@@ -2,6 +2,7 @@
 // buttons, agent rows with a chevron segment, and a flyout for the chosen agent. A plugin cannot
 // draw outside its frame, so both live inside the panel and are kept in view.
 import { icon } from './icons'
+import { setTip } from './tooltip'
 
 export type AgentEntry = { id: string; label: string; glyph: () => Element }
 
@@ -137,7 +138,7 @@ function el<K extends keyof HTMLElementTagNameMap>(tag: K, className: string): H
 function iconButton(name: 'squareTerminal' | 'open', label: string, onPress: () => void): HTMLButtonElement {
   const button = el('button', 'icon-button')
   button.type = 'button'
-  button.title = label
+  setTip(button, label)
   button.setAttribute('aria-label', label)
   button.appendChild(icon(name))
   button.addEventListener('click', onPress)

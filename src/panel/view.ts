@@ -1,6 +1,7 @@
 // Draws rows into the tree element. Text only ever goes in through textContent.
 import { icon, projectIcon } from './icons'
 import type { Row } from './rows'
+import { setTip } from './tooltip'
 
 const INDENT = 14
 const GUTTER = 8
@@ -26,7 +27,7 @@ function renderRow(row: Row, state: ViewState): HTMLElement {
   if (node.key === state.selectedKey) el.classList.add('selected')
   if (node.kind === 'workspace' && node.workspaceId === state.currentWorkspaceId) el.classList.add('current')
   el.style.paddingLeft = `${GUTTER + row.depth * INDENT}px`
-  el.title = node.kind === 'workspace' && node.detail ? `${node.label} · ${node.detail}` : node.label
+  setTip(el, node.kind === 'workspace' && node.detail ? `${node.label} · ${node.detail}` : node.label)
 
   const twistie = document.createElement('span')
   twistie.className = row.expandable ? `twistie${row.expanded ? ' open' : ''}` : 'twistie'
@@ -59,7 +60,7 @@ function renderRow(row: Row, state: ViewState): HTMLElement {
     const more = document.createElement('button')
     more.type = 'button'
     more.className = 'tool more'
-    more.title = 'Open in…'
+    setTip(more, 'Open in…')
     more.setAttribute('aria-label', 'Open in…')
     more.tabIndex = -1
     more.appendChild(icon('more'))

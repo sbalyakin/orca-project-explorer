@@ -9,6 +9,7 @@ import { buildLauncher, type LauncherChoice } from './launcher'
 import { buildMainMenu, closePopover, openPopover } from './menu'
 import { allCollapsed, containerKeys, navigate, pathTo, visibleRows, type NavKey, type Row } from './rows'
 import { CSS } from './style'
+import { installTooltips, setTip } from './tooltip'
 import { renderMessage, renderRows } from './view'
 
 const COLLAPSED_KEY = 'collapsed'
@@ -64,7 +65,7 @@ function toolButton(name: IconName, label: string, onPress: () => void): HTMLBut
   const button = document.createElement('button')
   button.className = 'tool'
   button.type = 'button'
-  button.title = label
+  setTip(button, label)
   button.setAttribute('aria-label', label)
   button.appendChild(icon(name))
   button.addEventListener('click', onPress)
@@ -80,7 +81,7 @@ const foldButton = toolButton('collapseAll', 'Collapse all projects', () => {
 function syncFoldButton(): void {
   const expand = allCollapsed(state.tree?.nodes ?? [], state.collapsed)
   const label = expand ? 'Expand all projects' : 'Collapse all projects'
-  foldButton.title = label
+  setTip(foldButton, label)
   foldButton.setAttribute('aria-label', label)
   foldButton.replaceChildren(icon(expand ? 'expandAll' : 'collapseAll'))
 }
@@ -93,6 +94,7 @@ toolbar.append(
   foldButton
 )
 document.body.append(toolbar, treeEl, footer)
+installTooltips()
 
 // ---------------------------------------------------------------- state
 

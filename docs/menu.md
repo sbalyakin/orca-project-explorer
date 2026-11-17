@@ -19,7 +19,7 @@ Under `~/Space/Development/_external/orca/src/renderer/src/components`:
 
 ## Not reproducible with the plugin API
 
-Browser and new-file icons, the gear, `Agent settings...`, row shortcut hints (`Cmd+Alt+T`), `No chat on this host`, and `/` and `@` in the prompt (the real one is Orca's chat composer). The panel's own tooltips are native `title` attributes.
+Browser and new-file icons, the gear, `Agent settings...`, row shortcut hints (`Cmd+Alt+T`), `No chat on this host`, and `/` and `@` in the prompt (the real one is Orca's chat composer). The panel's tooltips copy `ui/tooltip.tsx` (inverted bubble, arrow, 600 ms delay; `src/panel/tooltip.ts`, opt in with `data-tip`). They have no shortcut chips, since the panel has no shortcuts (2026-11-17, not compared pixel by pixel).
 
 ## Flyout placement
 

@@ -56,6 +56,20 @@ body {
 .more { display: none; width: 20px; height: 20px; }
 .row:hover .more, .row.selected .more { display: grid; }
 .more svg { width: 14px; height: 14px; }
+/* Orca's tooltip (ui/tooltip.tsx): bg-foreground, text-background, rounded-md, text-xs, px-3 py-1.5, a 10px arrow. */
+.tooltip {
+  position: fixed; z-index: 90; width: fit-content; max-width: calc(100vw - 8px); padding: 6px 12px; pointer-events: none;
+  background: var(--orca-foreground); color: var(--orca-background); border-radius: 6px;
+  font-size: 12px; line-height: 16px; text-wrap: balance; animation: tooltip-in .12s ease-out;
+}
+.tooltip-arrow {
+  position: absolute; width: 10px; height: 10px; margin-left: -5px; background: var(--orca-foreground);
+  border-radius: 2px; transform: rotate(45deg);
+}
+.tooltip-arrow.below-bubble { bottom: -3px; }
+.tooltip-arrow.above-bubble { top: -3px; }
+@keyframes tooltip-in { from { opacity: 0; } }
+@media (prefers-reduced-motion: reduce) { .tooltip { animation: none; } }
 .footer { padding: 4px 10px; min-height: 22px; color: var(--orca-destructive); }
 /* The menu follows Orca's new-tab menu: same sizes, radii and states, on the panel's own theme variables. */
 .popover {
