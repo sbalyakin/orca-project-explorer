@@ -1,2 +1,6 @@
 node_modules/
 .orca/
+.claude/skills
+.cursor/skills
+.opencode/skills
+.pi/skills
