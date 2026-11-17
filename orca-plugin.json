@@ -1,0 +1,54 @@
+{
+  "manifestVersion": 2,
+  "id": "project-tree",
+  "name": "Project Tree",
+  "version": "0.1.0",
+  "description": "Your projects and workspaces as a folder tree, with a right-click menu to open a terminal or launch an agent with a model, effort and prompt.",
+  "engines": {
+    "orca": ">=1.4.259"
+  },
+  "execution": "trusted-worker",
+  "pluginApi": 1,
+  "main": "src/worker.ts",
+  "contributes": {
+    "panels": [
+      {
+        "id": "project-tree",
+        "title": "Project Tree",
+        "icon": "folder",
+        "entry": "src/panel/main.ts",
+        "ui": "html"
+      }
+    ],
+    "settings": [
+      {
+        "key": "agents",
+        "title": "Agents in the right-click menu",
+        "description": "Comma-separated agent ids, in menu order. Known ids: claude, codex, opencode, opencode2, pi, cursor, gemini, copilot, droid, grok, kimi, kiro.",
+        "type": "string",
+        "default": "claude,codex,opencode2,pi,cursor",
+        "maxLength": 200
+      }
+    ]
+  },
+  "capabilities": [
+    {
+      "kind": "workspace:read"
+    },
+    {
+      "kind": "workspace:write"
+    },
+    {
+      "kind": "terminal:send"
+    },
+    {
+      "kind": "agent:read"
+    },
+    {
+      "kind": "storage:own"
+    },
+    {
+      "kind": "settings:own"
+    }
+  ]
+}

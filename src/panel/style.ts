@@ -1,0 +1,155 @@
+// Styled only from Orca's `--orca-*` theme variables, so a theme or font change needs no reload.
+export const CSS = `
+/* The left sidebar's colour (--worktree-sidebar) is not passed to plugins, so it is estimated: in light themes it lies
+   between --background and --muted (62% towards muted matches Claude light exactly). Dark themes vary too much; they keep --background. */
+:root { --panel-bg: color-mix(in srgb, var(--orca-muted) 62%, var(--orca-background)); --panel-accent: var(--orca-accent); }
+html.dark { --panel-bg: var(--orca-background); }
+* { box-sizing: border-box; }
+html, body { height: 100%; margin: 0; }
+body {
+  display: flex; flex-direction: column;
+  background: var(--panel-bg); color: var(--orca-foreground);
+  font: 12px/1.4 var(--orca-font-sans, system-ui), system-ui, sans-serif; user-select: none; overflow: hidden;
+}
+.toolbar { display: flex; gap: 2px; align-items: center; padding: 8px 8px 6px; }
+.search {
+  flex: 1; min-width: 0; height: 26px; padding: 0 8px; color: inherit; font: inherit;
+  background: var(--orca-card); border: 1px solid var(--orca-input); border-radius: var(--orca-radius); outline: none;
+}
+.search:focus { border-color: var(--orca-ring); }
+.tool {
+  display: grid; place-items: center; width: 26px; height: 26px; padding: 0; flex: none;
+  color: var(--orca-muted-foreground); background: none; border: 0; border-radius: var(--orca-radius); cursor: pointer;
+}
+.tool:hover { background: var(--panel-accent); color: var(--orca-accent-foreground); }
+.tool svg { width: 15px; height: 15px; }
+.tree { flex: 1; overflow: auto; padding: 2px 0 12px; outline: none; }
+.message { padding: 16px 12px; color: var(--orca-muted-foreground); }
+.message.error { color: var(--orca-destructive); }
+.row {
+  position: relative; display: flex; align-items: center; gap: 4px; height: 24px; padding-right: 8px;
+  cursor: pointer; white-space: nowrap;
+}
+.row:hover { background: var(--panel-accent); }
+.row.selected { background: var(--panel-accent); }
+.tree:focus-visible .row.selected { outline: 1px solid var(--orca-ring); outline-offset: -1px; }
+.row.current { background: var(--panel-accent); color: var(--orca-accent-foreground); }
+.row.group { font-weight: 600; }
+.twistie, .glyph { display: grid; place-items: center; flex: none; width: 16px; height: 16px; }
+.twistie { color: var(--orca-muted-foreground); }
+.twistie svg { width: 12px; height: 12px; transition: transform .1s; }
+.twistie.open svg { transform: rotate(90deg); }
+.glyph { color: var(--orca-muted-foreground); }
+.glyph svg { width: 15px; height: 15px; }
+.row.group .glyph { color: var(--orca-primary); }
+.glyph .project-image { width: 15px; height: 15px; border-radius: 4px; object-fit: contain; }
+.glyph .project-emoji { font-size: 13px; line-height: 1; }
+.label { overflow: hidden; text-overflow: ellipsis; flex: 0 1 auto; min-width: 0; }
+.detail { overflow: hidden; text-overflow: ellipsis; flex: 1 1 0; min-width: 0; color: var(--orca-muted-foreground); }
+.spacer { flex: 1; }
+.dot { flex: none; width: 7px; height: 7px; border-radius: 50%; }
+.dot.unread { background: var(--orca-destructive); }
+.dot.permission { background: #d97706; }
+.dot.working { background: var(--orca-primary); animation: pulse 1.2s ease-in-out infinite; }
+@keyframes pulse { 50% { opacity: .25; } }
+@media (prefers-reduced-motion: reduce) { .dot.working { animation: none; } }
+.more { display: none; width: 20px; height: 20px; }
+.row:hover .more, .row.selected .more { display: grid; }
+.more svg { width: 14px; height: 14px; }
+.footer { padding: 4px 10px; min-height: 22px; color: var(--orca-destructive); }
+/* The menu follows Orca's new-tab menu: same sizes, radii and states, on the panel's own theme variables. */
+.popover {
+  position: fixed; z-index: 10; width: min(288px, calc(100vw - 16px)); min-width: 11rem; padding: 6px;
+  background: var(--orca-popover); color: var(--orca-popover-foreground);
+  border: 1px solid rgb(0 0 0 / .07); border-radius: 12px; font-size: 13px; line-height: 16px;
+  box-shadow: 0 1px 2px rgb(0 0 0 / .04), 0 8px 24px rgb(0 0 0 / .08);
+}
+html.dark .popover { border-color: rgb(255 255 255 / .09); box-shadow: 0 12px 32px rgb(0 0 0 / .45); }
+.popover.picker { padding: 0; overflow: hidden; display: flex; flex-direction: column; max-height: calc(100vh - 16px); }
+.menu svg:not(.agent-icon) { stroke-width: 1.5; }
+.omnibox { display: flex; align-items: center; height: 36px; margin: -4px -4px 0; padding: 0 12px; font-size: 12px; }
+.omnibox-input {
+  flex: 1; min-width: 0; height: 36px; padding: 0; color: var(--orca-foreground); font: inherit; font-size: 12px;
+  background: transparent; border: 0; outline: none; user-select: text;
+}
+.omnibox-input::placeholder, .cmd-field::placeholder, .composer-input::placeholder { color: var(--orca-muted-foreground); }
+.menu-separator { height: 1px; margin: 6px -6px; background: rgb(0 0 0 / .07); }
+.menu-separator.flush { margin: 0 -6px 6px; }
+html.dark .menu-separator { background: rgb(255 255 255 / .1); }
+.icon-row { display: flex; gap: 2px; }
+.icon-button {
+  display: grid; place-items: center; flex: none; width: 36px; height: 28px; padding: 0; color: var(--orca-muted-foreground);
+  background: none; border: 0; border-radius: 7px; outline: none; cursor: pointer;
+}
+.icon-button svg { width: 16px; height: 16px; }
+.icon-button:hover, .icon-button:focus-visible { color: var(--orca-foreground); background: rgb(0 0 0 / .08); }
+html.dark .icon-button:hover, html.dark .icon-button:focus-visible { background: rgb(255 255 255 / .14); }
+.launch-row { display: flex; border-radius: 7px; }
+.launch-row:hover, .launch-row:focus-within, .launch-row.open { color: var(--orca-accent-foreground); background: var(--orca-accent); }
+.launch-main {
+  display: flex; align-items: center; gap: 8px; flex: 1; min-width: 0; height: 36px; padding: 0 8px;
+  color: var(--orca-foreground); font: inherit; font-weight: 500; text-align: left; background: none; border: 0;
+  border-radius: 7px 0 0 7px; outline: none; cursor: pointer;
+}
+.launch-row:hover .launch-main, .launch-row:focus-within .launch-main, .launch-row.open .launch-main { color: var(--orca-accent-foreground); }
+.launch-main .agent-icon { width: 14px; height: 14px; }
+.launch-label { flex: 1; min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.launch-segment {
+  display: grid; place-items: center; flex: none; align-self: stretch; width: 36px; min-height: 24px; padding: 0; color: inherit;
+  background: none; border: 0; border-left: 1px solid var(--orca-border); border-radius: 0 7px 7px 0; outline: none; cursor: pointer;
+}
+.launch-segment svg { width: 14px; height: 14px; }
+.menu-empty { padding: 5px 10px; opacity: .4; }
+.setup { display: flex; flex-direction: column; width: 100%; min-height: 0; }
+.cmd-input { display: flex; align-items: center; flex: none; height: 40px; padding: 0 10px; border-bottom: 1px solid var(--orca-border); }
+.cmd-input svg { flex: none; width: 14px; height: 14px; margin-right: 8px; opacity: .5; }
+.cmd-field {
+  flex: 1; min-width: 0; height: 100%; padding: 0; color: inherit; font: inherit; font-size: 13px;
+  background: transparent; border: 0; outline: none; user-select: text;
+}
+.cmd-list { flex: 0 1 auto; min-height: 0; max-height: 224px; padding: 4px; overflow: auto; }
+.cmd-item { display: flex; align-items: center; gap: 8px; min-height: 30px; padding: 0 8px; border-radius: 6px; cursor: default; }
+.cmd-item.active { background: color-mix(in srgb, var(--orca-foreground) 12%, var(--orca-popover)); }
+html.dark .cmd-item.active { background: color-mix(in srgb, var(--orca-foreground) 8%, var(--orca-popover)); }
+.cmd-label { flex: 1; min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.cmd-check { display: grid; place-items: center; flex: none; width: 14px; height: 14px; color: var(--orca-muted-foreground); }
+.cmd-check svg { width: 14px; height: 14px; }
+.setup-note { flex: none; padding: 6px 10px; color: var(--orca-muted-foreground); font-size: 12px; user-select: text; }
+.setup-efforts {
+  display: flex; flex-wrap: wrap; align-items: center; gap: 2px; flex: none; min-height: 36px; padding: 6px 10px;
+  border-top: 1px solid var(--orca-border);
+}
+.seg {
+  height: 24px; min-width: 24px; padding: 0 8px; color: var(--orca-muted-foreground); font: inherit; font-size: 12px; font-weight: 500;
+  white-space: nowrap; background: transparent; border: 0; border-radius: 6px; outline: none; cursor: pointer;
+}
+.seg:hover, .seg:focus-visible { color: var(--orca-foreground); }
+.seg.on { color: var(--orca-foreground); background: color-mix(in srgb, var(--orca-foreground) 12%, transparent); }
+html.dark .seg.on { background: var(--orca-accent); }
+.setup-prompt { flex: none; padding: 8px; }
+.composer {
+  padding: 6px; background: var(--orca-background); border: 1px solid color-mix(in srgb, var(--orca-foreground) 10%, transparent);
+  border-radius: 12px; box-shadow: 0 1px 2px rgb(0 0 0 / .05);
+}
+html.dark .composer { background: color-mix(in srgb, var(--orca-foreground) 4%, transparent); }
+.composer-input {
+  display: block; width: 100%; min-height: 28px; max-height: calc(6 * 20px + 8px); padding: 4px 8px; overflow-y: auto; resize: none;
+  color: inherit; font: inherit; font-size: 14px; line-height: 20px; background: transparent; border: 0; outline: none; user-select: text;
+}
+.setup-actions { display: grid; grid-auto-flow: column; grid-auto-columns: 1fr; gap: 8px; flex: none; padding: 0 8px 8px; }
+.btn {
+  display: flex; align-items: center; gap: 6px; min-width: 0; height: 32px; padding: 0 12px; color: var(--orca-foreground);
+  font: inherit; font-size: 14px; font-weight: 500; line-height: 20px; white-space: nowrap; background: var(--orca-background);
+  border: 1px solid var(--orca-border); border-radius: 6px; box-shadow: 0 1px 2px rgb(0 0 0 / .05); outline: none; cursor: pointer;
+}
+html.dark .btn { background: color-mix(in srgb, var(--orca-input) 30%, transparent); border-color: var(--orca-input); }
+.btn:hover, html.dark .btn:hover { color: var(--orca-accent-foreground); background: var(--orca-accent); }
+.btn:focus-visible { border-color: var(--orca-ring); box-shadow: 0 0 0 3px color-mix(in srgb, var(--orca-ring) 50%, transparent); }
+.btn.primary, html.dark .btn.primary { color: var(--orca-primary-foreground); background: var(--orca-primary); border-color: transparent; box-shadow: none; }
+.btn.primary:hover, html.dark .btn.primary:hover { color: var(--orca-primary-foreground); background: color-mix(in srgb, var(--orca-primary) 90%, transparent); }
+.btn svg { flex: none; width: 16px; height: 16px; }
+.btn-label { flex: 1; min-width: 0; overflow: hidden; text-overflow: ellipsis; text-align: left; }
+.keys { display: inline-flex; align-items: center; gap: 2px; flex: none; font-size: 11px; line-height: 1; opacity: .6; }
+.keys svg { width: 12px; height: 12px; }
+[hidden] { display: none !important; }
+`
