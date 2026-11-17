@@ -2,7 +2,7 @@
 
 ## Decisions
 
-- Own plugin, not a fork of `woodfishhhh/better-project-tree`. Same tree behaviour (folder grouping, filter, refresh, collapse and expand, status dots), own right-click menu. The left sidebar toggle button was dropped at the user's request (2026-11-17). The user removed better-project-tree from Orca (2026-11-17).
+- Own plugin, not a fork of `woodfishhhh/better-project-tree`. Same tree behaviour (folder grouping, filter, refresh, collapse and expand, status dots), own right-click menu. The left sidebar toggle button and the toolbar refresh button were dropped at the user's request (2026-11-17); the tree reloads on events and when the panel is looked at. The user removed better-project-tree from Orca (2026-11-17).
 - The menu lives in the right-sidebar HTML panel because the platform has no hook in the left list (see `platform.md`).
 - Folder layout: the first folder under `~` is the root (`~/Space`), then every folder down to the project; a project outside `~` hangs off its parent folder. Folders first, then projects, via `Intl.Collator`. Attention precedence: permission > unread > working.
 - Launch through the `orca` CLI so model, effort, prompt and surface fit in one call.

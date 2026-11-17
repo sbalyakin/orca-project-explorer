@@ -11,7 +11,6 @@ const PANEL_ICONS = {
   branch: 'GitBranch',
   terminal: 'Terminal',
   open: 'ExternalLink',
-  refresh: 'RefreshCw',
   collapseAll: 'ChevronsDownUp',
   expandAll: 'ChevronsUpDown',
   more: 'Ellipsis',

@@ -92,11 +92,7 @@ function syncFoldButton(): void {
 
 const toolbar = document.createElement('div')
 toolbar.className = 'toolbar'
-toolbar.append(
-  search,
-  toolButton('refresh', 'Refresh', () => void reload()),
-  foldButton
-)
+toolbar.append(search, foldButton)
 document.body.append(toolbar, treeEl, footer)
 installTooltips()
 
