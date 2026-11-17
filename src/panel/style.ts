@@ -48,6 +48,9 @@ body {
 .row.current { background: var(--panel-accent); color: var(--orca-accent-foreground); }
 /* Orca's project header label (SectionHeader.tsx): text-[13px] font-semibold leading-4, in the sidebar foreground. */
 .row.group { font-size: 13px; font-weight: 600; line-height: 16px; }
+/* Orca's workspace card title (WorktreeTitleInlineRename): text-[13px] leading-5, normal weight, semibold while unread. */
+.row.workspace .label { font-size: 13px; line-height: 20px; font-weight: 400; }
+.row.workspace.unread .label { font-weight: 600; }
 .twistie, .glyph { display: grid; place-items: center; flex: none; width: 16px; height: 16px; }
 .twistie { color: var(--orca-muted-foreground); }
 .twistie svg { width: 12px; height: 12px; transition: transform .1s; }

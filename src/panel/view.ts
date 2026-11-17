@@ -25,6 +25,7 @@ function renderRow(row: Row, state: ViewState): HTMLElement {
   el.setAttribute('aria-level', String(row.depth + 1))
   if (row.expandable) el.setAttribute('aria-expanded', String(row.expanded))
   if (node.key === state.selectedKey) el.classList.add('selected')
+  if (row.attention === 'unread') el.classList.add('unread')
   if (node.kind === 'workspace' && node.workspaceId === state.currentWorkspaceId) el.classList.add('current')
   el.style.paddingLeft = `${GUTTER + row.depth * INDENT}px`
   setTip(el, node.kind === 'workspace' && node.detail ? `${node.label} · ${node.detail}` : node.label)
