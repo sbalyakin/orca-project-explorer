@@ -19,7 +19,8 @@ to start a terminal or an agent in any workspace.
 - Dots: blue = unread, amber = waiting for permission, pulsing = agent working. A folded folder shows
   the strongest one below it. The row's tooltip names the status in words.
 - The open workspace has a filled row; the keyboard cursor is an outline. Launch progress and errors
-  show under the tree; an error stays until you dismiss it or start something else.
+  show in a strip under the tree that exists only while there is a message; `×` dismisses it, and an
+  error also goes when you start something else.
 
 Layout: the first folder under `~` is one root (`~/Space`), then every folder down to the project;
 a project outside `~` hangs off its parent folder. Linked worktrees nest under their project.

@@ -2,12 +2,13 @@
 // agent in a workspace. Orca wraps this module in a page; there is no build step.
 import type {} from 'orca/frame'
 import '../protocol'
-import type { ModelCatalog, ProjectTree } from '../types'
+import type { ModelCatalog, ProjectTree, SidebarLooks } from '../types'
 import { agentLabel, DEFAULT_AGENTS, parseAgents } from './agents'
 import { agentIcon, icon, type IconName } from './icons'
 import { buildLauncher, type LauncherChoice } from './launcher'
 import { buildMainMenu, closePopover, openPopover } from './menu'
 import { allCollapsed, containerKeys, keepLooks, navigate, pathTo, visibleRows, type NavKey, type Row } from './rows'
+import { lookFor, parseLooks } from './sidebar'
 import { CSS } from './style'
 import { shrinkImages } from './thumbs'
 import { installTooltips, setTip } from './tooltip'
@@ -17,6 +18,7 @@ const COLLAPSED_KEY = 'collapsed'
 /** Bump the version when `ProjectTree` changes shape, so an old cache is not drawn. */
 const TREE_KEY = 'tree:v1'
 const FONT_KEY = 'font:v1'
+const SIDEBAR_KEY = 'sidebar:v1'
 const AGENTS_KEY = 'agents'
 const RELOAD_DEBOUNCE_MS = 300
 const LOOK_RELOAD_MIN_MS = 5000
@@ -69,8 +71,9 @@ footer.setAttribute('role', 'status')
 const footerText = document.createElement('span')
 footerText.className = 'footer-text'
 const footerClose = toolButton('close', 'Dismiss', () => clearFooter())
-footerClose.hidden = true
 footer.append(footerText, footerClose)
+// Shown only while there is a message, so an idle panel gives the tree its full height.
+footer.hidden = true
 
 function toolButton(name: IconName, label: string, onPress: () => void): HTMLButtonElement {
   const button = document.createElement('button')
@@ -138,7 +141,7 @@ let loadErrorOwner: number | null = null
 function showFooter(text: string, isError: boolean): number {
   footerText.textContent = text
   footer.classList.toggle('error', isError)
-  footerClose.hidden = !isError
+  footer.hidden = text === ''
   loadErrorOwner = null
   return ++footerOwner
 }
@@ -478,6 +481,7 @@ function reloadOnLook(): void {
   if (now - lastLookAt < LOOK_RELOAD_MIN_MS) return
   lastLookAt = now
   void applyFont()
+  void loadSidebar()
   reloadSoon()
 }
 document.addEventListener('visibilitychange', () => {
@@ -485,7 +489,38 @@ document.addEventListener('visibilitychange', () => {
 })
 document.documentElement.addEventListener('pointerenter', reloadOnLook)
 window.addEventListener('focus', reloadOnLook)
-orca.on('theme', closePopover)
+orca.on('theme', () => {
+  closePopover()
+  // The base has changed: the cached looks cover both, so the colours switch at once; then they are read again.
+  applySidebar()
+  void loadSidebar()
+})
+
+let sidebarLooks: SidebarLooks | null = null
+
+/** Paints the panel in the left sidebar's colours for the theme base on screen; without them the stylesheet's estimate stays. */
+function applySidebar(): void {
+  const look = lookFor(sidebarLooks, document.documentElement.classList.contains('dark'))
+  const style = document.documentElement.style
+  if (look) {
+    style.setProperty('--panel-bg', look.background)
+    style.setProperty('--panel-accent', look.accent)
+  } else {
+    style.removeProperty('--panel-bg')
+    style.removeProperty('--panel-accent')
+  }
+}
+
+/** Orca sends no event when the app theme changes in settings, so the colours are read at start and on each look. */
+async function loadSidebar(): Promise<void> {
+  try {
+    sidebarLooks = await orca.plugin.request('theme.get')
+    applySidebar()
+    orca.storage.set(SIDEBAR_KEY, sidebarLooks).catch(() => {})
+  } catch {
+    // Keep the colours on screen.
+  }
+}
 
 function setFont(family: string): void {
   document.documentElement.style.setProperty('--app-font', family)
@@ -525,9 +560,16 @@ function cachedTree(stored: unknown): Partial<State> {
 async function start(): Promise<void> {
   render()
   try {
-    const [stored, tree, font] = await Promise.all([orca.storage.get(COLLAPSED_KEY), orca.storage.get(TREE_KEY), orca.storage.get(FONT_KEY)])
+    const [stored, tree, font, sidebar] = await Promise.all([
+      orca.storage.get(COLLAPSED_KEY),
+      orca.storage.get(TREE_KEY),
+      orca.storage.get(FONT_KEY),
+      orca.storage.get(SIDEBAR_KEY)
+    ])
     // Before the cached tree is drawn: a later change of font would reflow every row.
     if (typeof font === 'string') setFont(font)
+    sidebarLooks = parseLooks(sidebar)
+    applySidebar()
     const keys = Array.isArray(stored) ? stored.filter((key): key is string => typeof key === 'string') : []
     setState({ collapsed: new Set(keys), ...cachedTree(tree) })
     // `reload` reveals only when the tree changes, and a fresh tree usually equals the cached one.
@@ -535,7 +577,7 @@ async function start(): Promise<void> {
   } catch (error: unknown) {
     flash(error)
   }
-  await Promise.all([loadAgents(), reload(), applyFont()])
+  await Promise.all([loadAgents(), reload(), applyFont(), loadSidebar()])
 }
 
 void start()

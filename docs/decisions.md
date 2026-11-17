@@ -19,6 +19,6 @@
 ## Not verified
 
 
-- Dark theme of the panel (`plugin shot --theme` needs a hidden window).
+- Dark theme of the panel: checked live 2026-11-17 for the filter ring, `×`, keyboard outline, the menu and the panel colour (see `platform.md`). Not checked there: row hover (the pointer did not reach the panel in that session), the unread dot's blue, the back arrow.
 - Launching Claude, Codex, OpenCode and Cursor from the menu on the live panel (Pi is verified).
 - Which surface Orca treats as default for each agent; the plugin draws chat as primary.

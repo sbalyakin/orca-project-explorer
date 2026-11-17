@@ -77,3 +77,9 @@ export type AgentLaunch = {
   /** Left out: Orca uses the person's Chat | CLI choice for the agent. */
   surface?: LaunchSurface
 }
+
+/** Colours of Orca's left sidebar, as CSS values the panel can use: its fill and its hover fill. */
+export type SidebarLook = { background: string; accent: string }
+
+/** The look for each theme base; `null` where it cannot be known and the panel estimates. */
+export type SidebarLooks = { light: SidebarLook | null; dark: SidebarLook | null }

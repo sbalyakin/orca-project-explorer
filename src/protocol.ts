@@ -1,5 +1,5 @@
 // The panel <-> worker contract, declared once: both sides read it.
-import type { AgentLaunch, ModelCatalog, ProjectTree } from './types'
+import type { AgentLaunch, ModelCatalog, ProjectTree, SidebarLooks } from './types'
 
 declare module 'orca' {
   interface PluginRequests {
@@ -15,6 +15,8 @@ declare module 'orca' {
     'models.get': { input: { agent: string; refresh?: boolean }; output: ModelCatalog }
     /** Orca's interface font as a CSS `font-family` stack. */
     'font.get': { output: { family: string } }
+    /** The left sidebar's colours under the chosen app theme, for both bases. */
+    'theme.get': { output: SidebarLooks }
   }
   interface PluginPanelEvents {
     /** A background refresh finished for one agent. */

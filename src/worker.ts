@@ -4,6 +4,7 @@ import { homedir } from 'node:os'
 import type { OrcaWorkerApi } from 'orca/worker'
 import './protocol'
 import { readAppFont } from './appfont'
+import { readSidebarLooks } from './apptheme'
 import { createLooksCache, type LooksCache } from './appearance'
 import { buildTree } from './tree'
 import { createCatalogs } from './catalog/catalogs'
@@ -41,6 +42,7 @@ export default function activate(orca: OrcaWorkerApi): void {
   orca.panels.handle('tree.load', () => loadTree(orca, looks))
 
   orca.panels.handle('font.get', async () => ({ family: await readAppFont() }))
+  orca.panels.handle('theme.get', () => readSidebarLooks())
 
   orca.panels.handle('workspace.open', async ({ workspaceId }) => {
     await orca.host.call('workspace.open', { workspaceId: requireId(workspaceId, 'workspaceId') })
