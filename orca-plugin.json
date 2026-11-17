@@ -16,7 +16,7 @@
         "id": "project-tree",
         "title": "Project Tree",
         "icon": "layers",
-        "entry": "src/panel/main.ts",
+        "entry": "src/panel/index.html",
         "ui": "html"
       }
     ],

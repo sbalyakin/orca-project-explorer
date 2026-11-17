@@ -17,5 +17,7 @@ declare module 'orca' {
   interface PluginPanelEvents {
     /** A background refresh finished for one agent. */
     'models.updated': ModelCatalog
+    /** Project icons or colours changed; the next `tree.load` has them. */
+    'tree.changed': Record<string, never>
   }
 }

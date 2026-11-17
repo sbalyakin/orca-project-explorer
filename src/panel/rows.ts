@@ -1,6 +1,6 @@
 // Flattens the tree into the rows the panel draws and moves a selection through them.
 // Pure: no DOM, so the rules are testable in Node.
-import { ATTENTION_LEVELS, type Attention, type TreeNode } from '../types'
+import { ATTENTION_LEVELS, type Attention, type TreeNode, type WorkspaceNode } from '../types'
 
 export type Row = {
   node: TreeNode
@@ -109,4 +109,29 @@ export function navigate(rows: readonly Row[], selectedKey: string | null, key: 
       return { selectedKey: String(unreachable) }
     }
   }
+}
+
+type Look = Pick<WorkspaceNode, 'icon' | 'color'>
+
+/** Gives the workspaces of a tree that came without icons and colours the ones they had in an earlier tree. In place. */
+export function keepLooks(nodes: TreeNode[], earlier: readonly TreeNode[]): void {
+  const looks = new Map<string, Look>()
+  const collect = (list: readonly TreeNode[]): void => {
+    for (const node of list) {
+      if (node.kind === 'workspace' && (node.icon || node.color)) looks.set(node.key, { icon: node.icon, color: node.color })
+      collect(node.children)
+    }
+  }
+  const apply = (list: TreeNode[]): void => {
+    for (const node of list) {
+      const look = node.kind === 'workspace' ? looks.get(node.key) : undefined
+      if (node.kind === 'workspace' && look) {
+        if (look.icon) node.icon = look.icon
+        if (look.color) node.color = look.color
+      }
+      apply(node.children)
+    }
+  }
+  collect(earlier)
+  apply(nodes)
 }

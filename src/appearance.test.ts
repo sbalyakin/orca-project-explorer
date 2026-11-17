@@ -29,27 +29,63 @@ test('output that is not JSON gives no looks', () => {
 
 const lookMap = (color: string): Map<string, ProjectLook> => new Map([['r1', { color }]])
 
-test('looks load once, then come from memory while a refresh runs behind', async () => {
+const settle = (): Promise<void> => new Promise((resolve) => setTimeout(resolve, 0))
+
+test('the first call answers null at once; looks come from memory after the load', async () => {
+  let changes = 0
+  const get = createLooksCache(async () => lookMap('#000001'), () => changes++)
+  assert.equal(get(), null)
+  await settle()
+  assert.equal(changes, 1)
+  assert.equal(get()?.get('r1')?.color, '#000001')
+})
+
+test('a refresh tells only when the looks differ', async () => {
+  let calls = 0
+  let changes = 0
+  const get = createLooksCache(async () => lookMap(++calls < 3 ? '#000001' : '#000002'), () => changes++)
+  get()
+  await settle()
+  get()
+  await settle()
+  assert.equal(changes, 1)
+  get()
+  await settle()
+  assert.equal(changes, 2)
+  assert.equal(get()?.get('r1')?.color, '#000002')
+})
+
+test('one load at a time', async () => {
   let calls = 0
   let release: () => void = () => {}
   const gate = new Promise<void>((resolve) => (release = resolve))
   const get = createLooksCache(async () => {
     calls++
-    if (calls > 1) await gate
-    return lookMap(`#00000${calls}`)
+    await gate
+    return lookMap('#000001')
   })
-  assert.equal((await get()).get('r1')?.color, '#000001')
-  // The second call must not wait for the held refresh.
-  assert.equal((await get()).get('r1')?.color, '#000001')
-  assert.equal(calls, 2)
+  get()
+  get()
+  assert.equal(calls, 1)
   release()
+  await settle()
 })
 
 test('a refresh that finds nothing keeps the earlier looks', async () => {
   let calls = 0
   const get = createLooksCache(async () => (++calls === 1 ? lookMap('#111111') : new Map()))
-  await get()
-  await get()
-  await new Promise((resolve) => setTimeout(resolve, 0))
-  assert.equal((await get()).get('r1')?.color, '#111111')
+  get()
+  await settle()
+  get()
+  await settle()
+  assert.equal(get()?.get('r1')?.color, '#111111')
+})
+
+test('a failed first load still ends the wait, with no looks', async () => {
+  let changes = 0
+  const get = createLooksCache(async () => Promise.reject(new Error('no cli')), () => changes++)
+  get()
+  await settle()
+  assert.equal(changes, 1)
+  assert.equal(get()?.size, 0)
 })

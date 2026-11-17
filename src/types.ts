@@ -39,6 +39,8 @@ export type TreeNode = GroupNode | WorkspaceNode
 
 export type ProjectTree = {
   nodes: TreeNode[]
+  /** The worker has not loaded project icons and colours yet; `tree.changed` follows when it has. */
+  looksPending?: true
 }
 
 /** One model an agent offers, as its own CLI lists it. */

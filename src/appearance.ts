@@ -6,6 +6,7 @@ import type { ProjectLook } from './tree'
 import type { ProjectIcon } from './types'
 
 export type LooksLoader = () => Promise<Map<string, ProjectLook>>
+export type LooksCache = ReturnType<typeof createLooksCache>
 
 const APP_CLI = '/Applications/Orca.app/Contents/Resources/bin/orca'
 const TIMEOUT_MS = 15_000
@@ -83,31 +84,37 @@ export async function inlineRemoteIcons(looks: Map<string, ProjectLook>): Promis
   )
 }
 
+const lookSignature = (looks: Map<string, ProjectLook>): string => JSON.stringify([...looks])
+
 /**
- * Looks change almost never, but loading them costs a CLI call (about a second). The first call waits
- * for them; later calls answer from memory and refresh in the background. A failed refresh (empty
- * result) keeps the earlier looks.
+ * Looks change almost never, but loading them costs a CLI call (about a second, more with favicons).
+ * Every call answers from memory at once, `null` until the first load is done, and refreshes in the
+ * background; `onChange` fires when a refresh brings different looks. A failed refresh (empty result)
+ * keeps the earlier looks.
  */
-export function createLooksCache(load: LooksLoader = fetchLooks): () => Promise<Map<string, ProjectLook>> {
+export function createLooksCache(
+  load: LooksLoader = fetchLooks,
+  onChange: () => void = () => {}
+): () => Map<string, ProjectLook> | null {
   let looks: Map<string, ProjectLook> | null = null
+  let signature = ''
   let running: Promise<void> | null = null
-  const refresh = (): Promise<void> => {
+  const settle = (fresh: Map<string, ProjectLook>): void => {
+    if (fresh.size === 0 && looks) return
+    const next = lookSignature(fresh)
+    const changed = !looks || next !== signature
+    looks = fresh
+    signature = next
+    if (changed) onChange()
+  }
+  return () => {
     running ??= load()
-      .then((fresh) => {
-        if (fresh.size > 0 || !looks) looks = fresh
-      })
-      .catch(() => {
-        looks ??= new Map()
-      })
+      .catch(() => new Map<string, ProjectLook>())
+      .then(settle)
       .finally(() => {
         running = null
       })
-    return running
-  }
-  return async () => {
-    const pending = refresh()
-    if (!looks) await pending
-    return looks ?? new Map()
+    return looks
   }
 }
 

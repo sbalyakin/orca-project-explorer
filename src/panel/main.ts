@@ -7,12 +7,15 @@ import { agentLabel, DEFAULT_AGENTS, parseAgents } from './agents'
 import { agentIcon, icon, type IconName } from './icons'
 import { buildLauncher, type LauncherChoice } from './launcher'
 import { buildMainMenu, closePopover, openPopover } from './menu'
-import { allCollapsed, containerKeys, navigate, pathTo, visibleRows, type NavKey, type Row } from './rows'
+import { allCollapsed, containerKeys, keepLooks, navigate, pathTo, visibleRows, type NavKey, type Row } from './rows'
 import { CSS } from './style'
+import { shrinkImages } from './thumbs'
 import { installTooltips, setTip } from './tooltip'
 import { renderMessage, renderRows } from './view'
 
 const COLLAPSED_KEY = 'collapsed'
+/** Bump the version when `ProjectTree` changes shape, so an old cache is not drawn. */
+const TREE_KEY = 'tree:v1'
 const AGENTS_KEY = 'agents'
 const RELOAD_DEBOUNCE_MS = 300
 const ERROR_SHOW_MS = 5000
@@ -179,12 +182,17 @@ let loadSeq = 0
 async function reload(): Promise<void> {
   const seq = ++loadSeq
   try {
-    const tree = await orca.plugin.request('tree.load')
+    const { looksPending, ...tree } = await orca.plugin.request('tree.load')
+    await shrinkImages(tree.nodes)
     // A newer load has started; this answer may be older than what is on screen.
     if (seq !== loadSeq) return
+    // A worker just started has no icons yet; keep the ones on screen until `tree.changed`.
+    if (looksPending) keepLooks(tree.nodes, state.tree?.nodes ?? [])
     const signature = JSON.stringify(tree.nodes)
     if (signature === state.treeSignature) return
     setState({ tree, treeSignature: signature, error: null })
+    // The cache is optional: a tree past the 256 KiB storage limit is not kept, nor is an older one.
+    if (!looksPending) orca.storage.set(TREE_KEY, tree).catch(() => orca.storage.delete(TREE_KEY).catch(() => {}))
     if (pendingReveal) reveal(pendingReveal)
     else if (state.currentWorkspaceId && !state.selectedKey) reveal(state.currentWorkspaceId)
   } catch (error: unknown) {
@@ -402,6 +410,7 @@ orca.on('workspace.changed', ({ context }) => {
 orca.on('workspace.created', reloadSoon)
 orca.on('workspace.removed', reloadSoon)
 orca.on('agent.status.changed', reloadSoon)
+orca.plugin.on('tree.changed', reloadSoon)
 // Orca sends no event when a project is added, renamed or recoloured (see docs/platform.md), so a look at
 // the panel is the trigger: the pointer entering it, the window regaining focus, or the panel being shown.
 // All three share one throttle, since they often fire together.
@@ -430,12 +439,20 @@ orca.settings.onDidChange(({ key }) => {
   if (key === AGENTS_KEY) void loadAgents()
 })
 
+/** The tree from the last session. Orca stops an idle worker after 5 minutes, and a cold `tree.load` takes about 2 s. */
+function cachedTree(stored: unknown): Partial<State> {
+  const nodes = (stored as Partial<ProjectTree> | null)?.nodes
+  return Array.isArray(nodes) ? { tree: { nodes }, treeSignature: JSON.stringify(nodes) } : {}
+}
+
 async function start(): Promise<void> {
   render()
   try {
-    const stored = await orca.storage.get(COLLAPSED_KEY)
+    const [stored, tree] = await Promise.all([orca.storage.get(COLLAPSED_KEY), orca.storage.get(TREE_KEY)])
     const keys = Array.isArray(stored) ? stored.filter((key): key is string => typeof key === 'string') : []
-    state = { ...state, collapsed: new Set(keys) }
+    setState({ collapsed: new Set(keys), ...cachedTree(tree) })
+    // `reload` reveals only when the tree changes, and a fresh tree usually equals the cached one.
+    if (state.currentWorkspaceId && !state.selectedKey) reveal(state.currentWorkspaceId)
   } catch (error: unknown) {
     flash(error)
   }

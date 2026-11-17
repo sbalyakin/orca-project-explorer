@@ -3,19 +3,20 @@
 import { homedir } from 'node:os'
 import type { OrcaWorkerApi } from 'orca/worker'
 import './protocol'
-import { createLooksCache, type LooksLoader } from './appearance'
+import { createLooksCache, type LooksCache } from './appearance'
 import { buildTree } from './tree'
 import { createCatalogs } from './catalog/catalogs'
 import { launchAgent } from './launch'
 import type { ProjectTree } from './types'
 
-export async function loadTree(orca: OrcaWorkerApi, loadLooks: LooksLoader): Promise<ProjectTree> {
-  const [projects, workspaces, looks] = await Promise.all([
+export async function loadTree(orca: OrcaWorkerApi, looks: LooksCache): Promise<ProjectTree> {
+  const [projects, workspaces] = await Promise.all([
     orca.host.call('project.list', {}),
-    orca.host.call('workspace.list', { includeStatus: true }),
-    loadLooks()
+    orca.host.call('workspace.list', { includeStatus: true })
   ])
-  return { nodes: buildTree(projects.projects, workspaces.workspaces, homedir() || null, looks) }
+  const known = looks()
+  const nodes = buildTree(projects.projects, workspaces.workspaces, homedir() || null, known ?? new Map())
+  return known ? { nodes } : { nodes, looksPending: true as const }
 }
 
 function invalidParams(message: string): Error {
@@ -35,7 +36,7 @@ function requireAgent(value: unknown): string {
 }
 
 export default function activate(orca: OrcaWorkerApi): void {
-  const looks = createLooksCache()
+  const looks = createLooksCache(undefined, () => orca.panels.post('tree.changed', {}))
   orca.panels.handle('tree.load', () => loadTree(orca, looks))
 
   orca.panels.handle('workspace.open', async ({ workspaceId }) => {

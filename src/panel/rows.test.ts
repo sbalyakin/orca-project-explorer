@@ -1,6 +1,6 @@
 import { assert, test } from 'orca/testing'
 import type { Attention, TreeNode } from '../types'
-import { allCollapsed, containerKeys, navigate, pathTo, visibleRows } from './rows'
+import { allCollapsed, containerKeys, keepLooks, navigate, pathTo, visibleRows } from './rows'
 
 function ws(id: string, label: string, attention: Attention = 'none', children: TreeNode[] = []): TreeNode {
   return { kind: 'workspace', key: `ws:${id}`, workspaceId: id, label, linked: false, attention, children }
@@ -42,6 +42,15 @@ test('all collapsed only when every folder is folded', () => {
   assert.equal(allCollapsed(tree, new Set(['g1'])), false)
   assert.equal(allCollapsed(tree, new Set(['g1', 'g2'])), true)
   assert.equal(allCollapsed([ws('a', 'A')], new Set()), false)
+})
+
+test('a tree without looks takes them from the earlier tree by row key', () => {
+  const earlier = [group('g', [{ ...ws('a', 'alpha'), icon: { type: 'emoji', emoji: '📚' }, color: '#8b5cf6' } as TreeNode])]
+  const fresh = [group('g', [ws('a', 'alpha', 'unread'), ws('b', 'beta')])]
+  keepLooks(fresh, earlier)
+  const [a, b] = fresh[0].children
+  assert.deepEqual(a, { ...ws('a', 'alpha', 'unread'), icon: { type: 'emoji', emoji: '📚' }, color: '#8b5cf6' })
+  assert.deepEqual(b, ws('b', 'beta'))
 })
 
 test('arrow keys move, fold and unfold', () => {

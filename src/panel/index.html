@@ -1,0 +1,9 @@
+<style>
+/* Here rather than in style.ts: the page must have the panel's colour before the modules load.
+   The left sidebar's colour (--worktree-sidebar) is not passed to plugins, so it is estimated: in light themes it lies
+   between --background and --muted (62% towards muted matches Claude light exactly). Dark themes vary too much; they keep --background. */
+:root { --panel-bg: color-mix(in srgb, var(--orca-muted) 62%, var(--orca-background)); --panel-accent: var(--orca-accent); }
+html.dark { --panel-bg: var(--orca-background); }
+html { background: var(--panel-bg); }
+</style>
+<script type="module" src="./main.ts"></script>

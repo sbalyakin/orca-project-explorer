@@ -1,9 +1,6 @@
 // Styled only from Orca's `--orca-*` theme variables, so a theme or font change needs no reload.
 export const CSS = `
-/* The left sidebar's colour (--worktree-sidebar) is not passed to plugins, so it is estimated: in light themes it lies
-   between --background and --muted (62% towards muted matches Claude light exactly). Dark themes vary too much; they keep --background. */
-:root { --panel-bg: color-mix(in srgb, var(--orca-muted) 62%, var(--orca-background)); --panel-accent: var(--orca-accent); }
-html.dark { --panel-bg: var(--orca-background); }
+/* --panel-bg and --panel-accent come from index.html. */
 * { box-sizing: border-box; }
 html, body { height: 100%; margin: 0; }
 body {
