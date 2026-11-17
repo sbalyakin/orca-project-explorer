@@ -41,7 +41,7 @@ body {
 .twistie.open svg { transform: rotate(90deg); }
 .glyph { color: var(--orca-muted-foreground); }
 .glyph svg { width: 15px; height: 15px; }
-.row.group .glyph { color: var(--orca-primary); }
+.row.group .glyph { color: #737373; } /* Orca's default project badge colour (DEFAULT_REPO_BADGE_COLOR) */
 .glyph .project-image { width: 15px; height: 15px; border-radius: 4px; object-fit: contain; }
 .glyph .project-emoji { font-size: 13px; line-height: 1; }
 .label { overflow: hidden; text-overflow: ellipsis; flex: 0 1 auto; min-width: 0; }
