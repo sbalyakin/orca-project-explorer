@@ -47,4 +47,5 @@ Facts about Orca's plugin system that the code does not show. Verified on Orca 1
 ## Machine environment
 
 - A GUI-started Orca has a thin `PATH` and does not read `~/.zshenv`. `src/catalog/run.ts` also searches `~/.local/bin`, `~/.opencode/bin`, `/opt/homebrew/bin` and the like. OpenCode's wrapper `opencode-jb` goes before `opencode`.
-- The Orca source checkout is `~/Space/Development/_external/orca`. Its `package.json` version lags the installed app; compare against the app, not the file.
+- The Orca source checkout is `~/Space/Development/_external/orca`. It is detached at tag `v1.4.261`, the installed app's version (checked 2026-11-17). On `main` its `package.json` version lagged the app, so check out the app's tag (`git fetch --tags`) rather than trusting the file.
+- Plugins get only 5 events (`PLUGIN_EVENT_NAMES`, same on 1.4.261): no event for project add, rename, icon or colour. Orca's own `repos:changed` goes to its window only (checked 2026-11-17).

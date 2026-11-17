@@ -16,6 +16,7 @@ const COLLAPSED_KEY = 'collapsed'
 const AGENTS_KEY = 'agents'
 const RELOAD_DEBOUNCE_MS = 300
 const ERROR_SHOW_MS = 5000
+const LOOK_RELOAD_MIN_MS = 5000
 
 type State = {
   tree: ProjectTree | null
@@ -401,9 +402,21 @@ orca.on('workspace.changed', ({ context }) => {
 orca.on('workspace.created', reloadSoon)
 orca.on('workspace.removed', reloadSoon)
 orca.on('agent.status.changed', reloadSoon)
+// Orca sends no event when a project is added, renamed or recoloured (see docs/platform.md), so a look at
+// the panel is the trigger: the pointer entering it, the window regaining focus, or the panel being shown.
+// All three share one throttle, since they often fire together.
+let lastLookAt = 0
+function reloadOnLook(): void {
+  const now = Date.now()
+  if (now - lastLookAt < LOOK_RELOAD_MIN_MS) return
+  lastLookAt = now
+  reloadSoon()
+}
 document.addEventListener('visibilitychange', () => {
-  if (document.visibilityState === 'visible') reloadSoon()
+  if (document.visibilityState === 'visible') reloadOnLook()
 })
+document.documentElement.addEventListener('pointerenter', reloadOnLook)
+window.addEventListener('focus', reloadOnLook)
 orca.on('theme', closePopover)
 
 async function loadAgents(): Promise<void> {
