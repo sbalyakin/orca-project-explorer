@@ -16,6 +16,7 @@ import { renderMessage, renderRows } from './view'
 const COLLAPSED_KEY = 'collapsed'
 /** Bump the version when `ProjectTree` changes shape, so an old cache is not drawn. */
 const TREE_KEY = 'tree:v1'
+const FONT_KEY = 'font:v1'
 const AGENTS_KEY = 'agents'
 const RELOAD_DEBOUNCE_MS = 300
 const ERROR_SHOW_MS = 5000
@@ -431,11 +432,19 @@ document.documentElement.addEventListener('pointerenter', reloadOnLook)
 window.addEventListener('focus', reloadOnLook)
 orca.on('theme', closePopover)
 
-/** Orca sends no event when the interface font changes, so it is read at start and on each look. */
+function setFont(family: string): void {
+  document.documentElement.style.setProperty('--app-font', family)
+}
+
+/**
+ * Orca sends no event when the interface font changes, so it is read at start and on each look. The last
+ * answer is kept (see `start`), so the first paint already has the right font and does not reflow.
+ */
 async function applyFont(): Promise<void> {
   try {
     const { family } = await orca.plugin.request('font.get')
-    document.documentElement.style.setProperty('--app-font', family)
+    setFont(family)
+    orca.storage.set(FONT_KEY, family).catch(() => {})
   } catch {
     // Keep the font on screen; the stylesheet has Orca's default.
   }
@@ -461,7 +470,9 @@ function cachedTree(stored: unknown): Partial<State> {
 async function start(): Promise<void> {
   render()
   try {
-    const [stored, tree] = await Promise.all([orca.storage.get(COLLAPSED_KEY), orca.storage.get(TREE_KEY)])
+    const [stored, tree, font] = await Promise.all([orca.storage.get(COLLAPSED_KEY), orca.storage.get(TREE_KEY), orca.storage.get(FONT_KEY)])
+    // Before the cached tree is drawn: a later change of font would reflow every row.
+    if (typeof font === 'string') setFont(font)
     const keys = Array.isArray(stored) ? stored.filter((key): key is string => typeof key === 'string') : []
     setState({ collapsed: new Set(keys), ...cachedTree(tree) })
     // `reload` reveals only when the tree changes, and a fresh tree usually equals the cached one.
