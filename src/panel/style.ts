@@ -9,11 +9,21 @@ body {
   font: 12px/1.4 var(--orca-font-sans, system-ui), system-ui, sans-serif; user-select: none; overflow: hidden;
 }
 .toolbar { display: flex; gap: 2px; align-items: center; padding: 8px 8px 6px; }
-.search {
-  flex: 1; min-width: 0; height: 26px; padding: 0 8px; color: inherit; font: inherit;
-  background: var(--orca-card); border: 1px solid var(--orca-input); border-radius: var(--orca-radius); outline: none;
+/* Mirrors Orca's sidebar Search button: bg foreground/5, px-2 py-1.5, 13px medium, rounded-md (0.8 radius), icon 16px at foreground/30. */
+.search-box {
+  flex: 1; min-width: 0; display: flex; align-items: center; gap: 8px; padding: 6px 8px;
+  background: color-mix(in srgb, var(--orca-foreground) 5%, transparent); border-radius: calc(var(--orca-radius) * 0.8);
+  transition: background-color .15s;
 }
-.search:focus { border-color: var(--orca-ring); }
+.search-box:hover { background: color-mix(in srgb, var(--orca-foreground) 8%, transparent); }
+.search-box svg { width: 16px; height: 16px; flex: none; color: color-mix(in srgb, var(--orca-foreground) 30%, transparent); }
+.search {
+  flex: 1; min-width: 0; padding: 0; border: 0; outline: none; background: none; appearance: none;
+  font: 500 13px/1.25rem var(--orca-font-sans, system-ui), system-ui, sans-serif; letter-spacing: -0.025em;
+  color: var(--orca-foreground);
+}
+.search::placeholder { color: color-mix(in srgb, var(--orca-foreground) 60%, transparent); opacity: 1; }
+.search::-webkit-search-cancel-button { display: none; }
 .tool {
   display: grid; place-items: center; width: 26px; height: 26px; padding: 0; flex: none;
   color: var(--orca-muted-foreground); background: none; border: 0; border-radius: var(--orca-radius); cursor: pointer;

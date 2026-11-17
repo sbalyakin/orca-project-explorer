@@ -92,7 +92,13 @@ function syncFoldButton(): void {
 
 const toolbar = document.createElement('div')
 toolbar.className = 'toolbar'
-toolbar.append(search, foldButton)
+// The field is drawn like the left sidebar's Search button (`SidebarNav.tsx`): a Lucide magnifier inside.
+const searchBox = document.createElement('label')
+searchBox.className = 'search-box'
+const searchIcon = icon('filter')
+searchIcon.setAttribute('stroke-width', '1.75')
+searchBox.append(searchIcon, search)
+toolbar.append(searchBox, foldButton)
 document.body.append(toolbar, treeEl, footer)
 installTooltips()
 

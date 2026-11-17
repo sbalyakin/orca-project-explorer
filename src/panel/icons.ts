@@ -18,6 +18,7 @@ const PANEL_ICONS = {
   check: 'Check',
   chat: 'MessageSquare',
   search: 'Search',
+  filter: 'ListFilter',
   squareTerminal: 'SquareTerminal',
   enter: 'CornerDownLeft'
 } as const
