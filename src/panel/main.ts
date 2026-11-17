@@ -120,8 +120,28 @@ clearButton.addEventListener('click', () => {
   search.focus()
 })
 searchBox.append(searchIcon, search, clearButton)
-toolbar.append(searchBox, foldButton)
-document.body.append(toolbar, treeEl, footer)
+toolbar.append(searchBox)
+
+// The header under the filter, as Orca's sidebar header: the fold button appears only while the pointer is over it.
+const header = document.createElement('div')
+header.className = 'header'
+const headerTitle = document.createElement('span')
+headerTitle.className = 'header-title'
+headerTitle.textContent = 'Projects'
+foldButton.classList.add('header-fold')
+const headerActions = document.createElement('div')
+headerActions.className = 'header-actions'
+// Placeholders: no action and no tooltip yet.
+for (const [name, label] of [['settings', 'Settings'], ['add', 'Add project']] as const) {
+  const stub = document.createElement('button')
+  stub.className = 'tool'
+  stub.type = 'button'
+  stub.setAttribute('aria-label', label)
+  stub.appendChild(icon(name))
+  headerActions.appendChild(stub)
+}
+header.append(headerTitle, foldButton, headerActions)
+document.body.append(toolbar, header, treeEl, footer)
 installTooltips()
 // ---------------------------------------------------------------- state
 

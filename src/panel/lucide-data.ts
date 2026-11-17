@@ -40,4 +40,6 @@ export const LUCIDE: Record<string, readonly Shape[]> = {
   Search: [['path', {"d": "m21 21-4.34-4.34"}], ['circle', {"cx": "11", "cy": "11", "r": "8"}]],
   CornerDownLeft: [['path', {"d": "M20 4v7a4 4 0 0 1-4 4H4"}], ['path', {"d": "m9 10-5 5 5 5"}]],
   X: [['path', {"d": "M18 6 6 18"}], ['path', {"d": "m6 6 12 12"}]],
+  SlidersHorizontal: [['path', {"d": "M10 5H3"}], ['path', {"d": "M12 19H3"}], ['path', {"d": "M14 3v4"}], ['path', {"d": "M16 17v4"}], ['path', {"d": "M21 12h-9"}], ['path', {"d": "M21 19h-5"}], ['path', {"d": "M21 5h-7"}], ['path', {"d": "M8 10v4"}], ['path', {"d": "M8 12H3"}]],
+  Plus: [['path', {"d": "M5 12h14"}], ['path', {"d": "M12 5v14"}]],
 }

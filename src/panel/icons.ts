@@ -21,7 +21,9 @@ const PANEL_ICONS = {
   filter: 'ListFilter',
   squareTerminal: 'SquareTerminal',
   enter: 'CornerDownLeft',
-  close: 'X'
+  close: 'X',
+  settings: 'SlidersHorizontal',
+  add: 'Plus'
 } as const
 
 export type IconName = keyof typeof PANEL_ICONS
