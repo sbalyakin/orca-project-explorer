@@ -32,7 +32,7 @@ REPO_ICON_LIST = RENDERER / "repo/repo-icon.tsx"
 # Lucide components the panel's own chrome draws (see PANEL_ICONS in src/panel/icons.ts).
 PANEL_LUCIDE = [
     "ChevronRight", "Folder", "FolderOpen", "Book", "GitBranch", "Terminal", "ExternalLink", "RefreshCw",
-    "ChevronsDownUp", "ChevronsUpDown", "PanelLeft", "Ellipsis", "ArrowLeft", "Check", "MessageSquare",
+    "ChevronsDownUp", "ChevronsUpDown", "Ellipsis", "ArrowLeft", "Check", "MessageSquare",
     "Search", "SquareTerminal", "CornerDownLeft",
 ]
 

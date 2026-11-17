@@ -13,8 +13,6 @@ declare module 'orca' {
     'agent.launch': { input: AgentLaunch; output: { launched: true } }
     /** An agent's models: the cached list at once, or a fresh one with `refresh`. */
     'models.get': { input: { agent: string; refresh?: boolean }; output: ModelCatalog }
-    /** Shows or hides Orca's left sidebar. */
-    'sidebar.toggle': { output: { ran: true } }
   }
   interface PluginPanelEvents {
     /** A background refresh finished for one agent. */

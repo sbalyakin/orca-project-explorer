@@ -33,7 +33,6 @@ export const LUCIDE: Record<string, readonly Shape[]> = {
   RefreshCw: [['path', {"d": "M3 12a9 9 0 0 1 9-9 9.75 9.75 0 0 1 6.74 2.74L21 8"}], ['path', {"d": "M21 3v5h-5"}], ['path', {"d": "M21 12a9 9 0 0 1-9 9 9.75 9.75 0 0 1-6.74-2.74L3 16"}], ['path', {"d": "M8 16H3v5"}]],
   ChevronsDownUp: [['path', {"d": "m7 20 5-5 5 5"}], ['path', {"d": "m7 4 5 5 5-5"}]],
   ChevronsUpDown: [['path', {"d": "m7 15 5 5 5-5"}], ['path', {"d": "m7 9 5-5 5 5"}]],
-  PanelLeft: [['rect', {"width": "18", "height": "18", "x": "3", "y": "3", "rx": "2"}], ['path', {"d": "M9 3v18"}]],
   Ellipsis: [['circle', {"cx": "12", "cy": "12", "r": "1"}], ['circle', {"cx": "19", "cy": "12", "r": "1"}], ['circle', {"cx": "5", "cy": "12", "r": "1"}]],
   ArrowLeft: [['path', {"d": "m12 19-7-7 7-7"}], ['path', {"d": "M19 12H5"}]],
   Check: [['path', {"d": "M20 6 9 17l-5-5"}]],

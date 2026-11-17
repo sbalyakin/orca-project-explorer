@@ -14,7 +14,6 @@ const PANEL_ICONS = {
   refresh: 'RefreshCw',
   collapseAll: 'ChevronsDownUp',
   expandAll: 'ChevronsUpDown',
-  sidebar: 'PanelLeft',
   more: 'Ellipsis',
   back: 'ArrowLeft',
   check: 'Check',

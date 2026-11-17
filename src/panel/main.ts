@@ -77,8 +77,7 @@ toolbar.append(
   search,
   toolButton('refresh', 'Refresh', () => void reload()),
   toolButton('collapseAll', 'Collapse all', () => setCollapsed(new Set(containerKeys(state.tree?.nodes ?? [])))),
-  toolButton('expandAll', 'Expand all', () => setCollapsed(new Set())),
-  toolButton('sidebar', 'Toggle left sidebar', () => void run(() => orca.plugin.request('sidebar.toggle')))
+  toolButton('expandAll', 'Expand all', () => setCollapsed(new Set()))
 )
 document.body.append(toolbar, treeEl, footer)
 

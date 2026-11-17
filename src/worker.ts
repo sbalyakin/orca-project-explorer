@@ -59,9 +59,4 @@ export default function activate(orca: OrcaWorkerApi): void {
 
   const catalogs = createCatalogs(orca)
   orca.panels.handle('models.get', ({ agent, refresh }) => catalogs.get(requireAgent(agent), refresh === true))
-
-  orca.panels.handle('sidebar.toggle', async () => {
-    await orca.host.call('commands.run', { action: 'sidebar.left.toggle' })
-    return { ran: true as const }
-  })
 }
