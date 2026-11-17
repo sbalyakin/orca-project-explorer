@@ -20,7 +20,8 @@ const PANEL_ICONS = {
   search: 'Search',
   filter: 'ListFilter',
   squareTerminal: 'SquareTerminal',
-  enter: 'CornerDownLeft'
+  enter: 'CornerDownLeft',
+  close: 'X'
 } as const
 
 export type IconName = keyof typeof PANEL_ICONS

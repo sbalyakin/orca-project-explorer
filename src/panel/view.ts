@@ -1,6 +1,6 @@
 // Draws rows into the tree element. Text only ever goes in through textContent.
 import { icon, projectIcon } from './icons'
-import type { Row } from './rows'
+import { rowDescription, type Row } from './rows'
 import { setTip } from './tooltip'
 
 const INDENT = 14
@@ -9,6 +9,8 @@ const GUTTER = 8
 export type ViewState = {
   selectedKey: string | null
   currentWorkspaceId: string | null
+  /** The row whose menu is open, kept marked while the menu covers the tree. */
+  menuKey: string | null
 }
 
 function glyphName(row: Row): 'folder' | 'folderOpen' | 'repo' | 'branch' {
@@ -16,19 +18,24 @@ function glyphName(row: Row): 'folder' | 'folderOpen' | 'repo' | 'branch' {
   return row.node.linked ? 'branch' : 'repo'
 }
 
-function renderRow(row: Row, state: ViewState): HTMLElement {
+function renderRow(row: Row, index: number, state: ViewState): HTMLElement {
   const { node } = row
   const el = document.createElement('div')
   el.className = `row ${node.kind}`
+  el.id = `row-${index}`
   el.dataset.key = node.key
   el.setAttribute('role', 'treeitem')
   el.setAttribute('aria-level', String(row.depth + 1))
+  el.setAttribute('aria-selected', String(node.key === state.selectedKey))
   if (row.expandable) el.setAttribute('aria-expanded', String(row.expanded))
   if (node.key === state.selectedKey) el.classList.add('selected')
+  if (node.key === state.menuKey) el.classList.add('menu-target')
   if (row.attention === 'unread') el.classList.add('unread')
   if (node.kind === 'workspace' && node.workspaceId === state.currentWorkspaceId) el.classList.add('current')
   el.style.paddingLeft = `${GUTTER + row.depth * INDENT}px`
-  setTip(el, node.kind === 'workspace' && node.detail ? `${node.label} · ${node.detail}` : node.label)
+  const description = rowDescription(row)
+  setTip(el, description)
+  el.setAttribute('aria-label', description)
 
   const twistie = document.createElement('span')
   twistie.className = row.expandable ? `twistie${row.expanded ? ' open' : ''}` : 'twistie'
@@ -52,10 +59,14 @@ function renderRow(row: Row, state: ViewState): HTMLElement {
     el.appendChild(spacer)
   }
 
+  // The dot and the menu button share one place, so showing the button on hover moves nothing.
+  if (row.attention === 'none' && node.kind !== 'workspace') return el
+  const slot = document.createElement('span')
+  slot.className = 'slot'
   if (row.attention !== 'none') {
     const dot = document.createElement('span')
     dot.className = `dot ${row.attention}`
-    el.appendChild(dot)
+    slot.appendChild(dot)
   }
   if (node.kind === 'workspace') {
     const more = document.createElement('button')
@@ -65,13 +76,14 @@ function renderRow(row: Row, state: ViewState): HTMLElement {
     more.setAttribute('aria-label', 'Open in…')
     more.tabIndex = -1
     more.appendChild(icon('more'))
-    el.appendChild(more)
+    slot.appendChild(more)
   }
+  el.appendChild(slot)
   return el
 }
 
 export function renderRows(container: HTMLElement, rows: readonly Row[], state: ViewState): void {
-  container.replaceChildren(...rows.map((row) => renderRow(row, state)))
+  container.replaceChildren(...rows.map((row, index) => renderRow(row, index, state)))
 }
 
 export function renderMessage(container: HTMLElement, text: string, isError = false): void {

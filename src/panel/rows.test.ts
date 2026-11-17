@@ -1,6 +1,6 @@
 import { assert, test } from 'orca/testing'
 import type { Attention, TreeNode } from '../types'
-import { allCollapsed, containerKeys, keepLooks, navigate, pathTo, visibleRows } from './rows'
+import { allCollapsed, containerKeys, keepLooks, navigate, pathTo, rowDescription, visibleRows } from './rows'
 
 function ws(id: string, label: string, attention: Attention = 'none', children: TreeNode[] = []): TreeNode {
   return { kind: 'workspace', key: `ws:${id}`, workspaceId: id, label, linked: false, attention, children }
@@ -29,6 +29,14 @@ test('a filter keeps matches and the folders above them, even folded ones', () =
   assert.deepEqual(keys(visibleRows(tree, new Set(['g1']), 'BET')), ['g1', 'g2', 'ws:b'])
   assert.deepEqual(keys(visibleRows(tree, new Set(), 'nothing')), [])
   assert.deepEqual(keys(visibleRows(tree, new Set(), 'g2')), ['g1', 'g2', 'ws:a', 'ws:b'])
+})
+
+test('a row describes itself with its branch and status in words', () => {
+  const branched: TreeNode = { ...ws('d', 'delta', 'permission'), detail: 'main' } as TreeNode
+  assert.equal(rowDescription(visibleRows([branched], new Set(), '')[0]), 'delta · main · Waiting for permission')
+  const rows = visibleRows(tree, new Set(['g2']), '')
+  assert.equal(rowDescription(rows[1]), 'g2 · Unread inside')
+  assert.equal(rowDescription(rows[2]), 'gamma')
 })
 
 test('container keys and the path to a workspace', () => {

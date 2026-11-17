@@ -21,6 +21,13 @@ body {
   transition: background-color .15s;
 }
 .search-box:hover { background: color-mix(in srgb, var(--orca-foreground) 8%, transparent); }
+.search-box:focus-within { box-shadow: inset 0 0 0 1px var(--orca-ring); }
+.search-clear {
+  display: grid; place-items: center; flex: none; width: 16px; height: 16px; margin: -2px -2px -2px 0; padding: 0;
+  color: var(--orca-muted-foreground); background: none; border: 0; border-radius: 4px; cursor: pointer;
+}
+.search-clear:hover { color: var(--orca-foreground); background: color-mix(in srgb, var(--orca-foreground) 8%, transparent); }
+.search-box .search-clear svg { width: 12px; height: 12px; color: inherit; }
 .search-box svg { width: 16px; height: 16px; flex: none; color: color-mix(in srgb, var(--orca-foreground) 30%, transparent); }
 .search {
   flex: 1; min-width: 0; padding: 0; border: 0; outline: none; background: none; appearance: none;
@@ -42,10 +49,13 @@ body {
   position: relative; display: flex; align-items: center; gap: 4px; height: 24px; padding-right: 8px;
   cursor: pointer; white-space: nowrap;
 }
-.row:hover { background: var(--panel-accent); }
-.row.selected { background: var(--panel-accent); }
-.tree:focus-visible .row.selected { outline: 1px solid var(--orca-ring); outline-offset: -1px; }
-.row.current { background: var(--panel-accent); color: var(--orca-accent-foreground); }
+/* Three states that must not look alike: hover (as Orca's sidebar rows), the open workspace, and the keyboard cursor. */
+.row:hover, .row.menu-target { background: color-mix(in srgb, var(--panel-accent) 55%, transparent); }
+html.dark .row:hover, html.dark .row.menu-target { background: color-mix(in srgb, var(--orca-foreground) 3.5%, transparent); }
+/* Twice: the dark hover rule above is more specific and would otherwise win over the open workspace's fill. */
+.row.current, html.dark .row.current { background: var(--panel-accent); color: var(--orca-accent-foreground); }
+/* The page sets .keyboard; :focus-visible would also match after the menu hands focus back to a mouse user. */
+body.keyboard .tree:focus .row.selected { outline: 1px solid var(--orca-ring); outline-offset: -1px; }
 /* Orca's project header label (SectionHeader.tsx): text-[13px] font-semibold leading-4, in the sidebar foreground. */
 .row.group { font-size: 13px; font-weight: 600; line-height: 16px; }
 /* Orca's workspace card title (WorktreeTitleInlineRename): text-[13px] leading-5, normal weight, semibold while unread. */
@@ -63,14 +73,19 @@ body {
 .label { overflow: hidden; text-overflow: ellipsis; flex: 0 1 auto; min-width: 0; }
 .detail { overflow: hidden; text-overflow: ellipsis; flex: 1 1 0; min-width: 0; color: var(--orca-muted-foreground); }
 .spacer { flex: 1; }
-.dot { flex: none; width: 7px; height: 7px; border-radius: 50%; }
-.dot.unread { background: var(--orca-destructive); }
+.slot { display: grid; place-items: center; flex: none; width: 20px; height: 20px; }
+.slot > * { grid-area: 1 / 1; }
+.dot { width: 7px; height: 7px; border-radius: 50%; }
+/* Orca's --unread (blue-500, blue-400 in dark) is not passed to plugins. */
+.dot.unread { background: oklch(62.3% 0.214 259.815); }
+html.dark .dot.unread { background: oklch(70.7% 0.165 254.624); }
 .dot.permission { background: #d97706; }
 .dot.working { background: var(--orca-primary); animation: pulse 1.2s ease-in-out infinite; }
 @keyframes pulse { 50% { opacity: .25; } }
 @media (prefers-reduced-motion: reduce) { .dot.working { animation: none; } }
-.more { display: none; width: 20px; height: 20px; }
-.row:hover .more, .row.selected .more { display: grid; }
+.more { width: 20px; height: 20px; visibility: hidden; }
+.row:hover .more, .row.menu-target .more, body.keyboard .tree:focus .row.selected .more { visibility: visible; }
+.row.workspace:hover .dot, .row.workspace.menu-target .dot, body.keyboard .tree:focus .row.workspace.selected .dot { visibility: hidden; }
 .more svg { width: 14px; height: 14px; }
 /* Orca's tooltip (ui/tooltip.tsx): bg-foreground, text-background, rounded-md, text-xs, px-3 py-1.5, a 10px arrow. */
 .tooltip {
@@ -86,7 +101,11 @@ body {
 .tooltip-arrow.above-bubble { top: -3px; }
 @keyframes tooltip-in { from { opacity: 0; } }
 @media (prefers-reduced-motion: reduce) { .tooltip { animation: none; } }
-.footer { padding: 4px 10px; min-height: 22px; color: var(--orca-destructive); }
+.footer { display: flex; align-items: flex-start; gap: 6px; padding: 4px 10px; min-height: 22px; color: var(--orca-muted-foreground); }
+.footer.error { color: var(--orca-destructive); }
+.footer-text { flex: 1; min-width: 0; overflow-wrap: anywhere; user-select: text; }
+.footer .tool { width: 16px; height: 16px; border-radius: 4px; }
+.footer .tool svg { width: 12px; height: 12px; }
 /* The menu follows Orca's new-tab menu: same sizes, radii and states, on the panel's own theme variables. */
 .popover {
   position: fixed; z-index: 10; width: min(288px, calc(100vw - 16px)); min-width: 11rem; padding: 6px;
@@ -133,6 +152,12 @@ html.dark .icon-button:hover, html.dark .icon-button:focus-visible { background:
 .setup { display: flex; flex-direction: column; width: 100%; min-height: 0; }
 .cmd-input { display: flex; align-items: center; flex: none; height: 40px; padding: 0 10px; border-bottom: 1px solid var(--orca-border); }
 .cmd-input svg { flex: none; width: 14px; height: 14px; margin-right: 8px; opacity: .5; }
+.cmd-back {
+  display: grid; place-items: center; flex: none; width: 24px; height: 24px; margin: 0 4px 0 -4px; padding: 0;
+  color: var(--orca-muted-foreground); background: none; border: 0; border-radius: 6px; outline: none; cursor: pointer;
+}
+.cmd-back:hover, .cmd-back:focus-visible { color: var(--orca-foreground); background: color-mix(in srgb, var(--orca-foreground) 8%, transparent); }
+.cmd-input .cmd-back svg { margin: 0; opacity: 1; }
 .cmd-field {
   flex: 1; min-width: 0; height: 100%; padding: 0; color: inherit; font: inherit; font-size: 13px;
   background: transparent; border: 0; outline: none; user-select: text;

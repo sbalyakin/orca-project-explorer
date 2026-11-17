@@ -10,7 +10,10 @@ export type Popover = {
   close: () => void
   /** Shows `content` beside the menu, level with `anchor`; at most one at a time. */
   flyout: (anchor: HTMLElement, content: HTMLElement, onClosed: () => void) => void
-  closeFlyout: () => void
+  /** `restoreFocus` returns the keyboard to the agent row the flyout belonged to. */
+  closeFlyout: (restoreFocus?: boolean) => void
+  /** True when the panel is too narrow for a flyout beside the menu, so it would be drawn over it. */
+  flyoutCovers: () => boolean
 }
 
 const EDGE = 8
@@ -54,11 +57,18 @@ export function openPopover(options: { x: number; y: number; onClose: () => void
     if (restoreFocus) anchor?.querySelector('button')?.focus()
   }
 
+  const flyoutWidth = (): number => Math.min(FLYOUT_WIDTH, window.innerWidth - 2 * EDGE)
+  const flyoutCovers = (): boolean => {
+    const main = frame.getBoundingClientRect()
+    const width = flyoutWidth()
+    return main.right + 4 + width > window.innerWidth - EDGE && main.left - width - 4 < EDGE
+  }
+
   const flyout: Popover['flyout'] = (anchor, body, onClosed) => {
     closeFlyout()
     const element = document.createElement('div')
     element.className = 'popover picker'
-    element.style.width = `${Math.min(FLYOUT_WIDTH, window.innerWidth - 2 * EDGE)}px`
+    element.style.width = `${flyoutWidth()}px`
     element.appendChild(body)
     document.body.appendChild(element)
     flyoutFrame = element
@@ -112,7 +122,7 @@ export function openPopover(options: { x: number; y: number; onClose: () => void
   document.addEventListener('keydown', onKeyDown, true)
   window.addEventListener('blur', close)
   window.addEventListener('resize', close)
-  return { close, flyout, closeFlyout: () => closeFlyout() }
+  return { close, flyout, closeFlyout: (restoreFocus) => closeFlyout(restoreFocus), flyoutCovers }
 }
 
 export type MainMenuOptions = {
@@ -125,6 +135,8 @@ export type MainMenuOptions = {
   onSetup: (agent: string, row: HTMLElement) => void
   /** The pointer reached `agent`'s row, or (no agent) a part of the menu that is not an agent row. */
   onHover: (agent?: string) => void
+  /** False when a flyout would cover the menu: hovering the chevron must not hide the menu under the pointer. */
+  hoverOpensSetup: () => boolean
 }
 
 export type MainMenu = { element: HTMLElement; markOpen: (agent: string | null) => void }
@@ -188,7 +200,7 @@ export function buildMainMenu(options: MainMenuOptions): MainMenu {
     })
     // Moving, not entering: rows sliding under a resting pointer must not open a flyout.
     segment.addEventListener('pointermove', (event) => {
-      if (event.pointerType === 'mouse' && !row.classList.contains('open')) options.onSetup(agent.id, row)
+      if (event.pointerType === 'mouse' && !row.classList.contains('open') && options.hoverOpensSetup()) options.onSetup(agent.id, row)
     })
     row.append(main, segment)
     return { agent, row, main, label: agent.label }

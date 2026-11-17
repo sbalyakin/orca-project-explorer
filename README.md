@@ -15,9 +15,11 @@ to start a terminal or an agent in any workspace.
   --mode rpc`, `opencode models`, `cursor-agent --list-models`), cached in plugin storage for 6 h
   and refreshed in the background. Other agents launch without a list: type a model id.
 - Agents start through `orca agent launch` (model, effort, prompt, chat or terminal in one call).
-- Arrow keys, `Home`/`End`, `Enter` work in the tree; `Esc` clears the filter.
-- Dots: red = unread, amber = waiting for permission, pulsing = agent working. A folded folder shows
-  the strongest one below it.
+- Arrow keys, `Home`/`End`, `Enter` work in the tree; `Esc` or the `×` in the field clears the filter.
+- Dots: blue = unread, amber = waiting for permission, pulsing = agent working. A folded folder shows
+  the strongest one below it. The row's tooltip names the status in words.
+- The open workspace has a filled row; the keyboard cursor is an outline. Launch progress and errors
+  show under the tree; an error stays until you dismiss it or start something else.
 
 Layout: the first folder under `~` is one root (`~/Space`), then every folder down to the project;
 a project outside `~` hangs off its parent folder. Linked worktrees nest under their project.

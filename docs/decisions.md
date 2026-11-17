@@ -6,7 +6,9 @@
 - The menu lives in the right-sidebar HTML panel because the platform has no hook in the left list (see `platform.md`).
 - Folder layout: the first folder under `~` is the root (`~/Space`), then every folder down to the project; a project outside `~` hangs off its parent folder. Folders first, then projects, via `Intl.Collator`. Attention precedence: permission > unread > working.
 - Launch through the `orca` CLI so model, effort, prompt and surface fit in one call.
-- Menu fidelity to Orca beats extra features: the flyout has no refresh button and no workspace subtitle, because Orca's has neither. Background refresh keeps lists fresh.
+- Menu fidelity to Orca beats extra features: the flyout has no refresh button and no workspace subtitle, because Orca's has neither. Background refresh keeps lists fresh. One exception, when the flyout covers the menu: no hover-open and a back arrow (see `menu.md`, 2026-11-17).
+- Row states (UX audit, 2026-11-17): hover, the open workspace (`current`, filled) and the keyboard cursor (`selected`, outline only while the tree has keyboard focus) must look different; before, all three used `--panel-accent`. Keyboard mode is a `keyboard` class on `body`, not `:focus-visible`, because the menu hands focus back to the tree by code from a text field, and by Chromium's heuristics that focus counts as visible even for a mouse user (not checked live). The dot and `…` share one slot, so hover moves nothing.
+- Errors under the tree stay until dismissed or the next action (were 5 s); a failed reload is cleared by the next good one.
 
 ## Rejected
 

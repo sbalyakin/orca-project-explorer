@@ -34,7 +34,7 @@ REPO_ICON_LIST = RENDERER / "repo/repo-icon.tsx"
 PANEL_LUCIDE = [
     "ChevronRight", "Folder", "FolderOpen", "Book", "GitBranch", "Terminal", "ExternalLink", "ListFilter",
     "ChevronsDownUp", "ChevronsUpDown", "Ellipsis", "ArrowLeft", "Check", "MessageSquare",
-    "Search", "SquareTerminal", "CornerDownLeft",
+    "Search", "SquareTerminal", "CornerDownLeft", "X",
 ]
 
 # agent id -> (source file, component function). Ids Orca maps to the same component share one glyph.

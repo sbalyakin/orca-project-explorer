@@ -39,4 +39,5 @@ export const LUCIDE: Record<string, readonly Shape[]> = {
   MessageSquare: [['path', {"d": "M22 17a2 2 0 0 1-2 2H6.828a2 2 0 0 0-1.414.586l-2.202 2.202A.71.71 0 0 1 2 21.286V5a2 2 0 0 1 2-2h16a2 2 0 0 1 2 2z"}]],
   Search: [['path', {"d": "m21 21-4.34-4.34"}], ['circle', {"cx": "11", "cy": "11", "r": "8"}]],
   CornerDownLeft: [['path', {"d": "M20 4v7a4 4 0 0 1-4 4H4"}], ['path', {"d": "m9 10-5 5 5 5"}]],
+  X: [['path', {"d": "M18 6 6 18"}], ['path', {"d": "m6 6 12 12"}]],
 }

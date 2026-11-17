@@ -1,6 +1,7 @@
 // The setup flyout for one agent, laid out as in Orca: a model search over a list, the reasoning
 // levels, an optional prompt, and Launch terminal / Launch chat. Models come from the agent itself.
 import { icon } from './icons'
+import { setTip } from './tooltip'
 import type { AgentModel, LaunchSurface, ModelCatalog } from '../types'
 
 export type LauncherChoice = { model?: string; effort?: string; prompt: string; surface?: LaunchSurface }
@@ -11,8 +12,10 @@ export type LauncherOptions = {
   load: (refresh: boolean) => Promise<ModelCatalog>
   /** Hears a background refresh of this agent's models; returns a function that stops listening. */
   subscribe: (listener: (catalog: ModelCatalog) => void) => () => void
-  /** ArrowLeft out of the flyout: back to the agent row. */
+  /** ArrowLeft out of the flyout, or its back button: back to the agent row. */
   onBack: () => void
+  /** The flyout covers the menu, so a mouse needs a visible way back to it. */
+  showBack: boolean
   onLaunch: (choice: LauncherChoice) => void
 }
 
@@ -67,7 +70,18 @@ export function buildLauncher(options: LauncherOptions): { element: HTMLElement;
   search.placeholder = `Search ${options.agentLabel} models…`
   search.setAttribute('aria-label', 'Search models')
   search.dataset.autofocus = ''
-  field.append(icon('search'), search)
+  if (options.showBack) {
+    const back = el('button', 'cmd-back')
+    back.type = 'button'
+    back.tabIndex = -1
+    back.setAttribute('aria-label', 'Back to agents')
+    setTip(back, 'Back to agents')
+    back.appendChild(icon('back'))
+    back.addEventListener('click', () => options.onBack())
+    field.append(back, search)
+  } else {
+    field.append(icon('search'), search)
+  }
 
   const list = el('div', 'cmd-list')
   list.setAttribute('role', 'listbox')

@@ -17,6 +17,10 @@ Under `~/Space/Development/_external/orca/src/renderer/src/components`:
 - The source gives the model rows and the search field `h-9`; the screenshot shows about 30 px rows and a 40 px field. The plugin follows the screenshot. If Orca is updated, re-measure before trusting either.
 - The composer box below the levels has no top border on screen although the source has one; the plugin follows the screen.
 
+## Highlights in dark themes
+
+The agent row (the split variant, `ui/menu-item.ts:81`), the model row (`ui/command.tsx`), the effort toggle and `Button` hover all use `--accent`, so the plugin uses `--orca-accent` too. In some dark themes (the user's, 2026-11-17) that is nearly the menu's colour, and Orca's own menu looks the same. A stronger white overlay was tried and reverted at the user's request: match Orca, not the contrast. Only `white/14` rows (`ROW_FOCUS`, the icon buttons) are a different Orca variant.
+
 ## Not reproducible with the plugin API
 
 Browser and new-file icons, the gear, `Agent settings...`, row shortcut hints (`Cmd+Alt+T`), `No chat on this host`, and `/` and `@` in the prompt (the real one is Orca's chat composer). The panel's tooltips copy `ui/tooltip.tsx` (inverted bubble, arrow, 600 ms delay; `src/panel/tooltip.ts`, opt in with `data-tip`). They have no shortcut chips, since the panel has no shortcuts (checked live 2026-11-17: the bubble opens under the fold button, since there is no room above; not compared pixel by pixel). `pointerenter` fires inside the panel iframe (checked 2026-11-17).
@@ -24,6 +28,8 @@ Browser and new-file icons, the gear, `Agent settings...`, row shortcut hints (`
 ## Flyout placement
 
 A plugin cannot draw outside its frame. `placeFlyout` in `src/panel/menu.ts` puts the flyout right of the menu, else left, else over it at the panel edge (Orca does the same in a narrow window). It tracks its own height as the list loads.
+
+Menu 288 px + flyout 416 px do not fit side by side in the usual sidebar, so "over it" is the common case (checked live 2026-11-17 at about 630 px). Then (`flyoutCovers`) two things differ from Orca on purpose (user request 2026-11-17): hovering the chevron does not open the flyout, since it would hide the menu under the pointer; and the flyout's search field starts with a back arrow instead of the magnifier, the only way back for a mouse (a click outside closes everything).
 
 ## Icons
 

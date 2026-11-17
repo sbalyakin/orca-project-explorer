@@ -69,6 +69,32 @@ export function visibleRows(nodes: readonly TreeNode[], collapsed: ReadonlySet<s
   return rows
 }
 
+function attentionWords(attention: Attention): string | null {
+  switch (attention) {
+    case 'none':
+      return null
+    case 'working':
+      return 'Agent working'
+    case 'unread':
+      return 'Unread'
+    case 'permission':
+      return 'Waiting for permission'
+    default: {
+      const unreachable: never = attention
+      return String(unreachable)
+    }
+  }
+}
+
+/** What a row's tooltip and accessible name say: its label, branch and status, so the dot's colour is not the only sign. */
+export function rowDescription(row: Row): string {
+  const { node } = row
+  const parts = [node.kind === 'workspace' && node.detail ? `${node.label} · ${node.detail}` : node.label]
+  const status = attentionWords(row.attention)
+  if (status) parts.push(node.kind === 'group' ? `${status} inside` : status)
+  return parts.join(' · ')
+}
+
 /** Keys of the folders above a node, for revealing it. */
 export function pathTo(nodes: readonly TreeNode[], predicate: (node: TreeNode) => boolean): string[] | null {
   for (const node of nodes) {

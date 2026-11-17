@@ -19,7 +19,6 @@ const TREE_KEY = 'tree:v1'
 const FONT_KEY = 'font:v1'
 const AGENTS_KEY = 'agents'
 const RELOAD_DEBOUNCE_MS = 300
-const ERROR_SHOW_MS = 5000
 const LOOK_RELOAD_MIN_MS = 5000
 
 type State = {
@@ -30,6 +29,7 @@ type State = {
   filter: string
   selectedKey: string | null
   currentWorkspaceId: string | null
+  menuKey: string | null
   agents: readonly string[]
 }
 
@@ -41,6 +41,7 @@ let state: State = {
   filter: '',
   selectedKey: null,
   currentWorkspaceId: null,
+  menuKey: null,
   agents: parseAgents(DEFAULT_AGENTS)
 }
 let rows: Row[] = []
@@ -65,6 +66,11 @@ treeEl.setAttribute('aria-label', 'Projects')
 const footer = document.createElement('div')
 footer.className = 'footer'
 footer.setAttribute('role', 'status')
+const footerText = document.createElement('span')
+footerText.className = 'footer-text'
+const footerClose = toolButton('close', 'Dismiss', () => clearFooter())
+footerClose.hidden = true
+footer.append(footerText, footerClose)
 
 function toolButton(name: IconName, label: string, onPress: () => void): HTMLButtonElement {
   const button = document.createElement('button')
@@ -98,10 +104,25 @@ const searchBox = document.createElement('label')
 searchBox.className = 'search-box'
 const searchIcon = icon('filter')
 searchIcon.setAttribute('stroke-width', '1.75')
-searchBox.append(searchIcon, search)
+// The native cancel button is hidden by the stylesheet (it ignores the theme), so the field draws its own.
+const clearButton = document.createElement('button')
+clearButton.className = 'search-clear'
+clearButton.type = 'button'
+clearButton.hidden = true
+setTip(clearButton, 'Clear filter')
+clearButton.setAttribute('aria-label', 'Clear filter')
+clearButton.appendChild(icon('close'))
+clearButton.addEventListener('click', () => {
+  setFilter('')
+  search.focus()
+})
+searchBox.append(searchIcon, search, clearButton)
 toolbar.append(searchBox, foldButton)
 document.body.append(toolbar, treeEl, footer)
 installTooltips()
+// The tree's focus ring is for keyboard users only; `:focus-visible` cannot tell, since the menu hands focus back by code.
+document.addEventListener('keydown', () => document.body.classList.add('keyboard'), true)
+document.addEventListener('pointerdown', () => document.body.classList.remove('keyboard'), true)
 
 // ---------------------------------------------------------------- state
 
@@ -109,17 +130,34 @@ function errorText(error: unknown): string {
   return error instanceof Error ? error.message : String(error)
 }
 
-let errorTimer: ReturnType<typeof setTimeout> | undefined
-/** Shows a failure under the tree for a few seconds; the tree itself stays as it was. */
-function flash(error: unknown): void {
-  footer.textContent = errorText(error)
-  clearTimeout(errorTimer)
-  errorTimer = setTimeout(() => (footer.textContent = ''), ERROR_SHOW_MS)
+/** Each message under the tree gets a number, so a finished action clears only its own. */
+let footerOwner = 0
+/** The failed reload on screen, cleared by the next good one. */
+let loadErrorOwner: number | null = null
+
+function showFooter(text: string, isError: boolean): number {
+  footerText.textContent = text
+  footer.classList.toggle('error', isError)
+  footerClose.hidden = !isError
+  loadErrorOwner = null
+  return ++footerOwner
 }
 
-async function run(action: () => Promise<unknown>): Promise<void> {
+function clearFooter(owner = footerOwner): void {
+  if (owner === footerOwner) showFooter('', false)
+}
+
+/** Shows a failure under the tree until it is dismissed or the next action starts; the tree itself stays as it was. */
+function flash(error: unknown): number {
+  return showFooter(errorText(error), true)
+}
+
+/** Runs a host request, saying what is going on under the tree while it takes. */
+async function run(action: () => Promise<unknown>, pending = ''): Promise<void> {
+  const owner = showFooter(pending, false)
   try {
     await action()
+    clearFooter(owner)
   } catch (error: unknown) {
     flash(error)
   }
@@ -127,6 +165,7 @@ async function run(action: () => Promise<unknown>): Promise<void> {
 
 function render(scrollToSelected = false): void {
   syncFoldButton()
+  treeEl.removeAttribute('aria-activedescendant')
   if (!state.tree) {
     renderMessage(treeEl, state.error ? `Could not load projects: ${state.error}` : 'Loading…', state.error !== null)
     return
@@ -137,7 +176,16 @@ function render(scrollToSelected = false): void {
     return
   }
   renderRows(treeEl, rows, state)
-  if (scrollToSelected) treeEl.querySelector('.row.selected')?.scrollIntoView({ block: 'nearest' })
+  const selected = treeEl.querySelector('.row.selected')
+  if (!selected) return
+  treeEl.setAttribute('aria-activedescendant', selected.id)
+  if (scrollToSelected) selected.scrollIntoView({ block: 'nearest' })
+}
+
+function setFilter(filter: string): void {
+  search.value = filter
+  clearButton.hidden = filter === ''
+  setState({ filter })
 }
 
 function setState(next: Partial<State>, scrollToSelected = false): void {
@@ -189,6 +237,7 @@ async function reload(): Promise<void> {
     await shrinkImages(tree.nodes)
     // A newer load has started; this answer may be older than what is on screen.
     if (seq !== loadSeq) return
+    if (loadErrorOwner !== null) clearFooter(loadErrorOwner)
     // A worker just started has no icons yet; keep the ones on screen until `tree.changed`.
     if (looksPending) keepLooks(tree.nodes, state.tree?.nodes ?? [])
     const signature = JSON.stringify(tree.nodes)
@@ -199,7 +248,7 @@ async function reload(): Promise<void> {
     if (pendingReveal) reveal(pendingReveal)
     else if (state.currentWorkspaceId && !state.selectedKey) reveal(state.currentWorkspaceId)
   } catch (error: unknown) {
-    if (state.tree) flash(error)
+    if (state.tree) loadErrorOwner = flash(error)
     else setState({ error: errorText(error) })
   }
 }
@@ -244,11 +293,15 @@ async function loadLast(agent: string): Promise<LastChoice> {
   }
 }
 
+/** Counts menus opened, so closing an older one (when a new one replaces it) does not unmark the new row. */
+let menuCount = 0
+
 /** The right-click menu for a workspace row, opened at a screen point. */
 function showMenu(row: Row, x: number, y: number): void {
   const { node } = row
   if (node.kind !== 'workspace') return
-  setState({ selectedKey: node.key })
+  const menuSeq = ++menuCount
+  setState({ selectedKey: node.key, menuKey: node.key })
   const { workspaceId } = node
   let openAgent: string | null = null
   let disposeSetup: (() => void) | null = null
@@ -263,7 +316,7 @@ function showMenu(row: Row, x: number, y: number): void {
     },
     onTerminal: () => {
       popover.close()
-      void run(() => orca.plugin.request('terminal.launch', { workspaceId }))
+      void run(() => orca.plugin.request('terminal.launch', { workspaceId }), 'Opening terminal…')
     },
     onLaunch: (agent) => {
       popover.close()
@@ -272,7 +325,8 @@ function showMenu(row: Row, x: number, y: number): void {
     onSetup: (agent, anchor) => void openSetup(agent, anchor),
     onHover: (agent) => {
       if (agent === undefined || agent !== openAgent) popover.closeFlyout()
-    }
+    },
+    hoverOpensSetup: () => !popover.flyoutCovers()
   })
   const popover = openPopover(
     {
@@ -280,6 +334,7 @@ function showMenu(row: Row, x: number, y: number): void {
       y,
       onClose: () => {
         disposeSetup?.()
+        if (menuSeq === menuCount) setState({ menuKey: null })
         treeEl.focus({ preventScroll: true })
       }
     },
@@ -304,7 +359,8 @@ function showMenu(row: Row, x: number, y: number): void {
         })
         return () => subscription.dispose()
       },
-      onBack: () => popover.closeFlyout(),
+      onBack: () => popover.closeFlyout(true),
+      showBack: popover.flyoutCovers(),
       onLaunch: (choice) => {
         popover.close()
         void launchAgent(workspaceId, agent, choice)
@@ -327,7 +383,7 @@ function showMenu(row: Row, x: number, y: number): void {
 async function launchAgent(workspaceId: string, agent: string, choice: LauncherChoice): Promise<void> {
   const remembered: LastChoice = { ...(choice.model ? { model: choice.model } : {}), ...(choice.effort ? { effort: choice.effort } : {}) }
   orca.storage.set(lastKey(agent), remembered).catch(flash)
-  await run(() => orca.plugin.request('agent.launch', { workspaceId, agent, ...choice }))
+  await run(() => orca.plugin.request('agent.launch', { workspaceId, agent, ...choice }), `Launching ${agentLabel(agent)}…`)
 }
 
 // ---------------------------------------------------------------- input
@@ -387,15 +443,14 @@ treeEl.addEventListener('keydown', (event) => {
   }
 })
 
-search.addEventListener('input', () => setState({ filter: search.value }))
+search.addEventListener('input', () => setFilter(search.value))
 search.addEventListener('keydown', (event) => {
   if (event.key === 'ArrowDown') {
     event.preventDefault()
     treeEl.focus()
     setState({ selectedKey: state.selectedKey ?? rows[0]?.node.key ?? null }, true)
   } else if (event.key === 'Escape') {
-    search.value = ''
-    setState({ filter: '' })
+    setFilter('')
   }
 })
 
