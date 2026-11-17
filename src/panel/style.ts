@@ -1,12 +1,17 @@
-// Styled only from Orca's `--orca-*` theme variables, so a theme or font change needs no reload.
+import { GEIST_URL } from './font-data'
+
+// Styled only from Orca's `--orca-*` theme variables, so a theme change needs no reload.
+// Orca's own font (Geist) is bundled: the host does not pass `--font-sans` to panels.
 export const CSS = `
+@font-face { font-family: 'Geist'; src: url('${GEIST_URL}') format('woff2'); font-weight: 100 900; font-display: block; }
 /* --panel-bg and --panel-accent come from index.html. */
 * { box-sizing: border-box; }
 html, body { height: 100%; margin: 0; }
 body {
   display: flex; flex-direction: column;
   background: var(--panel-bg); color: var(--orca-foreground);
-  font: 12px/1.4 var(--orca-font-sans, system-ui), system-ui, sans-serif; user-select: none; overflow: hidden;
+  font: 12px/1.4 var(--app-font, 'Geist', -apple-system, BlinkMacSystemFont, sans-serif); user-select: none; overflow: hidden;
+  letter-spacing: 0.01em; -webkit-font-smoothing: antialiased; /* as Orca's body */
 }
 .toolbar { display: flex; gap: 2px; align-items: center; padding: 8px 8px 6px; }
 /* Mirrors Orca's sidebar Search button: bg foreground/5, px-2 py-1.5, 13px medium, rounded-md (0.8 radius), icon 16px at foreground/30. */
@@ -19,7 +24,7 @@ body {
 .search-box svg { width: 16px; height: 16px; flex: none; color: color-mix(in srgb, var(--orca-foreground) 30%, transparent); }
 .search {
   flex: 1; min-width: 0; padding: 0; border: 0; outline: none; background: none; appearance: none;
-  font: 500 13px/1.25rem var(--orca-font-sans, system-ui), system-ui, sans-serif; letter-spacing: -0.025em;
+  font-family: inherit; font-size: 13px; font-weight: 500; line-height: 1.25rem; letter-spacing: -0.025em;
   color: var(--orca-foreground);
 }
 .search::placeholder { color: color-mix(in srgb, var(--orca-foreground) 60%, transparent); opacity: 1; }
@@ -41,7 +46,8 @@ body {
 .row.selected { background: var(--panel-accent); }
 .tree:focus-visible .row.selected { outline: 1px solid var(--orca-ring); outline-offset: -1px; }
 .row.current { background: var(--panel-accent); color: var(--orca-accent-foreground); }
-.row.group { font-weight: 600; }
+/* Orca's project header label (SectionHeader.tsx): text-[13px] font-semibold leading-4, in the sidebar foreground. */
+.row.group { font-size: 13px; font-weight: 600; line-height: 16px; }
 .twistie, .glyph { display: grid; place-items: center; flex: none; width: 16px; height: 16px; }
 .twistie { color: var(--orca-muted-foreground); }
 .twistie svg { width: 12px; height: 12px; transition: transform .1s; }

@@ -13,6 +13,8 @@ declare module 'orca' {
     'agent.launch': { input: AgentLaunch; output: { launched: true } }
     /** An agent's models: the cached list at once, or a fresh one with `refresh`. */
     'models.get': { input: { agent: string; refresh?: boolean }; output: ModelCatalog }
+    /** Orca's interface font as a CSS `font-family` stack. */
+    'font.get': { output: { family: string } }
   }
   interface PluginPanelEvents {
     /** A background refresh finished for one agent. */

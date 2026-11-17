@@ -3,6 +3,7 @@
 import { homedir } from 'node:os'
 import type { OrcaWorkerApi } from 'orca/worker'
 import './protocol'
+import { readAppFont } from './appfont'
 import { createLooksCache, type LooksCache } from './appearance'
 import { buildTree } from './tree'
 import { createCatalogs } from './catalog/catalogs'
@@ -38,6 +39,8 @@ function requireAgent(value: unknown): string {
 export default function activate(orca: OrcaWorkerApi): void {
   const looks = createLooksCache(undefined, () => orca.panels.post('tree.changed', {}))
   orca.panels.handle('tree.load', () => loadTree(orca, looks))
+
+  orca.panels.handle('font.get', async () => ({ family: await readAppFont() }))
 
   orca.panels.handle('workspace.open', async ({ workspaceId }) => {
     await orca.host.call('workspace.open', { workspaceId: requireId(workspaceId, 'workspaceId') })

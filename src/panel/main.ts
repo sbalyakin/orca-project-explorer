@@ -421,6 +421,7 @@ function reloadOnLook(): void {
   const now = Date.now()
   if (now - lastLookAt < LOOK_RELOAD_MIN_MS) return
   lastLookAt = now
+  void applyFont()
   reloadSoon()
 }
 document.addEventListener('visibilitychange', () => {
@@ -429,6 +430,16 @@ document.addEventListener('visibilitychange', () => {
 document.documentElement.addEventListener('pointerenter', reloadOnLook)
 window.addEventListener('focus', reloadOnLook)
 orca.on('theme', closePopover)
+
+/** Orca sends no event when the interface font changes, so it is read at start and on each look. */
+async function applyFont(): Promise<void> {
+  try {
+    const { family } = await orca.plugin.request('font.get')
+    document.documentElement.style.setProperty('--app-font', family)
+  } catch {
+    // Keep the font on screen; the stylesheet has Orca's default.
+  }
+}
 
 async function loadAgents(): Promise<void> {
   try {
@@ -458,7 +469,7 @@ async function start(): Promise<void> {
   } catch (error: unknown) {
     flash(error)
   }
-  await Promise.all([loadAgents(), reload()])
+  await Promise.all([loadAgents(), reload(), applyFont()])
 }
 
 void start()
