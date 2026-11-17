@@ -155,6 +155,12 @@ html.dark .icon-button:hover, html.dark .icon-button:focus-visible { background:
 }
 .launch-row:hover .launch-main, .launch-row:focus-within .launch-main, .launch-row.open .launch-main { color: var(--orca-accent-foreground); }
 .launch-main .agent-icon { width: 14px; height: 14px; }
+.menu-item {
+  display: flex; align-items: center; gap: 8px; width: 100%; height: 36px; padding: 0 8px; color: var(--orca-foreground);
+  font: inherit; font-weight: 500; text-align: left; background: none; border: 0; border-radius: 7px; outline: none; cursor: pointer;
+}
+.menu-item:hover, .menu-item:focus-visible { color: var(--orca-accent-foreground); background: var(--orca-accent); }
+.menu-item svg { flex: none; width: 14px; height: 14px; }
 .launch-label { flex: 1; min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
 .launch-segment {
   display: grid; place-items: center; flex: none; align-self: stretch; width: 36px; min-height: 24px; padding: 0; color: inherit;

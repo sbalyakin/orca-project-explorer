@@ -64,7 +64,8 @@ export default function activate(orca: OrcaWorkerApi): void {
     return { launched: true as const }
   })
 
-  orca.panels.handle('worktree.new', async () => {
+  orca.panels.handle('worktree.new', async ({ workspaceId }) => {
+    if (workspaceId !== undefined) await orca.host.call('workspace.open', { workspaceId: requireId(workspaceId, 'workspaceId') })
     await openNewWorktreeDialog()
     return { opened: true as const }
   })

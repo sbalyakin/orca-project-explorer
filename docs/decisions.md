@@ -23,3 +23,9 @@
 - Dark theme of the panel: checked live 2026-11-17 for the filter ring, `×`, the menu and the panel colour (see `platform.md`). Not checked there: row hover (the pointer did not reach the panel in that session), the unread dot's blue, the back arrow.
 - Launching Claude, Codex, OpenCode and Cursor from the menu on the live panel (Pi is verified).
 - Which surface Orca treats as default for each agent; the plugin draws chat as primary.
+
+## Project menu (2026-11-17)
+
+- Right-click or `…` on a project (a main checkout, `linked: false`) shows two items, New tab and New workspace. A linked worktree row shows New tab only (user request, 2026-11-17); New tab opens the workspace menu for it. A folder row has no menu. New tab replaces the project menu with the workspace menu of the main checkout (same point); New workspace shows that checkout (`workspace.open`) and then sends Orca's create-worktree shortcut (see `platform.md`).
+- Orca's window starts on the shown project (checked by the user, 2026-11-17), so the `workspace.open` step is how the project is passed in; there is no API for it.
+- Accepted: the worker sends the shortcut right after `workspace.open` without waiting for Orca to switch. A race (window on the previous project) was not seen; add a short wait or a poll of the active workspace only if it shows up, e.g. on a cold start. If the shortcut step fails, the switch to the project's workspace stays; the panel shows the error.

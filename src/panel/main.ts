@@ -2,11 +2,11 @@
 // agent in a workspace. Orca wraps this module in a page; there is no build step.
 import type {} from 'orca/frame'
 import '../protocol'
-import type { ModelCatalog, ProjectTree, SidebarLooks } from '../types'
+import type { ModelCatalog, ProjectTree, SidebarLooks, WorkspaceNode } from '../types'
 import { agentLabel, DEFAULT_AGENTS, parseAgents } from './agents'
 import { agentIcon, icon, type IconName } from './icons'
 import { buildLauncher, type LauncherChoice } from './launcher'
-import { buildMainMenu, closePopover, openPopover } from './menu'
+import { buildMainMenu, buildRowMenu, closePopover, openPopover, type Popover } from './menu'
 import { allCollapsed, containerKeys, keepLooks, navigate, pathTo, visibleRows, type NavKey, type Row } from './rows'
 import { lookFor, parseLooks } from './sidebar'
 import { CSS } from './style'
@@ -144,7 +144,7 @@ for (const [name, label] of [['settings', 'Settings'], ['add', 'Create worktree'
     button.addEventListener('click', () => {
       if (busy) return
       busy = true
-      void run(() => orca.plugin.request('worktree.new')).finally(() => {
+      void run(() => orca.plugin.request('worktree.new', {})).finally(() => {
         busy = false
       })
     })
@@ -326,12 +326,57 @@ async function loadLast(agent: string): Promise<LastChoice> {
 /** Counts menus opened, so closing an older one (when a new one replaces it) does not unmark the new row. */
 let menuCount = 0
 
-/** The right-click menu for a workspace row, opened at a screen point. */
+/** The menu for a row, opened at a screen point: a project gets New tab / New workspace, a worktree New tab only. */
 function showMenu(row: Row, x: number, y: number): void {
   const { node } = row
   if (node.kind !== 'workspace') return
+  showRowMenu(node, x, y)
+}
+
+/** New tab opens the workspace menu in its place; New workspace (projects only) opens Orca's window. */
+function showRowMenu(node: WorkspaceNode, x: number, y: number): void {
+  const menu = buildRowMenu({
+    onNewTab: () => {
+      popover.close()
+      showWorkspaceMenu(node, x, y)
+    },
+    ...(node.linked
+      ? {}
+      : {
+          onNewWorkspace: () => {
+            popover.close()
+            void run(() => orca.plugin.request('worktree.new', { workspaceId: node.workspaceId }))
+          }
+        })
+  })
+  const popover = openRowMenu(node, x, y, menu)
+}
+
+/**
+ * Opens a menu for a row: marks the row as the menu's target and clears the mark on close, unless a newer menu has
+ * taken over (so New tab, which closes one menu and opens the next, keeps the row marked). Returns the popover.
+ */
+function openRowMenu(node: WorkspaceNode, x: number, y: number, content: HTMLElement, onClose: () => void = () => {}): Popover {
   const menuSeq = ++menuCount
   setState({ selectedKey: node.key, menuKey: node.key })
+  const popover = openPopover(
+    {
+      x,
+      y,
+      onClose: () => {
+        onClose()
+        if (menuSeq === menuCount) setState({ menuKey: null })
+        treeEl.focus({ preventScroll: true })
+      }
+    },
+    content
+  )
+  content.querySelector<HTMLElement>('[data-autofocus]')?.focus()
+  return popover
+}
+
+/** The right-click menu for a workspace row, opened at a screen point. */
+function showWorkspaceMenu(node: WorkspaceNode, x: number, y: number): void {
   const { workspaceId } = node
   let openAgent: string | null = null
   let disposeSetup: (() => void) | null = null
@@ -358,19 +403,7 @@ function showMenu(row: Row, x: number, y: number): void {
     },
     hoverOpensSetup: () => !popover.flyoutCovers()
   })
-  const popover = openPopover(
-    {
-      x,
-      y,
-      onClose: () => {
-        disposeSetup?.()
-        if (menuSeq === menuCount) setState({ menuKey: null })
-        treeEl.focus({ preventScroll: true })
-      }
-    },
-    menu.element
-  )
-  menu.element.querySelector<HTMLElement>('[data-autofocus]')?.focus()
+  const popover = openRowMenu(node, x, y, menu.element, () => disposeSetup?.())
 
   async function openSetup(agent: string, anchor: HTMLElement): Promise<void> {
     if (openAgent === agent) return

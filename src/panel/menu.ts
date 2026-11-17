@@ -125,6 +125,47 @@ export function openPopover(options: { x: number; y: number; onClose: () => void
   return { close, flyout, closeFlyout: (restoreFocus) => closeFlyout(restoreFocus), flyoutCovers }
 }
 
+/** `onNewWorkspace` is absent for a linked worktree, whose menu has New tab only. */
+export type RowMenuOptions = { onNewTab: () => void; onNewWorkspace?: () => void }
+
+/** The menu of a project or worktree row: plain items, laid out like the agent rows of the main menu. */
+export function buildRowMenu(options: RowMenuOptions): HTMLElement {
+  const menu = el('div', 'menu')
+  menu.setAttribute('role', 'menu')
+  const { onNewWorkspace } = options
+  const entries: (readonly ['add' | 'branch', string, () => void])[] = [['add', 'New tab', options.onNewTab]]
+  if (onNewWorkspace) entries.push(['branch', 'New workspace', onNewWorkspace])
+  const items = entries.map(([name, text, onPress]) => {
+    const item = el('button', 'menu-item')
+    item.type = 'button'
+    item.setAttribute('role', 'menuitem')
+    const label = el('span', 'launch-label')
+    label.textContent = text
+    item.append(icon(name), label)
+    item.addEventListener('click', onPress)
+    return item
+  })
+  items[0].dataset.autofocus = ''
+  menu.append(...items)
+  menu.addEventListener('keydown', (event) => {
+    const at = items.findIndex((item) => item === document.activeElement)
+    const go = (target: HTMLElement | undefined): void => {
+      target?.focus()
+      event.preventDefault()
+    }
+    switch (event.key) {
+      case 'ArrowDown':
+        return go(items[Math.min(items.length - 1, at + 1)])
+      case 'ArrowUp':
+        return go(items[Math.max(0, at - 1)])
+      case 'Tab':
+        closePopover()
+        return
+    }
+  })
+  return menu
+}
+
 export type MainMenuOptions = {
   agents: readonly AgentEntry[]
   onOpen: () => void
