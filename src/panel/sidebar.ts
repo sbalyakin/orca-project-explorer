@@ -4,8 +4,10 @@ import type { SidebarLook, SidebarLooks } from '../types'
 
 function parseLook(value: unknown): SidebarLook | null {
   if (typeof value !== 'object' || value === null) return null
-  const { background, accent } = value as Record<string, unknown>
-  return typeof background === 'string' && typeof accent === 'string' ? { background, accent } : null
+  const { background, accent, active, activeBorder } = value as Record<string, unknown>
+  if (typeof background !== 'string' || typeof accent !== 'string') return null
+  // An older cache has no card colours: they read as "none" until the next answer.
+  return { background, accent, active: typeof active === 'string' ? active : null, activeBorder: typeof activeBorder === 'string' ? activeBorder : null }
 }
 
 /** A cached answer, or null when it is missing or of an older shape. */

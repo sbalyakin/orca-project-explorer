@@ -45,17 +45,25 @@ body {
 .tree { flex: 1; overflow: auto; padding: 2px 0 12px; outline: none; }
 .message { padding: 16px 12px; color: var(--orca-muted-foreground); }
 .message.error { color: var(--orca-destructive); }
+/* Rows are cards as in Orca's sidebar: 4px side margin, rounded-lg. The view's GUTTER and this padding allow for the margin. */
 .row {
-  position: relative; display: flex; align-items: center; gap: 4px; height: 24px; padding-right: 8px;
-  cursor: pointer; white-space: nowrap;
+  position: relative; display: flex; align-items: center; gap: 4px; height: 24px; margin: 0 4px; padding-right: 4px;
+  border-radius: 8px; cursor: pointer; white-space: nowrap;
 }
-/* Three states that must not look alike: hover (as Orca's sidebar rows), the open workspace, and the keyboard cursor. */
+/* Two states that must not look alike: hover (as Orca's sidebar rows) and the open workspace. */
 .row:hover, .row.menu-target { background: color-mix(in srgb, var(--panel-accent) 55%, transparent); }
 html.dark .row:hover, html.dark .row.menu-target { background: color-mix(in srgb, var(--orca-foreground) 3.5%, transparent); }
-/* Twice: the dark hover rule above is more specific and would otherwise win over the open workspace's fill. */
-.row.current, html.dark .row.current { background: var(--panel-accent); color: var(--orca-accent-foreground); }
-/* The page sets .keyboard; :focus-visible would also match after the menu hands focus back to a mouse user. */
-body.keyboard .tree:focus .row.selected { outline: 1px solid var(--orca-ring); outline-offset: -1px; }
+/* Orca's active card (main.css, data-worktree-card-active='primary'): a 1px border in the theme's --worktree-sidebar-active-border
+   over the --worktree-sidebar-active wash. Without those tokens Orca derives them from the text colour, as below. Twice, since
+   the dark hover rule above is more specific and would otherwise win over the wash. */
+.row.current {
+  background: var(--panel-active, color-mix(in srgb, var(--orca-foreground) 8%, transparent));
+  box-shadow: inset 0 0 0 1px var(--panel-active-border, color-mix(in srgb, var(--orca-border) 40%, transparent)), 0 1px 2px color-mix(in srgb, var(--orca-foreground) 4%, transparent);
+}
+html.dark .row.current {
+  background: var(--panel-active, color-mix(in srgb, var(--orca-foreground) 10%, transparent));
+  box-shadow: inset 0 0 0 1px var(--panel-active-border, color-mix(in srgb, var(--orca-foreground) 18%, var(--orca-border))), 0 1px 2px color-mix(in srgb, var(--orca-foreground) 3%, transparent);
+}
 /* Orca's project header label (SectionHeader.tsx): text-[13px] font-semibold leading-4, in the sidebar foreground. */
 .row.group { font-size: 13px; font-weight: 600; line-height: 16px; }
 /* Orca's workspace card title (WorktreeTitleInlineRename): text-[13px] leading-5, normal weight, semibold while unread. */
@@ -84,8 +92,8 @@ html.dark .dot.unread { background: oklch(70.7% 0.165 254.624); }
 @keyframes pulse { 50% { opacity: .25; } }
 @media (prefers-reduced-motion: reduce) { .dot.working { animation: none; } }
 .more { width: 20px; height: 20px; visibility: hidden; }
-.row:hover .more, .row.menu-target .more, body.keyboard .tree:focus .row.selected .more { visibility: visible; }
-.row.workspace:hover .dot, .row.workspace.menu-target .dot, body.keyboard .tree:focus .row.workspace.selected .dot { visibility: hidden; }
+.row:hover .more, .row.menu-target .more { visibility: visible; }
+.row.workspace:hover .dot, .row.workspace.menu-target .dot { visibility: hidden; }
 .more svg { width: 14px; height: 14px; }
 /* Orca's tooltip (ui/tooltip.tsx): bg-foreground, text-background, rounded-md, text-xs, px-3 py-1.5, a 10px arrow. */
 .tooltip {

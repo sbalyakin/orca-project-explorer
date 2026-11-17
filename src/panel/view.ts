@@ -4,7 +4,7 @@ import { rowDescription, type Row } from './rows'
 import { setTip } from './tooltip'
 
 const INDENT = 14
-const GUTTER = 8
+const GUTTER = 4 // the row's own 4px margin makes up the rest, so the open workspace's card has room for its border
 
 export type ViewState = {
   selectedKey: string | null

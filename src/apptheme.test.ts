@@ -3,7 +3,12 @@ import { createThemeReader, readSidebarLooks, resolveSidebarLooks, type ReadThem
 
 const DARK = 'plugin:acme.night/night'
 const tokens: Record<string, Record<string, string>> = {
-  [DARK]: { '--worktree-sidebar': '#20201E', '--worktree-sidebar-accent': '#2E2E2B' },
+  [DARK]: {
+    '--worktree-sidebar': '#20201E',
+    '--worktree-sidebar-accent': '#2E2E2B',
+    '--worktree-sidebar-active': '#2D2C28',
+    '--worktree-sidebar-active-border': '#D97757'
+  },
   'plugin:acme.night/bare': { '--background': '#000000' },
   'plugin:acme.night/evil': { '--worktree-sidebar': 'red; background: url(x)', '--worktree-sidebar-accent': 'var(--x)' }
 }
@@ -11,16 +16,16 @@ const read: ReadThemeTokens = async (slot) => tokens[slot] ?? null
 
 test('a plugin theme gives its own sidebar colours for the base it is chosen for', async () => {
   const looks = await resolveSidebarLooks({ mode: 'default', dark: DARK }, read)
-  assert.deepEqual(looks.dark, { background: '#20201E', accent: '#2E2E2B' })
+  assert.deepEqual(looks.dark, { background: '#20201E', accent: '#2E2E2B', active: '#2D2C28', activeBorder: '#D97757' })
   // No theme chosen for light: Orca's own light colours.
-  assert.deepEqual(looks.light, { background: '#f5f5f5', accent: '#eaeaea' })
+  assert.deepEqual(looks.light, { background: '#f5f5f5', accent: '#eaeaea', active: null, activeBorder: null })
 })
 
 test('a theme that omits the tokens, or holds anything but a hex colour, falls back to the built-in colours', async () => {
   const bare = await resolveSidebarLooks({ mode: 'default', dark: 'plugin:acme.night/bare' }, read)
-  assert.deepEqual(bare.dark, { background: '#2a2a2a', accent: '#353535' })
+  assert.deepEqual(bare.dark, { background: '#2a2a2a', accent: '#353535', active: null, activeBorder: null })
   const evil = await resolveSidebarLooks({ mode: 'default', dark: 'plugin:acme.night/evil' }, read)
-  assert.deepEqual(evil.dark, { background: '#2a2a2a', accent: '#353535' })
+  assert.deepEqual(evil.dark, { background: '#2a2a2a', accent: '#353535', active: null, activeBorder: null })
 })
 
 test('an unreadable theme, a foreign slot or "match terminal" leave the colour to the estimate', async () => {

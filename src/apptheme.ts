@@ -23,8 +23,8 @@ const QUERY = `select json_object(
 
 /** Orca's own sidebar colours when no theme plugin is chosen (`main.css`, `:root` and `.dark`). */
 const BUILT_IN: Record<'light' | 'dark', SidebarLook> = {
-  light: { background: '#f5f5f5', accent: '#eaeaea' },
-  dark: { background: '#2a2a2a', accent: '#353535' }
+  light: { background: '#f5f5f5', accent: '#eaeaea', active: null, activeBorder: null },
+  dark: { background: '#2a2a2a', accent: '#353535', active: null, activeBorder: null }
 }
 
 /** Mirrors `left-sidebar-appearance.ts`: the defaults and the cap of the "tinted" mode. */
@@ -63,7 +63,8 @@ function tinted(settings: ThemeSettings): SidebarLook {
   const opacity = typeof settings.tintOpacity === 'number' && Number.isFinite(settings.tintOpacity) ? settings.tintOpacity : DEFAULT_TINT_OPACITY
   const percent = Number((Math.min(MAX_TINT_OPACITY, Math.max(0, opacity)) * 100).toFixed(2))
   const background = `color-mix(in srgb, ${color} ${percent}%, var(--orca-background))`
-  return { background, accent: `color-mix(in srgb, var(--orca-foreground) ${TINT_ACCENT_PERCENT}%, ${background})` }
+  // Orca resets the active-card tokens in this mode, so the card keeps its derived colours.
+  return { background, accent: `color-mix(in srgb, var(--orca-foreground) ${TINT_ACCENT_PERCENT}%, ${background})`, active: null, activeBorder: null }
 }
 
 async function fromSlot(slot: unknown, base: 'light' | 'dark', read: ReadThemeTokens): Promise<SidebarLook | null> {
@@ -76,7 +77,9 @@ async function fromSlot(slot: unknown, base: 'light' | 'dark', read: ReadThemeTo
   // A theme that omits a token leaves Orca's built-in value in place.
   return {
     background: hex(tokens['--worktree-sidebar']) ?? BUILT_IN[base].background,
-    accent: hex(tokens['--worktree-sidebar-accent']) ?? BUILT_IN[base].accent
+    accent: hex(tokens['--worktree-sidebar-accent']) ?? BUILT_IN[base].accent,
+    active: hex(tokens['--worktree-sidebar-active']),
+    activeBorder: hex(tokens['--worktree-sidebar-active-border'])
   }
 }
 

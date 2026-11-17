@@ -78,8 +78,11 @@ export type AgentLaunch = {
   surface?: LaunchSurface
 }
 
-/** Colours of Orca's left sidebar, as CSS values the panel can use: its fill and its hover fill. */
-export type SidebarLook = { background: string; accent: string }
+/**
+ * Colours of Orca's left sidebar, as CSS values the panel can use: its fill, its hover fill, and the fill and
+ * border of the open workspace's card. `null` for the last two means the theme sets none (Orca then derives them).
+ */
+export type SidebarLook = { background: string; accent: string; active: string | null; activeBorder: string | null }
 
 /** The look for each theme base; `null` where it cannot be known and the panel estimates. */
 export type SidebarLooks = { light: SidebarLook | null; dark: SidebarLook | null }

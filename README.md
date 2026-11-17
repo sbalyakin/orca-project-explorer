@@ -18,7 +18,7 @@ to start a terminal or an agent in any workspace.
 - Arrow keys, `Home`/`End`, `Enter` work in the tree; `Esc` or the `×` in the field clears the filter.
 - Dots: blue = unread, amber = waiting for permission, pulsing = agent working. A folded folder shows
   the strongest one below it. The row's tooltip names the status in words.
-- The open workspace has a filled row; the keyboard cursor is an outline. Launch progress and errors
+- The open workspace is drawn as Orca draws its active card: a border and a wash from the theme. Launch progress and errors
   show in a strip under the tree that exists only while there is a message; `×` dismisses it, and an
   error also goes when you start something else.
 

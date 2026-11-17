@@ -123,10 +123,6 @@ searchBox.append(searchIcon, search, clearButton)
 toolbar.append(searchBox, foldButton)
 document.body.append(toolbar, treeEl, footer)
 installTooltips()
-// The tree's focus ring is for keyboard users only; `:focus-visible` cannot tell, since the menu hands focus back by code.
-document.addEventListener('keydown', () => document.body.classList.add('keyboard'), true)
-document.addEventListener('pointerdown', () => document.body.classList.remove('keyboard'), true)
-
 // ---------------------------------------------------------------- state
 
 function errorText(error: unknown): string {
@@ -505,9 +501,12 @@ function applySidebar(): void {
   if (look) {
     style.setProperty('--panel-bg', look.background)
     style.setProperty('--panel-accent', look.accent)
+    for (const [name, value] of [['--panel-active', look.active], ['--panel-active-border', look.activeBorder]] as const) {
+      if (value) style.setProperty(name, value)
+      else style.removeProperty(name)
+    }
   } else {
-    style.removeProperty('--panel-bg')
-    style.removeProperty('--panel-accent')
+    for (const name of ['--panel-bg', '--panel-accent', '--panel-active', '--panel-active-border']) style.removeProperty(name)
   }
 }
 
