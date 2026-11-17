@@ -7,7 +7,7 @@ import { agentLabel, DEFAULT_AGENTS, parseAgents } from './agents'
 import { agentIcon, icon, type IconName } from './icons'
 import { buildLauncher, type LauncherChoice } from './launcher'
 import { buildMainMenu, closePopover, openPopover } from './menu'
-import { containerKeys, navigate, pathTo, visibleRows, type NavKey, type Row } from './rows'
+import { allCollapsed, containerKeys, navigate, pathTo, visibleRows, type NavKey, type Row } from './rows'
 import { CSS } from './style'
 import { renderMessage, renderRows } from './view'
 
@@ -71,13 +71,26 @@ function toolButton(name: IconName, label: string, onPress: () => void): HTMLBut
   return button
 }
 
+/** One button for both directions; its label and icon name what a press will do (see `syncFoldButton`). */
+const foldButton = toolButton('collapseAll', 'Collapse all projects', () => {
+  const nodes = state.tree?.nodes ?? []
+  setCollapsed(allCollapsed(nodes, state.collapsed) ? new Set() : new Set(containerKeys(nodes)))
+})
+
+function syncFoldButton(): void {
+  const expand = allCollapsed(state.tree?.nodes ?? [], state.collapsed)
+  const label = expand ? 'Expand all projects' : 'Collapse all projects'
+  foldButton.title = label
+  foldButton.setAttribute('aria-label', label)
+  foldButton.replaceChildren(icon(expand ? 'expandAll' : 'collapseAll'))
+}
+
 const toolbar = document.createElement('div')
 toolbar.className = 'toolbar'
 toolbar.append(
   search,
   toolButton('refresh', 'Refresh', () => void reload()),
-  toolButton('collapseAll', 'Collapse all', () => setCollapsed(new Set(containerKeys(state.tree?.nodes ?? [])))),
-  toolButton('expandAll', 'Expand all', () => setCollapsed(new Set()))
+  foldButton
 )
 document.body.append(toolbar, treeEl, footer)
 
@@ -104,6 +117,7 @@ async function run(action: () => Promise<unknown>): Promise<void> {
 }
 
 function render(scrollToSelected = false): void {
+  syncFoldButton()
   if (!state.tree) {
     renderMessage(treeEl, state.error ? `Could not load projects: ${state.error}` : 'Loading…', state.error !== null)
     return

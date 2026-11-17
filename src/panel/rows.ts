@@ -44,6 +44,12 @@ export function containerKeys(nodes: readonly TreeNode[]): string[] {
   return nodes.flatMap((node) => (node.children.length > 0 ? [node.key, ...containerKeys(node.children)] : []))
 }
 
+/** True when there is something to fold and every folder is folded: the toolbar then offers "expand". */
+export function allCollapsed(nodes: readonly TreeNode[], collapsed: ReadonlySet<string>): boolean {
+  const keys = containerKeys(nodes)
+  return keys.length > 0 && keys.every((key) => collapsed.has(key))
+}
+
 /** While a filter is set every folder opens, so no match hides behind a collapsed one. */
 export function visibleRows(nodes: readonly TreeNode[], collapsed: ReadonlySet<string>, filter: string): Row[] {
   const needle = filter.trim().toLowerCase()
