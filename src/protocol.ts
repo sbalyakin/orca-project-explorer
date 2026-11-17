@@ -11,6 +11,8 @@ declare module 'orca' {
     'terminal.launch': { input: { workspaceId: string }; output: { terminalId: string } }
     /** Starts an agent in a workspace, with a model, effort and prompt, as a chat or a terminal. */
     'agent.launch': { input: AgentLaunch; output: { launched: true } }
+    /** Opens Orca's own "Create worktree" window (by sending its shortcut). */
+    'worktree.new': { output: { opened: true } }
     /** An agent's models: the cached list at once, or a fresh one with `refresh`. */
     'models.get': { input: { agent: string; refresh?: boolean }; output: ModelCatalog }
     /** Orca's interface font as a CSS `font-family` stack. */

@@ -9,6 +9,7 @@ import { createLooksCache, type LooksCache } from './appearance'
 import { buildTree } from './tree'
 import { createCatalogs } from './catalog/catalogs'
 import { launchAgent } from './launch'
+import { openNewWorktreeDialog } from './newworktree'
 import type { ProjectTree } from './types'
 
 export async function loadTree(orca: OrcaWorkerApi, looks: LooksCache): Promise<ProjectTree> {
@@ -61,6 +62,11 @@ export default function activate(orca: OrcaWorkerApi): void {
     const surface = launch.surface === 'terminal' || launch.surface === 'chat' ? { surface: launch.surface } : {}
     await launchAgent({ ...launch, ...surface, workspaceId: requireId(launch.workspaceId, 'workspaceId'), agent: requireAgent(launch.agent) })
     return { launched: true as const }
+  })
+
+  orca.panels.handle('worktree.new', async () => {
+    await openNewWorktreeDialog()
+    return { opened: true as const }
   })
 
   const catalogs = createCatalogs(orca)

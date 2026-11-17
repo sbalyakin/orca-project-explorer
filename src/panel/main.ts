@@ -131,14 +131,25 @@ headerTitle.textContent = 'Projects'
 foldButton.classList.add('header-fold')
 const headerActions = document.createElement('div')
 headerActions.className = 'header-actions'
-// Placeholders: no action and no tooltip yet.
-for (const [name, label] of [['settings', 'Settings'], ['add', 'Add project']] as const) {
-  const stub = document.createElement('button')
-  stub.className = 'tool'
-  stub.type = 'button'
-  stub.setAttribute('aria-label', label)
-  stub.appendChild(icon(name))
-  headerActions.appendChild(stub)
+// No tooltips yet. Settings is a placeholder; `+` opens Orca's own "Create worktree" window.
+for (const [name, label] of [['settings', 'Settings'], ['add', 'Create worktree']] as const) {
+  const button = document.createElement('button')
+  button.className = 'tool'
+  button.type = 'button'
+  button.setAttribute('aria-label', label)
+  button.appendChild(icon(name))
+  if (name === 'add') {
+    // A second press while the shortcut is on its way would send it twice, and Orca's window may close again.
+    let busy = false
+    button.addEventListener('click', () => {
+      if (busy) return
+      busy = true
+      void run(() => orca.plugin.request('worktree.new')).finally(() => {
+        busy = false
+      })
+    })
+  }
+  headerActions.appendChild(button)
 }
 header.append(headerTitle, foldButton, headerActions)
 document.body.append(toolbar, header, treeEl, footer)
