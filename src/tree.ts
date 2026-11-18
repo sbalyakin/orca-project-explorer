@@ -42,6 +42,7 @@ const collator = new Intl.Collator('en', { sensitivity: 'base', numeric: true })
 function sortNodes(nodes: TreeNode[]): void {
   nodes.sort((a, b) => {
     if (a.kind !== b.kind) return a.kind === 'group' ? -1 : 1
+    if (a.kind === 'workspace' && b.kind === 'workspace' && a.primary !== b.primary) return a.primary ? -1 : 1
     return collator.compare(a.label, b.label)
   })
   for (const node of nodes) sortNodes(node.children)
@@ -106,7 +107,17 @@ export function buildTree(
     const look = looks.get(project.id)
     if (look?.icon) node.icon = look.icon
     if (look?.color) node.color = look.color
-    node.children = rows.filter((row) => row !== main).map((row) => workspaceNode(row, row.name, true))
+    const others = rows.filter((row) => row !== main)
+    if (others.length > 0) {
+      // The project row only folds; the main checkout moves into the first child and takes the status and the branch.
+      const primary = workspaceNode(main, project.name, true)
+      primary.primary = true
+      primary.key = `${primary.key}:primary`
+      if (main.branch) primary.detail = main.branch
+      node.attention = 'none'
+      delete node.detail
+      node.children = [primary, ...others.map((row) => workspaceNode(row, row.name, true))]
+    }
     groupAt(folderPath(project.path, home)).push(node)
   }
   sortNodes(roots)

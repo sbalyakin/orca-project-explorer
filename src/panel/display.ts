@@ -1,5 +1,5 @@
 // What a row shows after its name. Pure: the choice, its stored form and the text it gives.
-import type { AgentText, TreeNode } from '../types'
+import { isProjectFolder, type AgentText, type TreeNode } from '../types'
 
 export const DETAIL_MODES = ['none', 'branch', 'title', 'message'] as const
 export type DetailMode = (typeof DETAIL_MODES)[number]
@@ -14,14 +14,29 @@ export const DETAIL_LABELS: Record<DetailMode, { short: string; full: string }> 
   message: { short: 'Message', full: 'Last agent message' }
 }
 
-export type DisplayOptions = { detail: DetailMode }
+export const FOLDER_MARKS = ['arrows', 'icons', 'both', 'none'] as const
+export type FolderMark = (typeof FOLDER_MARKS)[number]
 
-export const DEFAULT_DISPLAY: DisplayOptions = { detail: DEFAULT_DETAIL }
+export const DEFAULT_FOLDER_MARK: FolderMark = 'arrows'
+
+export const FOLDER_MARK_LABELS: Record<FolderMark, { short: string; full: string }> = {
+  arrows: { short: 'Arrows', full: 'Arrows only' },
+  icons: { short: 'Icons', full: 'Folder icons only' },
+  both: { short: 'Both', full: 'Arrows and folder icons' },
+  none: { short: 'None', full: 'Neither arrows nor icons' }
+}
+
+export type DisplayOptions = { detail: DetailMode; folders: FolderMark }
+
+export const DEFAULT_DISPLAY: DisplayOptions = { detail: DEFAULT_DETAIL, folders: DEFAULT_FOLDER_MARK }
 
 /** The saved choice; anything unreadable gives the default. */
 export function parseDisplay(stored: unknown): DisplayOptions {
-  const detail = typeof stored === 'object' && stored !== null ? (stored as Record<string, unknown>).detail : undefined
-  return { detail: DETAIL_MODES.find((mode) => mode === detail) ?? DEFAULT_DETAIL }
+  const saved = typeof stored === 'object' && stored !== null ? (stored as Record<string, unknown>) : {}
+  return {
+    detail: DETAIL_MODES.find((mode) => mode === saved.detail) ?? DEFAULT_DETAIL,
+    folders: FOLDER_MARKS.find((mark) => mark === saved.folders) ?? DEFAULT_FOLDER_MARK
+  }
 }
 
 /** Whether a mode reads the agents' words, which costs a CLI call. */
@@ -45,7 +60,7 @@ export function pruneTitles(texts: WorkspaceTexts, present: ReadonlySet<string>)
 
 /** The text after a row's name; only a workspace has one. */
 export function detailFor(node: TreeNode, mode: DetailMode, texts: ReadonlyMap<string, AgentText>): string | undefined {
-  if (node.kind !== 'workspace') return undefined
+  if (node.kind !== 'workspace' || isProjectFolder(node)) return undefined
   switch (mode) {
     case 'none':
       return undefined

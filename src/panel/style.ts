@@ -107,6 +107,9 @@ html.dark .dot.unread { background: oklch(70.7% 0.165 254.624); }
 @keyframes spin { to { transform: rotate(1turn); } }
 /* Frozen, the ring is closed so it still reads as a mark (as Orca does, #9515). */
 @media (prefers-reduced-motion: reduce) { .dot.working { animation: none; border-top-color: oklch(79.5% 0.184 86.047); } }
+.worktrees-mark { display: grid; place-items: center; flex: none; color: var(--orca-muted-foreground); }
+.worktrees-mark svg { width: 13px; height: 13px; }
+.status { position: absolute; top: 0; bottom: 0; display: grid; place-items: center; pointer-events: none; }
 .more { width: 20px; height: 20px; visibility: hidden; }
 .row:hover .more, .row.menu-target .more { visibility: visible; }
 .more svg { width: 14px; height: 14px; }

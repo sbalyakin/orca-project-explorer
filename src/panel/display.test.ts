@@ -12,6 +12,15 @@ test('the saved choice is read, and anything else gives the branch', () => {
   assert.equal(parseDisplay('title').detail, 'branch')
 })
 
+test('the folder mark is read, and anything else gives arrows', () => {
+  assert.equal(parseDisplay({ folders: 'icons' }).folders, 'icons')
+  assert.equal(parseDisplay({ folders: 'both' }).folders, 'both')
+  assert.equal(parseDisplay({ folders: 'none' }).folders, 'none')
+  assert.equal(parseDisplay({ folders: 'x' }).folders, 'arrows')
+  assert.equal(parseDisplay({ detail: 'title' }).folders, 'arrows')
+  assert.equal(parseDisplay(null).folders, 'arrows')
+})
+
 test('each mode shows its own text', () => {
   const titles = new Map([['a', { title: 'Fix tests', message: 'All green.' }]])
   assert.equal(detailFor(node, 'none', titles), undefined)
@@ -43,4 +52,14 @@ test('saved texts keep only well-formed entries', () => {
   assert.deepEqual(parseTexts(stored), [['a', { title: 'T', message: 'M' }], ['d', { message: 'only' }]])
   assert.deepEqual(parseTexts([1]), [])
   assert.deepEqual(parseTexts('x'), [])
+})
+
+test('a project that only folds shows no text, the primary child shows it', () => {
+  const primary: TreeNode = { ...node, key: 'ws:a:primary', linked: true, primary: true }
+  const project: TreeNode = { ...node, children: [primary] }
+  const titles = new Map([['a', { title: 'Fix tests' }]])
+  assert.equal(detailFor(project, 'branch', titles), undefined)
+  assert.equal(detailFor(project, 'title', titles), undefined)
+  assert.equal(detailFor(primary, 'title', titles), 'Fix tests')
+  assert.equal(detailFor(primary, 'branch', titles), 'main')
 })

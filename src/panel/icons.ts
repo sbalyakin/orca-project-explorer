@@ -9,6 +9,8 @@ const PANEL_ICONS = {
   folderOpen: 'FolderOpen',
   repo: 'Book',
   branch: 'GitBranch',
+  home: 'House',
+  chevronDown: 'ChevronDown',
   terminal: 'Terminal',
   open: 'ExternalLink',
   collapseAll: 'ChevronsDownUp',

@@ -28,6 +28,8 @@ export type WorkspaceNode = {
   detail?: string
   /** A linked worktree rather than the project's main checkout. */
   linked: boolean
+  /** The project's main checkout listed as the first child of a project that has other worktrees. */
+  primary?: true
   /** The project's icon and badge colour; set on a main checkout only. */
   icon?: ProjectIcon
   color?: string
@@ -36,6 +38,19 @@ export type WorkspaceNode = {
 }
 
 export type TreeNode = GroupNode | WorkspaceNode
+
+/**
+ * A project with worktrees besides its main checkout: it only folds and unfolds its children (the main checkout
+ * first, as `primary`). It keeps the main checkout's id for the menus, but opens nothing and shows no status or text.
+ */
+export function isProjectFolder(node: TreeNode): boolean {
+  return node.kind === 'workspace' && !node.linked && node.children.length > 0
+}
+
+/** A workspace a click can open: every workspace row except a project that only folds. Look workspaces up by id with this. */
+export function isOpenable(node: TreeNode): node is WorkspaceNode {
+  return node.kind === 'workspace' && !isProjectFolder(node)
+}
 
 export type ProjectTree = {
   nodes: TreeNode[]

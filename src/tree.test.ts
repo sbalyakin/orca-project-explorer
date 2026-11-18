@@ -1,6 +1,6 @@
 import { assert, test } from 'orca/testing'
 import { buildTree, folderPath } from './tree'
-import type { GroupNode, TreeNode } from './types'
+import { isProjectFolder, type GroupNode, type TreeNode } from './types'
 
 const HOME = '/Users/me'
 
@@ -35,7 +35,7 @@ test('builds the folder tree: folders first, then projects, each sorted', () => 
   assert.deepEqual(labels(dev), ['projects', 'Alpha', 'zeta'])
 })
 
-test('a linked worktree nests under its project; the main checkout is the one at the project path', () => {
+test('a project with other worktrees folds: the main checkout is its first child, then the linked ones', () => {
   const projects = [{ id: 'p1', name: 'app', path: `${HOME}/Space/app` }]
   const workspaces = [
     { id: 'w2', name: 'feature', projectId: 'p1', path: `${HOME}/orca/app/feature`, branch: 'feature/x' },
@@ -44,10 +44,39 @@ test('a linked worktree nests under its project; the main checkout is the one at
   const [root] = buildTree(projects, workspaces, HOME)
   const [project] = root.children
   assert.equal(project.kind === 'workspace' && project.workspaceId, 'w1')
-  assert.equal(project.kind === 'workspace' && project.detail, 'main')
-  const [linked] = project.children
+  assert.equal(project.kind === 'workspace' && project.detail, undefined)
+  assert.equal(project.kind === 'workspace' && isProjectFolder(project), true)
+  const [primary, linked] = project.children
+  assert.equal(primary.kind === 'workspace' && primary.primary, true)
+  assert.equal(primary.label, 'app')
+  assert.equal(primary.kind === 'workspace' && primary.detail, 'main')
+  assert.equal(primary.kind === 'workspace' && primary.workspaceId, 'w1')
+  assert.notEqual(primary.key, project.key)
   assert.equal(linked.kind === 'workspace' && linked.linked, true)
   assert.equal(linked.kind === 'workspace' && linked.detail, 'feature/x')
+})
+
+test('the primary child stays first whatever the worktrees are called, and takes the status', () => {
+  const projects = [{ id: 'p1', name: 'zz', path: `${HOME}/Space/zz` }]
+  const workspaces = [
+    { id: 'w2', name: 'aaa', projectId: 'p1', path: `${HOME}/orca/zz/aaa`, branch: 'a' },
+    { id: 'w1', name: 'zz', projectId: 'p1', path: `${HOME}/Space/zz`, branch: 'main', status: { state: 'working', unread: false } }
+  ]
+  const [root] = buildTree(projects, workspaces, HOME)
+  const [project] = root.children
+  assert.deepEqual(labels(project.children), ['zz', 'aaa'])
+  assert.equal(project.kind === 'workspace' && project.attention, 'none')
+  assert.equal(project.children[0].kind === 'workspace' && project.children[0].attention, 'working')
+})
+
+test('a project without other worktrees is one row that opens its workspace', () => {
+  const projects = [{ id: 'p1', name: 'app', path: `${HOME}/Space/app` }]
+  const workspaces = [{ id: 'w1', name: 'app', projectId: 'p1', path: `${HOME}/Space/app`, branch: 'main' }]
+  const [root] = buildTree(projects, workspaces, HOME)
+  const [project] = root.children
+  assert.equal(project.children.length, 0)
+  assert.equal(project.kind === 'workspace' && isProjectFolder(project), false)
+  assert.equal(project.kind === 'workspace' && project.detail, 'main')
 })
 
 test('folder workspaces have no branch, and the tree stays plain JSON', () => {

@@ -1,12 +1,13 @@
 // Draws rows into the tree element. Text only ever goes in through textContent.
-import type { AgentText } from '../types'
-import { detailFor, type DetailMode } from './display'
+import { isOpenable, isProjectFolder, type AgentText } from '../types'
+import { detailFor, type DetailMode, type FolderMark } from './display'
 import { icon, projectIcon } from './icons'
 import { rowDescription, type Row } from './rows'
 import { setTip } from './tooltip'
 
-const INDENT = 14
-const GUTTER = 4 // the row's own 4px margin makes up the rest, so the open workspace's card has room for its border
+const INDENT = 20 // per level, for folders and projects alike
+const STATUS_GAP = 4 // between the status mark's cell and the row's first mark
+const GUTTER = 8 // the row's own 4px margin makes up the rest, so the open workspace's card has room for its border
 
 export type ViewState = {
   selectedKey: string | null
@@ -15,11 +16,14 @@ export type ViewState = {
   menuKey: string | null
   /** What follows a row's name, and what the agents say, which it may come from. */
   detailMode: DetailMode
+  /** What marks a folder: its arrow, its icon, both or neither. A hidden mark leaves no cell, so the name moves left. */
+  folderMark: FolderMark
   titles: ReadonlyMap<string, AgentText>
 }
 
-function glyphName(row: Row): 'folder' | 'folderOpen' | 'repo' | 'branch' {
+function glyphName(row: Row): 'folder' | 'folderOpen' | 'repo' | 'branch' | 'home' {
   if (row.node.kind === 'group') return row.expanded ? 'folderOpen' : 'folder'
+  if (row.node.primary) return 'home'
   return row.node.linked ? 'branch' : 'repo'
 }
 
@@ -36,23 +40,25 @@ function renderRow(row: Row, index: number, state: ViewState): HTMLElement {
   if (node.key === state.selectedKey) el.classList.add('selected')
   if (node.key === state.menuKey) el.classList.add('menu-target')
   if (row.attention === 'unread') el.classList.add('unread')
-  if (node.kind === 'workspace' && node.workspaceId === state.currentWorkspaceId) el.classList.add('current')
-  el.style.paddingLeft = `${GUTTER + row.depth * INDENT}px`
+  if (isOpenable(node) && node.workspaceId === state.currentWorkspaceId) el.classList.add('current')
+  const pad = GUTTER + row.depth * INDENT
+  el.style.paddingLeft = `${pad}px`
   const description = rowDescription(row)
   setTip(el, description)
   el.setAttribute('aria-label', description)
 
   const twistie = document.createElement('span')
   twistie.className = row.expandable ? `twistie${row.expanded ? ' open' : ''}` : 'twistie'
-  if (row.expandable) twistie.appendChild(icon('chevron'))
+  const isFolder = node.kind === 'group'
+  const showArrow = !isFolder || state.folderMark === 'arrows' || state.folderMark === 'both'
+  const showGlyph = !isFolder || state.folderMark === 'icons' || state.folderMark === 'both'
+  if (row.expandable && showArrow) twistie.appendChild(icon('chevron'))
   const glyph = document.createElement('span')
   glyph.className = 'glyph'
   glyph.appendChild(node.kind === 'workspace' && !node.linked ? projectIcon(node.icon, node.color) : icon(glyphName(row)))
   const label = document.createElement('span')
   label.className = 'label'
   label.textContent = node.label
-  // A workspace row has no chevron, so its status takes the chevron's cell: left of the icon, nothing shifts.
-  // A collapsed group keeps its chevron and shows the rolled-up status at the right edge instead.
   const statusMark = (): Element => {
     if (row.attention === 'permission') {
       const mark = icon('permission')
@@ -68,8 +74,26 @@ function renderRow(row: Row, index: number, state: ViewState): HTMLElement {
     dot.className = `dot ${row.attention}`
     return dot
   }
-  if (row.attention !== 'none' && !row.expandable) twistie.appendChild(statusMark())
-  el.append(twistie, glyph, label)
+  // The status (a workspace's own, or what a folded row sums up) sits in the indent left of the row's first mark,
+  // out of the layout, so no row's text moves for it.
+  if (row.attention !== 'none') {
+    const width = Math.min(12, pad)
+    const status = document.createElement('span')
+    status.className = 'status'
+    status.style.left = `${Math.max(0, pad - width - STATUS_GAP)}px`
+    status.style.width = `${width}px`
+    status.appendChild(statusMark())
+    el.appendChild(status)
+  }
+  // A folder drops the cells it does not show; a workspace never has an arrow cell, even with worktrees under it, and always keeps its icon.
+  el.append(...(isFolder && showArrow ? [twistie] : []), ...(showGlyph ? [glyph] : []), label)
+  // A project with worktrees says so right after its name: a chevron down when open, right when folded.
+  if (isProjectFolder(node)) {
+    const mark = document.createElement('span')
+    mark.className = 'worktrees-mark'
+    mark.appendChild(icon(row.expanded ? 'chevronDown' : 'chevron'))
+    el.appendChild(mark)
+  }
 
   const detailText = detailFor(node, state.detailMode, state.titles)
   if (detailText) {
@@ -83,15 +107,7 @@ function renderRow(row: Row, index: number, state: ViewState): HTMLElement {
     el.appendChild(spacer)
   }
 
-  const rolledUp = row.attention !== 'none' && row.expandable
-  if (node.kind !== 'workspace' && !rolledUp) return el
-  if (rolledUp) {
-    const tail = document.createElement('span')
-    tail.className = 'slot'
-    tail.appendChild(statusMark())
-    el.appendChild(tail)
-    return el
-  }
+  if (node.kind !== 'workspace') return el
   const slot = document.createElement('span')
   slot.className = 'slot'
   const more = document.createElement('button')

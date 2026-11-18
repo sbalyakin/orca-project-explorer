@@ -2,7 +2,7 @@
 // agent in a workspace. Orca wraps this module in a page; there is no build step.
 import type {} from 'orca/frame'
 import '../protocol'
-import type { ModelCatalog, ProjectTree, SidebarLooks, WorkspaceNode } from '../types'
+import { isOpenable, type ModelCatalog, type ProjectTree, type SidebarLooks, type TreeNode, type WorkspaceNode } from '../types'
 import { DEFAULT_DISPLAY, parseDisplay, needsAgentText, parseTexts, pruneTitles, recordTitle, type DisplayOptions, type WorkspaceTexts } from './display'
 import { agentLabel, DEFAULT_AGENTS, parseAgents } from './agents'
 import { agentIcon, icon, projectIcon, type IconName } from './icons'
@@ -21,7 +21,7 @@ import { renderMessage, renderRows } from './view'
 
 const COLLAPSED_KEY = 'collapsed'
 /** Bump the version when `ProjectTree` changes shape, so an old cache is not drawn. */
-const TREE_KEY = 'tree:v1'
+const TREE_KEY = 'tree:v2' // v1 had no primary child under a project with worktrees
 const SIDEBAR_KEY = 'sidebar:v1'
 /** The last titles and replies, so the title and message modes have text on the first frame. */
 const TEXTS_KEY = 'texts:v1'
@@ -213,7 +213,7 @@ function render(scrollToSelected = false): void {
     renderMessage(treeEl, state.filter ? 'No matching projects' : 'No projects yet')
     return
   }
-  renderRows(treeEl, rows, { ...state, detailMode: state.display.detail, titles })
+  renderRows(treeEl, rows, { ...state, detailMode: state.display.detail, folderMark: state.display.folders, titles })
   const selected = treeEl.querySelector('.row.selected')
   if (!selected) return
   treeEl.setAttribute('aria-activedescendant', selected.id)
@@ -246,7 +246,7 @@ function toggle(key: string, expanded: boolean): void {
 /** Selects Orca's focused workspace and opens the folders above it, as an editor reveals a file. */
 function reveal(workspaceId: string | null): void {
   if (!state.tree || !workspaceId) return setState({ currentWorkspaceId: workspaceId })
-  const isIt = (node: { kind: string; workspaceId?: string }): boolean => node.kind === 'workspace' && node.workspaceId === workspaceId
+  const isIt = (node: TreeNode): boolean => isOpenable(node) && node.workspaceId === workspaceId
   const above = pathTo(state.tree.nodes, isIt) ?? []
   const collapsed = new Set([...state.collapsed].filter((key) => !above.includes(key)))
   const found = findKey(workspaceId)
@@ -258,7 +258,7 @@ function reveal(workspaceId: string | null): void {
 function findKey(workspaceId: string): string | null {
   const walk = (nodes: ProjectTree['nodes']): string | null => {
     for (const node of nodes) {
-      if (node.kind === 'workspace' && node.workspaceId === workspaceId) return node.key
+      if (isOpenable(node) && node.workspaceId === workspaceId) return node.key
       const below = walk(node.children)
       if (below) return below
     }
@@ -366,7 +366,7 @@ async function openWorkspace(workspaceId: string): Promise<void> {
 /** Pressing a row: open its workspace, or open/close a folder. */
 function activate(row: Row): void {
   setState({ selectedKey: row.node.key })
-  if (row.node.kind === 'workspace') void openWorkspace(row.node.workspaceId)
+  if (isOpenable(row.node)) void openWorkspace(row.node.workspaceId)
   else toggle(row.node.key, !row.expanded)
 }
 
@@ -438,6 +438,12 @@ function showOptions(anchor: HTMLElement): void {
   const box = anchor.getBoundingClientRect()
   const menu = buildOptionsMenu({
     detail: state.display.detail,
+    folders: state.display.folders,
+    onFolders: (folders) => {
+      const display = { ...state.display, folders }
+      setState({ display })
+      orca.storage.set(DISPLAY_KEY, display).catch(flash)
+    },
     onDetail: (detail) => {
       const display = { ...state.display, detail }
       setState({ display })
