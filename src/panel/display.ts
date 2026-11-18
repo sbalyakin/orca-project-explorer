@@ -61,3 +61,16 @@ export function detailFor(node: TreeNode, mode: DetailMode, texts: ReadonlyMap<s
     }
   }
 }
+
+/** The texts saved from the last session; entries that are not a title or a reply are dropped. */
+export function parseTexts(stored: unknown): [string, AgentText][] {
+  if (typeof stored !== 'object' || stored === null || Array.isArray(stored)) return []
+  const texts: [string, AgentText][] = []
+  for (const [id, value] of Object.entries(stored)) {
+    if (typeof value !== 'object' || value === null) continue
+    const { title, message } = value as Record<string, unknown>
+    const text: AgentText = { ...(typeof title === 'string' && title ? { title } : {}), ...(typeof message === 'string' && message ? { message } : {}) }
+    if (text.title !== undefined || text.message !== undefined) texts.push([id, text])
+  }
+  return texts
+}

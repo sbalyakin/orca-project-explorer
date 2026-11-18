@@ -1,6 +1,6 @@
 import { assert, test } from 'orca/testing'
 import type { TreeNode } from '../types'
-import { detailFor, parseDisplay, pruneTitles, recordTitle, type WorkspaceTexts } from './display'
+import { detailFor, parseDisplay, parseTexts, pruneTitles, recordTitle, type WorkspaceTexts } from './display'
 
 const node: TreeNode = { kind: 'workspace', key: 'ws:a', workspaceId: 'a', label: 'a', linked: false, attention: 'none', detail: 'main', children: [] }
 
@@ -36,4 +36,11 @@ test('the latest title wins, an empty one is ignored, gone workspaces are droppe
   assert.deepEqual([...titles], [['a', { title: 'two' }], ['b', { title: 'x' }]])
   pruneTitles(titles, new Set(['a']))
   assert.deepEqual([...titles.keys()], ['a'])
+})
+
+test('saved texts keep only well-formed entries', () => {
+  const stored = { a: { title: 'T', message: 'M' }, b: { title: 5 }, c: null, d: { message: 'only' } }
+  assert.deepEqual(parseTexts(stored), [['a', { title: 'T', message: 'M' }], ['d', { message: 'only' }]])
+  assert.deepEqual(parseTexts([1]), [])
+  assert.deepEqual(parseTexts('x'), [])
 })

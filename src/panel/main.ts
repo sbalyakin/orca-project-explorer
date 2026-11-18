@@ -3,7 +3,7 @@
 import type {} from 'orca/frame'
 import '../protocol'
 import type { ModelCatalog, ProjectTree, SidebarLooks, WorkspaceNode } from '../types'
-import { DEFAULT_DISPLAY, parseDisplay, needsAgentText, pruneTitles, recordTitle, type DisplayOptions, type WorkspaceTexts } from './display'
+import { DEFAULT_DISPLAY, parseDisplay, needsAgentText, parseTexts, pruneTitles, recordTitle, type DisplayOptions, type WorkspaceTexts } from './display'
 import { agentLabel, DEFAULT_AGENTS, parseAgents } from './agents'
 import { agentIcon, icon, projectIcon, type IconName } from './icons'
 import { readPluginFontCache, restorePluginFont, syncPluginFont } from './fontload'
@@ -23,6 +23,8 @@ const COLLAPSED_KEY = 'collapsed'
 /** Bump the version when `ProjectTree` changes shape, so an old cache is not drawn. */
 const TREE_KEY = 'tree:v1'
 const SIDEBAR_KEY = 'sidebar:v1'
+/** The last titles and replies, so the title and message modes have text on the first frame. */
+const TEXTS_KEY = 'texts:v1'
 const AGENTS_KEY = 'agents'
 const DISPLAY_KEY = 'display:v1'
 const RELOAD_DEBOUNCE_MS = 300
@@ -274,6 +276,8 @@ const TITLES_MIN_MS = 3000
 let titleSeq = 0
 let titlesAt = 0
 let titlesTimer: ReturnType<typeof setTimeout> | undefined
+// What `TEXTS_KEY` holds now. A busy agent's text rarely changes between reads, so the same bytes are not written again.
+let textsSignature = ''
 
 /**
  * Reads each workspace's agent title and last reply from the host; only the title and message modes show them, so only then is it asked for.
@@ -297,6 +301,14 @@ function loadTitles(now = false): void {
       titles.clear()
       for (const [id, text] of Object.entries(found)) titles.set(id, text)
       render()
+      const signature = JSON.stringify(found)
+      if (signature === textsSignature) return
+      textsSignature = signature
+      orca.storage.set(TEXTS_KEY, found).catch(() => {
+        // Nothing (or the old value) is stored: write again at the next read.
+        textsSignature = ''
+        orca.storage.delete(TEXTS_KEY).catch(() => {})
+      })
     },
     () => {
       // Keep the titles the events gave.
@@ -726,15 +738,17 @@ async function start(): Promise<void> {
   // At once, beside the storage reads: the worker's answer is the slow part when the cache is empty.
   void syncPluginFont()
   try {
-    const [stored, tree, sidebar, pluginFont, display] = await Promise.all([
+    const [stored, tree, sidebar, pluginFont, display, texts] = await Promise.all([
       orca.storage.get(COLLAPSED_KEY),
       orca.storage.get(TREE_KEY),
       orca.storage.get(SIDEBAR_KEY),
       readPluginFontCache(),
-      orca.storage.get(DISPLAY_KEY)
+      orca.storage.get(DISPLAY_KEY),
+      orca.storage.get(TEXTS_KEY)
     ])
     // Before the cached tree is drawn: a later change of font would reflow every row.
     restorePluginFont(pluginFont)
+    for (const [id, text] of parseTexts(texts)) if (!titles.has(id)) titles.set(id, text)
     sidebarLooks = parseLooks(sidebar)
     applySidebar()
     const keys = Array.isArray(stored) ? stored.filter((key): key is string => typeof key === 'string') : []
