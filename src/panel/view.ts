@@ -46,7 +46,15 @@ function renderRow(row: Row, index: number, state: ViewState): HTMLElement {
   const label = document.createElement('span')
   label.className = 'label'
   label.textContent = node.label
-  el.append(twistie, glyph, label)
+  // The status cell is on every row, empty or not, so icons stay aligned.
+  const status = document.createElement('span')
+  status.className = 'status'
+  if (row.attention !== 'none') {
+    const dot = document.createElement('span')
+    dot.className = `dot ${row.attention}`
+    status.appendChild(dot)
+  }
+  el.append(twistie, status, glyph, label)
 
   if (node.kind === 'workspace' && node.detail) {
     const detail = document.createElement('span')
@@ -59,25 +67,17 @@ function renderRow(row: Row, index: number, state: ViewState): HTMLElement {
     el.appendChild(spacer)
   }
 
-  // The dot and the menu button share one place, so showing the button on hover moves nothing.
-  if (row.attention === 'none' && node.kind !== 'workspace') return el
+  if (node.kind !== 'workspace') return el
   const slot = document.createElement('span')
   slot.className = 'slot'
-  if (row.attention !== 'none') {
-    const dot = document.createElement('span')
-    dot.className = `dot ${row.attention}`
-    slot.appendChild(dot)
-  }
-  if (node.kind === 'workspace') {
-    const more = document.createElement('button')
-    more.type = 'button'
-    more.className = 'tool more'
-    setTip(more, 'Open in…')
-    more.setAttribute('aria-label', 'Open in…')
-    more.tabIndex = -1
-    more.appendChild(icon('more'))
-    slot.appendChild(more)
-  }
+  const more = document.createElement('button')
+  more.type = 'button'
+  more.className = 'tool more'
+  setTip(more, 'Open in…')
+  more.setAttribute('aria-label', 'Open in…')
+  more.tabIndex = -1
+  more.appendChild(icon('more'))
+  slot.appendChild(more)
   el.appendChild(slot)
   return el
 }

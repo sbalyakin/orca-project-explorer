@@ -88,6 +88,7 @@ html.dark .row.current {
 .spacer { flex: 1; }
 .slot { display: grid; place-items: center; flex: none; width: 20px; height: 20px; }
 .slot > * { grid-area: 1 / 1; }
+.status { display: grid; place-items: center; flex: none; width: 7px; margin-right: -1px; }
 .dot { width: 7px; height: 7px; border-radius: 50%; }
 /* Orca's --unread (blue-500, blue-400 in dark) is not passed to plugins. */
 .dot.unread { background: oklch(62.3% 0.214 259.815); }
@@ -98,7 +99,6 @@ html.dark .dot.unread { background: oklch(70.7% 0.165 254.624); }
 @media (prefers-reduced-motion: reduce) { .dot.working { animation: none; } }
 .more { width: 20px; height: 20px; visibility: hidden; }
 .row:hover .more, .row.menu-target .more { visibility: visible; }
-.row.workspace:hover .dot, .row.workspace.menu-target .dot { visibility: hidden; }
 .more svg { width: 14px; height: 14px; }
 /* Orca's tooltip (ui/tooltip.tsx): bg-foreground, text-background, rounded-md, text-xs, px-3 py-1.5, a 10px arrow. */
 .tooltip {
