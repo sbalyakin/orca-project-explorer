@@ -183,6 +183,24 @@ html.dark .icon-button:hover, html.dark .icon-button:focus-visible { background:
   background: none; border: 0; border-left: 1px solid var(--orca-border); border-radius: 0 7px 7px 0; outline: none; cursor: pointer;
 }
 .launch-segment svg { width: 14px; height: 14px; }
+/* Orca's "Workspace options" popover: a 16px title; the section label is MENU_LABEL_CLASS (px-2.5 pt-[5px] pb-[3px] text-2xs
+   semibold muted); the segmented control is SidebarGroupByToggle (ToggleGroup outline, sm, h-6, text-[10px]) in a px-2 pt-0.5 pb-1 box. */
+.options-title { padding: 6px 8px 4px; font-size: 16px; font-weight: 600; line-height: 24px; letter-spacing: -0.01em; }
+.options-section { padding: 5px 10px 3px; color: var(--orca-muted-foreground); font-size: 11px; font-weight: 600; line-height: 16px; }
+.options-group {
+  display: flex; width: calc(100% - 16px); height: 24px; margin: 2px 8px 4px; border-radius: calc(var(--orca-radius) * 0.8);
+  box-shadow: 0 1px 2px 0 rgb(0 0 0 / .05);
+}
+.segment {
+  flex: 1 1 0; min-width: 0; height: 24px; padding: 0 4px; color: var(--orca-foreground); font: inherit; font-size: 10px; font-weight: 500;
+  line-height: 20px; white-space: nowrap; background: transparent; border: 1px solid var(--orca-input); border-left-width: 0; border-radius: 0;
+  outline: none; cursor: pointer; transition: color .15s, box-shadow .15s;
+}
+.segment:first-child { border-left-width: 1px; border-radius: calc(var(--orca-radius) * 0.8) 0 0 calc(var(--orca-radius) * 0.8); }
+.segment:last-child { border-radius: 0 calc(var(--orca-radius) * 0.8) calc(var(--orca-radius) * 0.8) 0; }
+.segment:hover { color: var(--orca-accent-foreground); background: var(--orca-accent); }
+.segment:focus-visible { position: relative; z-index: 1; border-color: var(--orca-ring); box-shadow: 0 0 0 3px color-mix(in srgb, var(--orca-ring) 50%, transparent); }
+.segment.on, .segment.on:hover { font-weight: 600; color: var(--orca-foreground); background: color-mix(in srgb, var(--orca-foreground) 10%, transparent); }
 .menu-empty { padding: 5px 10px; opacity: .4; }
 .setup { display: flex; flex-direction: column; width: 100%; min-height: 0; }
 .cmd-input { display: flex; align-items: center; flex: none; height: 40px; padding: 0 10px; border-bottom: 1px solid var(--orca-border); }

@@ -1,4 +1,5 @@
 // Draws rows into the tree element. Text only ever goes in through textContent.
+import { detailFor, type DetailMode } from './display'
 import { icon, projectIcon } from './icons'
 import { rowDescription, type Row } from './rows'
 import { setTip } from './tooltip'
@@ -11,6 +12,9 @@ export type ViewState = {
   currentWorkspaceId: string | null
   /** The row whose menu is open, kept marked while the menu covers the tree. */
   menuKey: string | null
+  /** What follows a row's name, and the agent titles it may come from. */
+  detailMode: DetailMode
+  titles: ReadonlyMap<string, string>
 }
 
 function glyphName(row: Row): 'folder' | 'folderOpen' | 'repo' | 'branch' {
@@ -66,10 +70,11 @@ function renderRow(row: Row, index: number, state: ViewState): HTMLElement {
   if (row.attention !== 'none' && !row.expandable) twistie.appendChild(statusMark())
   el.append(twistie, glyph, label)
 
-  if (node.kind === 'workspace' && node.detail) {
+  const detailText = detailFor(node, state.detailMode, state.titles)
+  if (detailText) {
     const detail = document.createElement('span')
     detail.className = 'detail'
-    detail.textContent = node.detail
+    detail.textContent = detailText
     el.appendChild(detail)
   } else {
     const spacer = document.createElement('span')

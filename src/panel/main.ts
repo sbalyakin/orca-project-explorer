@@ -3,11 +3,13 @@
 import type {} from 'orca/frame'
 import '../protocol'
 import type { ModelCatalog, ProjectTree, SidebarLooks, WorkspaceNode } from '../types'
+import { DEFAULT_DISPLAY, parseDisplay, pruneTitles, recordTitle, type DisplayOptions, type WorkspaceTitles } from './display'
 import { agentLabel, DEFAULT_AGENTS, parseAgents } from './agents'
 import { agentIcon, icon, projectIcon, type IconName } from './icons'
 import { readPluginFontCache, restorePluginFont, syncPluginFont } from './fontload'
 import { buildLauncher, type LauncherChoice } from './launcher'
 import { buildMainMenu, buildRowMenu, closePopover, openPopover, type Popover } from './menu'
+import { buildOptionsMenu } from './options-menu'
 import { buildProjectPicker } from './project-picker'
 import { allCollapsed, containerKeys, keepLooks, navigate, pathTo, projectOf, projectsOf, visibleRows, type NavKey, type Row } from './rows'
 import { applyMonitoring, prunePanes, recordPane, workspaceIds, type PaneStates } from './monitoring'
@@ -22,6 +24,7 @@ const COLLAPSED_KEY = 'collapsed'
 const TREE_KEY = 'tree:v1'
 const SIDEBAR_KEY = 'sidebar:v1'
 const AGENTS_KEY = 'agents'
+const DISPLAY_KEY = 'display:v1'
 const RELOAD_DEBOUNCE_MS = 300
 const LOOK_RELOAD_MIN_MS = 5000
 
@@ -35,6 +38,7 @@ type State = {
   currentWorkspaceId: string | null
   menuKey: string | null
   agents: readonly string[]
+  display: DisplayOptions
 }
 
 let state: State = {
@@ -46,10 +50,13 @@ let state: State = {
   selectedKey: null,
   currentWorkspaceId: null,
   menuKey: null,
-  agents: parseAgents(DEFAULT_AGENTS)
+  agents: parseAgents(DEFAULT_AGENTS),
+  display: DEFAULT_DISPLAY
 }
 let rows: Row[] = []
 let pendingReveal: string | null = null
+/** The latest title each workspace's agents reported; shown after the name when the options ask for it. */
+const titles: WorkspaceTitles = new Map()
 
 // ---------------------------------------------------------------- page
 
@@ -133,8 +140,8 @@ headerTitle.textContent = 'Projects'
 foldButton.classList.add('header-fold')
 const headerActions = document.createElement('div')
 headerActions.className = 'header-actions'
-// No tooltips yet. Settings is a placeholder; `+` opens a menu: a new workspace (Orca's own window) or a new tab.
-for (const [name, label] of [['settings', 'Settings'], ['add', 'Create…']] as const) {
+// The gear opens the display options; `+` opens a menu: a new workspace (Orca's own window) or a new tab.
+for (const [name, label] of [['settings', 'Display options'], ['add', 'Create…']] as const) {
   const button = document.createElement('button')
   button.className = 'tool'
   button.type = 'button'
@@ -143,6 +150,10 @@ for (const [name, label] of [['settings', 'Settings'], ['add', 'Create…']] as 
   if (name === 'add') {
     button.setAttribute('aria-haspopup', 'menu')
     button.addEventListener('click', () => showAddMenu(button))
+  } else {
+    button.setAttribute('aria-haspopup', 'dialog')
+    setTip(button, 'Display options')
+    button.addEventListener('click', () => showOptions(button))
   }
   headerActions.appendChild(button)
 }
@@ -200,7 +211,7 @@ function render(scrollToSelected = false): void {
     renderMessage(treeEl, state.filter ? 'No matching projects' : 'No projects yet')
     return
   }
-  renderRows(treeEl, rows, state)
+  renderRows(treeEl, rows, { ...state, detailMode: state.display.detail, titles })
   const selected = treeEl.querySelector('.row.selected')
   if (!selected) return
   treeEl.setAttribute('aria-activedescendant', selected.id)
@@ -258,6 +269,41 @@ function findKey(workspaceId: string): string | null {
 const panes: PaneStates = new Map()
 let knownWorkspaceIds = new Set<string>()
 let loadSeq = 0
+
+const TITLES_MIN_MS = 3000
+let titleSeq = 0
+let titlesAt = 0
+let titlesTimer: ReturnType<typeof setTimeout> | undefined
+
+/**
+ * Reads each workspace's agent title from the host; only the title mode shows it, so only then is it asked for.
+ * The read starts a CLI, so a busy agent's stream of events gets at most one read per `TITLES_MIN_MS` (the last
+ * request is not lost: it runs when the pause ends). `now` skips the pause, for a change of mode.
+ */
+function loadTitles(now = false): void {
+  if (state.display.detail !== 'title') return
+  clearTimeout(titlesTimer)
+  const wait = titlesAt + TITLES_MIN_MS - Date.now()
+  if (!now && wait > 0) {
+    titlesTimer = setTimeout(() => loadTitles(), wait)
+    return
+  }
+  titlesAt = Date.now()
+  const seq = ++titleSeq
+  orca.plugin.request('titles.get').then(
+    (found) => {
+      // A newer read has started; this answer may be older than what is on screen.
+      if (seq !== titleSeq) return
+      titles.clear()
+      for (const [id, title] of Object.entries(found)) titles.set(id, title)
+      render()
+    },
+    () => {
+      // Keep the titles the events gave.
+    }
+  )
+}
+
 async function reload(): Promise<void> {
   const seq = ++loadSeq
   try {
@@ -265,6 +311,8 @@ async function reload(): Promise<void> {
     const ids = workspaceIds(loaded.nodes)
     prunePanes(panes, knownWorkspaceIds, ids)
     knownWorkspaceIds = ids
+    pruneTitles(titles, ids)
+    loadTitles()
     const tree = { ...loaded, nodes: applyMonitoring(loaded.nodes, panes) }
     await shrinkImages(tree.nodes)
     // A newer load has started; this answer may be older than what is on screen.
@@ -371,6 +419,21 @@ function showAddMenu(anchor: HTMLElement): void {
     }
   })
   const popover = openRowMenu(null, x, y, menu)
+}
+
+/** The display options window, under the gear; a choice applies and is saved at once, and the window stays open as Orca's does. */
+function showOptions(anchor: HTMLElement): void {
+  const box = anchor.getBoundingClientRect()
+  const menu = buildOptionsMenu({
+    detail: state.display.detail,
+    onDetail: (detail) => {
+      const display = { ...state.display, detail }
+      setState({ display })
+      if (detail === 'title') loadTitles(true)
+      orca.storage.set(DISPLAY_KEY, display).catch(flash)
+    }
+  })
+  openRowMenu(null, box.right, box.bottom + 2, menu)
 }
 
 /** The project a new tab starts on: the open workspace's, else the selected row's, else none. */
@@ -582,6 +645,8 @@ orca.on('workspace.created', reloadSoon)
 orca.on('workspace.removed', reloadSoon)
 orca.on('agent.status.changed', (event) => {
   recordPane(panes, event)
+  recordTitle(titles, event)
+  if (state.display.detail === 'title') render()
   reloadSoon()
 })
 orca.plugin.on('tree.changed', reloadSoon)
@@ -661,18 +726,19 @@ async function start(): Promise<void> {
   // At once, beside the storage reads: the worker's answer is the slow part when the cache is empty.
   void syncPluginFont()
   try {
-    const [stored, tree, sidebar, pluginFont] = await Promise.all([
+    const [stored, tree, sidebar, pluginFont, display] = await Promise.all([
       orca.storage.get(COLLAPSED_KEY),
       orca.storage.get(TREE_KEY),
       orca.storage.get(SIDEBAR_KEY),
-      readPluginFontCache()
+      readPluginFontCache(),
+      orca.storage.get(DISPLAY_KEY)
     ])
     // Before the cached tree is drawn: a later change of font would reflow every row.
     restorePluginFont(pluginFont)
     sidebarLooks = parseLooks(sidebar)
     applySidebar()
     const keys = Array.isArray(stored) ? stored.filter((key): key is string => typeof key === 'string') : []
-    setState({ collapsed: new Set(keys), ...cachedTree(tree) })
+    setState({ collapsed: new Set(keys), display: parseDisplay(display), ...cachedTree(tree) })
     // `reload` reveals only when the tree changes, and a fresh tree usually equals the cached one.
     if (state.currentWorkspaceId && !state.selectedKey) reveal(state.currentWorkspaceId)
   } catch (error: unknown) {

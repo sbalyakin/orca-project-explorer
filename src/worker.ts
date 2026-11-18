@@ -8,6 +8,7 @@ import { createLooksCache, type LooksCache } from './appearance'
 import { buildTree } from './tree'
 import { createCatalogs } from './catalog/catalogs'
 import { launchAgent } from './launch'
+import { fetchCliAgents, latestByPath, realPath, resolveAgentPaths, titleOf, type CliAgent } from './titles'
 import { openNewWorktreeDialog } from './newworktree'
 import { readFontFace } from './pluginfont'
 import type { ProjectTree } from './types'
@@ -38,6 +39,23 @@ function requireAgent(value: unknown): string {
   return agent
 }
 
+/**
+ * The agent title of each workspace, by workspace id. The CLI lists chats and terminal agents alike and is asked first;
+ * without it, one `agents.list` per workspace gives the terminal agents (a workspace whose list fails is left out).
+ */
+export async function loadTitles(orca: OrcaWorkerApi, fetchAgents: () => Promise<CliAgent[] | null> = fetchCliAgents): Promise<Record<string, string>> {
+  const [{ workspaces }, cli] = await Promise.all([orca.host.call('workspace.list', {}), fetchAgents()])
+  const byPath = cli ? latestByPath(await resolveAgentPaths(cli)) : null
+  const found = await Promise.all(
+    workspaces.map(async ({ id, path }) => {
+      if (byPath) return [id, byPath.get(await realPath(path))] as const
+      const { agents } = await orca.host.call('agents.list', { workspaceId: id }).catch(() => ({ agents: [] }))
+      return [id, titleOf(agents)] as const
+    })
+  )
+  return Object.fromEntries(found.filter((entry): entry is readonly [string, string] => entry[1] !== undefined))
+}
+
 export default function activate(orca: OrcaWorkerApi): void {
   const looks = createLooksCache(undefined, () => orca.panels.post('tree.changed', {}))
   orca.panels.handle('tree.load', () => loadTree(orca, looks))
@@ -45,6 +63,7 @@ export default function activate(orca: OrcaWorkerApi): void {
   orca.panels.handle('font.face', ({ alias, index }) =>
     readFontFace(requireId(alias, 'alias'), Number.isInteger(index) && index >= 0 ? index : 0)
   )
+  orca.panels.handle('titles.get', () => loadTitles(orca))
   orca.panels.handle('theme.get', () => readSidebarLooks())
 
   orca.panels.handle('workspace.open', async ({ workspaceId }) => {

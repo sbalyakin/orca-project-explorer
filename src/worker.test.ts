@@ -1,4 +1,8 @@
+import { mkdir, mkdtemp, realpath, rm, symlink } from 'node:fs/promises'
+import { tmpdir } from 'node:os'
+import { join } from 'node:path'
 import { assert, mockHost, mountWorker, test } from 'orca/testing'
+import type { OrcaWorkerApi } from 'orca/worker'
 import * as main from './worker'
 
 const project = { id: 'p1', name: 'app', kind: 'git', hostId: 'local', path: '/Users/me/Space/app' }
@@ -46,4 +50,47 @@ test('refuses a request without a workspace id', async () => {
   const worker = await mountWorker(main, { host: host() })
   await assert.rejects(() => worker.request('workspace.open', { workspaceId: '' }))
   await worker.deactivate()
+})
+
+function titlesHost(agentLists: Record<string, unknown> = {}, firstPath = '/Users/me/app/') {
+  const calls: unknown[] = []
+  const api = {
+    host: {
+      call: async (method: string, params: { workspaceId?: string }) => {
+        if (method === 'workspace.list') {
+          return { workspaces: [{ id: 'w1', path: firstPath }, { id: 'w2', path: '/Users/me/other' }] }
+        }
+        calls.push(params)
+        return agentLists[params.workspaceId ?? ''] ?? { agents: [] }
+      }
+    }
+  }
+  return { orca: api as unknown as OrcaWorkerApi, calls }
+}
+
+test('titles come from the CLI by folder path, with a trailing slash ignored', async () => {
+  const { orca, calls } = titlesHost()
+  const agents = [{ path: '/Users/me/app', title: 'Fix tests', updatedAt: 1 }]
+  assert.deepEqual(await main.loadTitles(orca, async () => agents), { w1: 'Fix tests' })
+  assert.deepEqual(calls, [])
+})
+
+test('without the CLI, titles come from agents.list per workspace', async () => {
+  const { orca } = titlesHost({ w2: { agents: [{ title: 'Review PR', task: null }] } })
+  assert.deepEqual(await main.loadTitles(orca, async () => null), { w2: 'Review PR' })
+})
+
+test('a workspace path through a symlink matches the real folder the CLI reports', async () => {
+  const dir = await mkdtemp(join(tmpdir(), 'titles-'))
+  try {
+    const real = join(dir, 'real')
+    const link = join(dir, 'link')
+    await mkdir(real)
+    await symlink(real, link)
+    const { orca } = titlesHost({}, link)
+    const agents = [{ path: await realpath(real), title: 'Fix tests', updatedAt: 1 }]
+    assert.deepEqual(await main.loadTitles(orca, async () => agents), { w1: 'Fix tests' })
+  } finally {
+    await rm(dir, { recursive: true, force: true })
+  }
 })

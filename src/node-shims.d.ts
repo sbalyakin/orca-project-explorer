@@ -1,6 +1,7 @@
 // The Node APIs the worker uses; the plugin ships no @types/node.
 declare module 'node:os' {
   export function homedir(): string
+  export function tmpdir(): string
 }
 declare module 'node:fs' {
   export function existsSync(path: string): boolean
@@ -8,6 +9,11 @@ declare module 'node:fs' {
 declare module 'node:fs/promises' {
   export function readFile(path: string, encoding: 'utf8'): Promise<string>
   export function readFile(path: string): Promise<{ length: number; toString(encoding: 'base64'): string }>
+  export function realpath(path: string): Promise<string>
+  export function mkdir(path: string): Promise<void>
+  export function mkdtemp(prefix: string): Promise<string>
+  export function symlink(target: string, path: string): Promise<void>
+  export function rm(path: string, options?: { recursive?: boolean; force?: boolean }): Promise<void>
 }
 declare module 'node:path' {
   export function join(...parts: string[]): string
