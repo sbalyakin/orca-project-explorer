@@ -74,6 +74,9 @@ html.dark .row.current {
 /* Orca's workspace card title (WorktreeTitleInlineRename): text-[13px] leading-5, normal weight, semibold while unread. */
 .row.workspace .label { font-size: 13px; line-height: 20px; font-weight: 400; }
 .row.workspace.unread .label { font-weight: 600; }
+.guide { position: absolute; top: 0; bottom: 0; width: 1px; pointer-events: none; }
+.guide.visible { background: color-mix(in srgb, var(--orca-foreground) 22%, transparent); }
+.guide.subtle { background: color-mix(in srgb, var(--orca-foreground) 8%, transparent); }
 .twistie, .glyph { display: grid; place-items: center; flex: none; width: 16px; height: 16px; }
 .twistie { color: var(--orca-muted-foreground); }
 .twistie svg { width: 12px; height: 12px; transition: transform .1s; }

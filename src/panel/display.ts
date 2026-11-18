@@ -26,16 +26,28 @@ export const FOLDER_MARK_LABELS: Record<FolderMark, { short: string; full: strin
   none: { short: 'None', full: 'Neither arrows nor icons' }
 }
 
-export type DisplayOptions = { detail: DetailMode; folders: FolderMark }
+export const GUIDE_MODES = ['none', 'visible', 'subtle'] as const
+export type GuideMode = (typeof GUIDE_MODES)[number]
 
-export const DEFAULT_DISPLAY: DisplayOptions = { detail: DEFAULT_DETAIL, folders: DEFAULT_FOLDER_MARK }
+export const DEFAULT_GUIDES: GuideMode = 'none'
+
+export const GUIDE_LABELS: Record<GuideMode, { short: string; full: string }> = {
+  none: { short: 'None', full: 'No tree guides' },
+  visible: { short: 'Visible', full: 'Visible tree guides' },
+  subtle: { short: 'Subtle', full: 'Barely visible tree guides' }
+}
+
+export type DisplayOptions = { detail: DetailMode; folders: FolderMark; guides: GuideMode }
+
+export const DEFAULT_DISPLAY: DisplayOptions = { detail: DEFAULT_DETAIL, folders: DEFAULT_FOLDER_MARK, guides: DEFAULT_GUIDES }
 
 /** The saved choice; anything unreadable gives the default. */
 export function parseDisplay(stored: unknown): DisplayOptions {
   const saved = typeof stored === 'object' && stored !== null ? (stored as Record<string, unknown>) : {}
   return {
     detail: DETAIL_MODES.find((mode) => mode === saved.detail) ?? DEFAULT_DETAIL,
-    folders: FOLDER_MARKS.find((mark) => mark === saved.folders) ?? DEFAULT_FOLDER_MARK
+    folders: FOLDER_MARKS.find((mark) => mark === saved.folders) ?? DEFAULT_FOLDER_MARK,
+    guides: GUIDE_MODES.find((mode) => mode === saved.guides) ?? DEFAULT_GUIDES
   }
 }
 

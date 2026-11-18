@@ -1,6 +1,6 @@
 // Draws rows into the tree element. Text only ever goes in through textContent.
 import { isOpenable, isProjectFolder, type AgentText } from '../types'
-import { detailFor, type DetailMode, type FolderMark } from './display'
+import { detailFor, type DetailMode, type FolderMark, type GuideMode } from './display'
 import { icon, projectIcon } from './icons'
 import { rowDescription, type Row } from './rows'
 import { setTip } from './tooltip'
@@ -18,6 +18,8 @@ export type ViewState = {
   detailMode: DetailMode
   /** What marks a folder: its arrow, its icon, both or neither. A hidden mark leaves no cell, so the name moves left. */
   folderMark: FolderMark
+  /** Vertical lines through the indent of each ancestor level. */
+  guides: GuideMode
   titles: ReadonlyMap<string, AgentText>
 }
 
@@ -43,6 +45,15 @@ function renderRow(row: Row, index: number, state: ViewState): HTMLElement {
   if (isOpenable(node) && node.workspaceId === state.currentWorkspaceId) el.classList.add('current')
   const pad = GUTTER + row.depth * INDENT
   el.style.paddingLeft = `${pad}px`
+  if (state.guides !== 'none') {
+    // One line per ancestor level, centred under that ancestor's first mark; rows touch, so the lines join up.
+    for (let level = 0; level < row.depth; level++) {
+      const guide = document.createElement('span')
+      guide.className = `guide ${state.guides}`
+      guide.style.left = `${GUTTER + level * INDENT + 8}px`
+      el.appendChild(guide)
+    }
+  }
   const description = rowDescription(row)
   setTip(el, description)
   el.setAttribute('aria-label', description)
@@ -80,7 +91,9 @@ function renderRow(row: Row, index: number, state: ViewState): HTMLElement {
     const width = Math.min(12, pad)
     const status = document.createElement('span')
     status.className = 'status'
-    status.style.left = `${Math.max(0, pad - width - STATUS_GAP)}px`
+    // Nested rows centre the mark on the parent's guide line (its 1px line centre is at pad - INDENT + 8.5).
+    const left = row.depth > 0 ? pad - INDENT + 8.5 - width / 2 : pad - width - STATUS_GAP
+    status.style.left = `${Math.max(0, left)}px`
     status.style.width = `${width}px`
     status.appendChild(statusMark())
     el.appendChild(status)

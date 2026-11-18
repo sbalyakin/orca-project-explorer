@@ -213,7 +213,7 @@ function render(scrollToSelected = false): void {
     renderMessage(treeEl, state.filter ? 'No matching projects' : 'No projects yet')
     return
   }
-  renderRows(treeEl, rows, { ...state, detailMode: state.display.detail, folderMark: state.display.folders, titles })
+  renderRows(treeEl, rows, { ...state, detailMode: state.display.detail, folderMark: state.display.folders, guides: state.display.guides, titles })
   const selected = treeEl.querySelector('.row.selected')
   if (!selected) return
   treeEl.setAttribute('aria-activedescendant', selected.id)
@@ -433,22 +433,25 @@ function showAddMenu(anchor: HTMLElement): void {
   const popover = openRowMenu(null, x, y, menu)
 }
 
+/** Applies a display choice and saves it. */
+function setDisplay(patch: Partial<DisplayOptions>): void {
+  const display = { ...state.display, ...patch }
+  setState({ display })
+  orca.storage.set(DISPLAY_KEY, display).catch(flash)
+}
+
 /** The display options window, under the gear; a choice applies and is saved at once, and the window stays open as Orca's does. */
 function showOptions(anchor: HTMLElement): void {
   const box = anchor.getBoundingClientRect()
   const menu = buildOptionsMenu({
     detail: state.display.detail,
     folders: state.display.folders,
-    onFolders: (folders) => {
-      const display = { ...state.display, folders }
-      setState({ display })
-      orca.storage.set(DISPLAY_KEY, display).catch(flash)
-    },
+    guides: state.display.guides,
+    onGuides: (guides) => setDisplay({ guides }),
+    onFolders: (folders) => setDisplay({ folders }),
     onDetail: (detail) => {
-      const display = { ...state.display, detail }
-      setState({ display })
+      setDisplay({ detail })
       if (needsAgentText(detail)) loadTitles(true)
-      orca.storage.set(DISPLAY_KEY, display).catch(flash)
     }
   })
   openRowMenu(null, box.right, box.bottom + 2, menu)

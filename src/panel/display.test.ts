@@ -63,3 +63,10 @@ test('a project that only folds shows no text, the primary child shows it', () =
   assert.equal(detailFor(primary, 'title', titles), 'Fix tests')
   assert.equal(detailFor(primary, 'branch', titles), 'main')
 })
+
+test('parseDisplay reads the tree guides and defaults to none', () => {
+  assert.equal(parseDisplay({ guides: 'visible' }).guides, 'visible')
+  assert.equal(parseDisplay({ guides: 'subtle' }).guides, 'subtle')
+  assert.equal(parseDisplay({ guides: 'x' }).guides, 'none')
+  assert.equal(parseDisplay(null).guides, 'none')
+})
