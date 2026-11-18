@@ -48,11 +48,14 @@ body {
 .header:hover .header-fold, .header-fold:focus-visible { opacity: 1; }
 .header-actions { display: flex; gap: 2px; margin-left: auto; }
 .tree { flex: 1; overflow: auto; padding: 2px 0 12px; outline: none; }
+.tree[data-density="compact"] { --row-height: 24px; }
+.tree[data-density="comfort"] { --row-height: 28px; }
+.tree[data-density="spacious"] { --row-height: 32px; }
 .message { padding: 16px 12px; color: var(--orca-muted-foreground); }
 .message.error { color: var(--orca-destructive); }
 /* Rows are cards as in Orca's sidebar: 4px side margin, rounded-lg. The view's GUTTER and this padding allow for the margin. */
 .row {
-  position: relative; display: flex; align-items: center; gap: 4px; height: 24px; margin: 0 4px; padding-right: 4px;
+  position: relative; display: flex; align-items: center; gap: 4px; height: var(--row-height); margin: 0 4px; padding-right: 4px;
   border-radius: 8px; cursor: pointer; white-space: nowrap;
 }
 /* Two states that must not look alike: hover (as Orca's sidebar rows) and the open workspace. */

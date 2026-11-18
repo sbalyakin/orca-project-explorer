@@ -203,6 +203,7 @@ async function run(action: () => Promise<unknown>, pending = ''): Promise<void> 
 
 function render(scrollToSelected = false): void {
   syncFoldButton()
+  treeEl.dataset.density = state.display.density
   treeEl.removeAttribute('aria-activedescendant')
   if (!state.tree) {
     renderMessage(treeEl, state.error ? `Could not load projects: ${state.error}` : 'Loading…', state.error !== null)
@@ -448,6 +449,8 @@ function showOptions(anchor: HTMLElement): void {
     folders: state.display.folders,
     guides: state.display.guides,
     onGuides: (guides) => setDisplay({ guides }),
+    density: state.display.density,
+    onDensity: (density) => setDisplay({ density }),
     onFolders: (folders) => setDisplay({ folders }),
     onDetail: (detail) => {
       setDisplay({ detail })

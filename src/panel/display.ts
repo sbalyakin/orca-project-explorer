@@ -37,9 +37,25 @@ export const GUIDE_LABELS: Record<GuideMode, { short: string; full: string }> = 
   subtle: { short: 'Subtle', full: 'Barely visible tree guides' }
 }
 
-export type DisplayOptions = { detail: DetailMode; folders: FolderMark; guides: GuideMode }
+export const DENSITY_MODES = ['compact', 'comfort', 'spacious'] as const
+export type DensityMode = (typeof DENSITY_MODES)[number]
 
-export const DEFAULT_DISPLAY: DisplayOptions = { detail: DEFAULT_DETAIL, folders: DEFAULT_FOLDER_MARK, guides: DEFAULT_GUIDES }
+export const DEFAULT_DENSITY: DensityMode = 'comfort'
+
+export const DENSITY_LABELS: Record<DensityMode, { short: string; full: string }> = {
+  compact: { short: 'Compact', full: 'Compact rows' },
+  comfort: { short: 'Comfort', full: 'Comfortable rows' },
+  spacious: { short: 'Spacious', full: 'Spacious rows' }
+}
+
+export type DisplayOptions = { detail: DetailMode; folders: FolderMark; guides: GuideMode; density: DensityMode }
+
+export const DEFAULT_DISPLAY: DisplayOptions = {
+  detail: DEFAULT_DETAIL,
+  folders: DEFAULT_FOLDER_MARK,
+  guides: DEFAULT_GUIDES,
+  density: DEFAULT_DENSITY
+}
 
 /** The saved choice; anything unreadable gives the default. */
 export function parseDisplay(stored: unknown): DisplayOptions {
@@ -47,7 +63,8 @@ export function parseDisplay(stored: unknown): DisplayOptions {
   return {
     detail: DETAIL_MODES.find((mode) => mode === saved.detail) ?? DEFAULT_DETAIL,
     folders: FOLDER_MARKS.find((mark) => mark === saved.folders) ?? DEFAULT_FOLDER_MARK,
-    guides: GUIDE_MODES.find((mode) => mode === saved.guides) ?? DEFAULT_GUIDES
+    guides: GUIDE_MODES.find((mode) => mode === saved.guides) ?? DEFAULT_GUIDES,
+    density: DENSITY_MODES.find((mode) => mode === saved.density) ?? DEFAULT_DENSITY
   }
 }
 

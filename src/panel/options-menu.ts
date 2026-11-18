@@ -1,5 +1,5 @@
 // The "Display options" window under the gear: drawn like Orca's "Workspace options" popover.
-import { DETAIL_LABELS, DETAIL_MODES, FOLDER_MARKS, FOLDER_MARK_LABELS, GUIDE_LABELS, GUIDE_MODES, type DetailMode, type FolderMark, type GuideMode } from './display'
+import { DENSITY_LABELS, DENSITY_MODES, DETAIL_LABELS, DETAIL_MODES, FOLDER_MARKS, FOLDER_MARK_LABELS, GUIDE_LABELS, GUIDE_MODES, type DensityMode, type DetailMode, type FolderMark, type GuideMode } from './display'
 import { closePopover } from './menu'
 import { setTip } from './tooltip'
 
@@ -10,6 +10,8 @@ export type OptionsMenuOptions = {
   onFolders: (mark: FolderMark) => void
   guides: GuideMode
   onGuides: (mode: GuideMode) => void
+  density: DensityMode
+  onDensity: (mode: DensityMode) => void
 }
 
 function el<K extends keyof HTMLElementTagNameMap>(tag: K, className: string): HTMLElementTagNameMap[K] {
@@ -83,7 +85,8 @@ export function buildOptionsMenu(options: OptionsMenuOptions): HTMLElement {
     title,
     ...segmented('After project name', DETAIL_MODES, DETAIL_LABELS, options.detail, options.onDetail),
     ...segmented('Folders', FOLDER_MARKS, FOLDER_MARK_LABELS, options.folders, options.onFolders),
-    ...segmented('Tree guides', GUIDE_MODES, GUIDE_LABELS, options.guides, options.onGuides)
+    ...segmented('Tree guides', GUIDE_MODES, GUIDE_LABELS, options.guides, options.onGuides),
+    ...segmented('Density', DENSITY_MODES, DENSITY_LABELS, options.density, options.onDensity)
   )
   root.addEventListener('keydown', (event) => {
     if (event.key === 'Tab') closePopover()

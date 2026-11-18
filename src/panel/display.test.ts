@@ -70,3 +70,10 @@ test('parseDisplay reads the tree guides and defaults to none', () => {
   assert.equal(parseDisplay({ guides: 'x' }).guides, 'none')
   assert.equal(parseDisplay(null).guides, 'none')
 })
+
+test('parseDisplay reads the density and defaults to comfort', () => {
+  assert.equal(parseDisplay({ density: 'compact' }).density, 'compact')
+  assert.equal(parseDisplay({ density: 'spacious' }).density, 'spacious')
+  assert.equal(parseDisplay({ density: 'x' }).density, 'comfort')
+  assert.equal(parseDisplay(null).density, 'comfort')
+})
