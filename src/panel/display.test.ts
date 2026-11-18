@@ -71,6 +71,13 @@ test('parseDisplay reads the tree guides and defaults to none', () => {
   assert.equal(parseDisplay(null).guides, 'none')
 })
 
+test('parseDisplay reads the grouping and defaults to folder', () => {
+  assert.equal(parseDisplay({ group: 'none' }).group, 'none')
+  assert.equal(parseDisplay({ group: 'status' }).group, 'status')
+  assert.equal(parseDisplay({ group: 'x' }).group, 'folder')
+  assert.equal(parseDisplay(null).group, 'folder')
+})
+
 test('parseDisplay reads the density and defaults to comfort', () => {
   assert.equal(parseDisplay({ density: 'compact' }).density, 'compact')
   assert.equal(parseDisplay({ density: 'spacious' }).density, 'spacious')

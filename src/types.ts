@@ -10,6 +10,8 @@ export type GroupNode = {
   key: string
   label: string
   children: TreeNode[]
+  /** A section of the "Group by Status" view, drawn as `title count chevron`. Set by the panel, never by the worker. */
+  section?: true
 }
 
 /** A project's own icon, as Orca shows it; an absent icon means Orca's default folder. */
@@ -33,6 +35,8 @@ export type WorkspaceNode = {
   /** The project's icon and badge colour; set on a main checkout only. */
   icon?: ProjectIcon
   color?: string
+  /** The folders above a project, for its tooltip when the tree is not grouped by folder. Set by the panel. */
+  folder?: string
   attention: Attention
   children: TreeNode[]
 }

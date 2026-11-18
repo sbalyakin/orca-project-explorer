@@ -11,6 +11,7 @@ import { buildLauncher, type LauncherChoice } from './launcher'
 import { buildMainMenu, buildRowMenu, closePopover, openPopover, type Popover } from './menu'
 import { buildOptionsMenu } from './options-menu'
 import { buildProjectPicker } from './project-picker'
+import { groupTree } from './grouping'
 import { allCollapsed, containerKeys, keepLooks, navigate, pathTo, projectOf, projectsOf, visibleRows, type NavKey, type Row } from './rows'
 import { applyMonitoring, prunePanes, recordPane, workspaceIds, type PaneStates } from './monitoring'
 import { lookFor, parseLooks } from './sidebar'
@@ -99,12 +100,17 @@ function toolButton(name: IconName, label: string, onPress: () => void): HTMLBut
 
 /** One button for both directions; its label and icon name what a press will do (see `syncFoldButton`). */
 const foldButton = toolButton('collapseAll', 'Collapse all projects', () => {
-  const nodes = state.tree?.nodes ?? []
+  const nodes = shownNodes()
   setCollapsed(allCollapsed(nodes, state.collapsed) ? new Set() : new Set(containerKeys(nodes)))
 })
 
+/** The tree as drawn: the worker's folders, one list, or status sections, per the Group by option. */
+function shownNodes(): TreeNode[] {
+  return groupTree(state.tree?.nodes ?? [], state.display.group)
+}
+
 function syncFoldButton(): void {
-  const expand = allCollapsed(state.tree?.nodes ?? [], state.collapsed)
+  const expand = allCollapsed(shownNodes(), state.collapsed)
   const label = expand ? 'Expand all projects' : 'Collapse all projects'
   setTip(foldButton, label)
   foldButton.setAttribute('aria-label', label)
@@ -209,12 +215,12 @@ function render(scrollToSelected = false): void {
     renderMessage(treeEl, state.error ? `Could not load projects: ${state.error}` : 'Loading…', state.error !== null)
     return
   }
-  rows = visibleRows(state.tree.nodes, state.collapsed, state.filter)
+  rows = visibleRows(shownNodes(), state.collapsed, state.filter)
   if (rows.length === 0) {
     renderMessage(treeEl, state.filter ? 'No matching projects' : 'No projects yet')
     return
   }
-  renderRows(treeEl, rows, { ...state, detailMode: state.display.detail, folderMark: state.display.folders, guides: state.display.guides, titles })
+  renderRows(treeEl, rows, { ...state, detailMode: state.display.detail, folderMark: state.display.folders, guides: state.display.group === 'folder' ? state.display.guides : 'none', titles })
   const selected = treeEl.querySelector('.row.selected')
   if (!selected) return
   treeEl.setAttribute('aria-activedescendant', selected.id)
@@ -248,7 +254,7 @@ function toggle(key: string, expanded: boolean): void {
 function reveal(workspaceId: string | null): void {
   if (!state.tree || !workspaceId) return setState({ currentWorkspaceId: workspaceId })
   const isIt = (node: TreeNode): boolean => isOpenable(node) && node.workspaceId === workspaceId
-  const above = pathTo(state.tree.nodes, isIt) ?? []
+  const above = pathTo(shownNodes(), isIt) ?? []
   const collapsed = new Set([...state.collapsed].filter((key) => !above.includes(key)))
   const found = findKey(workspaceId)
   // A workspace that is not in the tree yet (just created) is revealed after the next load.
@@ -445,6 +451,8 @@ function setDisplay(patch: Partial<DisplayOptions>): void {
 function showOptions(anchor: HTMLElement): void {
   const box = anchor.getBoundingClientRect()
   const menu = buildOptionsMenu({
+    group: state.display.group,
+    onGroup: (group) => setDisplay({ group }),
     detail: state.display.detail,
     folders: state.display.folders,
     guides: state.display.guides,

@@ -48,9 +48,21 @@ export const DENSITY_LABELS: Record<DensityMode, { short: string; full: string }
   spacious: { short: 'Spacious', full: 'Spacious rows' }
 }
 
-export type DisplayOptions = { detail: DetailMode; folders: FolderMark; guides: GuideMode; density: DensityMode }
+export const GROUP_MODES = ['none', 'folder', 'status'] as const
+export type GroupMode = (typeof GROUP_MODES)[number]
+
+export const DEFAULT_GROUP: GroupMode = 'folder'
+
+export const GROUP_LABELS: Record<GroupMode, { short: string; full: string }> = {
+  none: { short: 'None', full: 'No grouping' },
+  folder: { short: 'Folder', full: 'Group by folder' },
+  status: { short: 'Status', full: 'Group by agent status' }
+}
+
+export type DisplayOptions = { group: GroupMode; detail: DetailMode; folders: FolderMark; guides: GuideMode; density: DensityMode }
 
 export const DEFAULT_DISPLAY: DisplayOptions = {
+  group: DEFAULT_GROUP,
   detail: DEFAULT_DETAIL,
   folders: DEFAULT_FOLDER_MARK,
   guides: DEFAULT_GUIDES,
@@ -61,6 +73,7 @@ export const DEFAULT_DISPLAY: DisplayOptions = {
 export function parseDisplay(stored: unknown): DisplayOptions {
   const saved = typeof stored === 'object' && stored !== null ? (stored as Record<string, unknown>) : {}
   return {
+    group: GROUP_MODES.find((mode) => mode === saved.group) ?? DEFAULT_GROUP,
     detail: DETAIL_MODES.find((mode) => mode === saved.detail) ?? DEFAULT_DETAIL,
     folders: FOLDER_MARKS.find((mark) => mark === saved.folders) ?? DEFAULT_FOLDER_MARK,
     guides: GUIDE_MODES.find((mode) => mode === saved.guides) ?? DEFAULT_GUIDES,

@@ -1,9 +1,11 @@
 // The "Display options" window under the gear: drawn like Orca's "Workspace options" popover.
-import { DENSITY_LABELS, DENSITY_MODES, DETAIL_LABELS, DETAIL_MODES, FOLDER_MARKS, FOLDER_MARK_LABELS, GUIDE_LABELS, GUIDE_MODES, type DensityMode, type DetailMode, type FolderMark, type GuideMode } from './display'
+import { DENSITY_LABELS, DENSITY_MODES, DETAIL_LABELS, DETAIL_MODES, FOLDER_MARKS, FOLDER_MARK_LABELS, GROUP_LABELS, GROUP_MODES, GUIDE_LABELS, GUIDE_MODES, type DensityMode, type DetailMode, type FolderMark, type GroupMode, type GuideMode } from './display'
 import { closePopover } from './menu'
 import { setTip } from './tooltip'
 
 export type OptionsMenuOptions = {
+  group: GroupMode
+  onGroup: (mode: GroupMode) => void
   detail: DetailMode
   onDetail: (mode: DetailMode) => void
   folders: FolderMark
@@ -81,11 +83,21 @@ export function buildOptionsMenu(options: OptionsMenuOptions): HTMLElement {
   root.setAttribute('aria-label', 'Display options')
   const title = el('div', 'options-title')
   title.textContent = 'Display options'
+  // The folder marks and tree guides describe the folder tree, so they show only while it is drawn.
+  const folderOptions = el('div', 'options-folder')
+  folderOptions.hidden = options.group !== 'folder'
+  folderOptions.append(
+    ...segmented('Folders', FOLDER_MARKS, FOLDER_MARK_LABELS, options.folders, options.onFolders),
+    ...segmented('Tree guides', GUIDE_MODES, GUIDE_LABELS, options.guides, options.onGuides)
+  )
   root.append(
     title,
+    ...segmented('Group by', GROUP_MODES, GROUP_LABELS, options.group, (mode) => {
+      folderOptions.hidden = mode !== 'folder'
+      options.onGroup(mode)
+    }),
     ...segmented('After project name', DETAIL_MODES, DETAIL_LABELS, options.detail, options.onDetail),
-    ...segmented('Folders', FOLDER_MARKS, FOLDER_MARK_LABELS, options.folders, options.onFolders),
-    ...segmented('Tree guides', GUIDE_MODES, GUIDE_LABELS, options.guides, options.onGuides),
+    folderOptions,
     ...segmented('Density', DENSITY_MODES, DENSITY_LABELS, options.density, options.onDensity)
   )
   root.addEventListener('keydown', (event) => {

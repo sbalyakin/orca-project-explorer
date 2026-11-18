@@ -70,6 +70,20 @@ function renderRow(row: Row, index: number, state: ViewState): HTMLElement {
   const label = document.createElement('span')
   label.className = 'label'
   label.textContent = node.label
+  if (node.kind === 'group' && node.section) {
+    el.classList.add('section')
+    // A status section reads `title count chevron`; it has no folder mark and no status of its own.
+    const count = document.createElement('span')
+    count.className = 'section-count'
+    count.textContent = String(node.children.length)
+    const chevron = document.createElement('span')
+    chevron.className = 'worktrees-mark'
+    chevron.appendChild(icon(row.expanded ? 'chevronDown' : 'chevron'))
+    const rest = document.createElement('span')
+    rest.className = 'spacer'
+    el.append(label, count, chevron, rest)
+    return el
+  }
   const statusMark = (): Element => {
     if (row.attention === 'permission') {
       const mark = icon('permission')

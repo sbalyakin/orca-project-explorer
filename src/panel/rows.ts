@@ -16,7 +16,7 @@ function stronger(a: Attention, b: Attention): Attention {
   return ATTENTION_LEVELS.indexOf(a) >= ATTENTION_LEVELS.indexOf(b) ? a : b
 }
 
-function strongestBelow(node: TreeNode): Attention {
+export function strongestBelow(node: TreeNode): Attention {
   let result: Attention = node.kind === 'workspace' ? node.attention : 'none'
   for (const child of node.children) result = stronger(result, strongestBelow(child))
   return result
@@ -26,11 +26,15 @@ function ownText(node: TreeNode): string {
   return node.kind === 'workspace' && node.detail ? `${node.label} ${node.detail}` : node.label
 }
 
-/** Keeps a node that matches, or has a match below it; a matching node keeps everything under it. */
+/**
+ * Keeps a node that matches, or has a match below it; a matching node keeps everything under it.
+ * A status section never matches by its title ("work" must not pull in the whole `Working` section).
+ */
 function filterNodes(nodes: readonly TreeNode[], needle: string): TreeNode[] {
   const kept: TreeNode[] = []
   for (const node of nodes) {
-    if (ownText(node).toLowerCase().includes(needle)) {
+    const isSection = node.kind === 'group' && node.section
+    if (!isSection && ownText(node).toLowerCase().includes(needle)) {
       kept.push(node)
       continue
     }
@@ -92,6 +96,7 @@ function attentionWords(attention: Attention): string | null {
 export function rowDescription(row: Row): string {
   const { node } = row
   const parts = [node.kind === 'workspace' && node.detail ? `${node.label} · ${node.detail}` : node.label]
+  if (node.kind === 'workspace' && node.folder) parts.push(node.folder)
   const status = attentionWords(row.attention)
   if (status) parts.push(node.kind === 'group' ? `${status} inside` : status)
   return parts.join(' · ')
