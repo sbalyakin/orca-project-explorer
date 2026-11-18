@@ -86,3 +86,6 @@ export type SidebarLook = { background: string; accent: string; active: string |
 
 /** The look for each theme base; `null` where it cannot be known and the panel estimates. */
 export type SidebarLooks = { light: SidebarLook | null; dark: SidebarLook | null }
+
+/** One upright face of a plugin's font, as base64 data for a panel `@font-face`. */
+export type FontFace = { weight: string; mime: string; data: string }

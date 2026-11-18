@@ -5,6 +5,7 @@ import '../protocol'
 import type { ModelCatalog, ProjectTree, SidebarLooks, WorkspaceNode } from '../types'
 import { agentLabel, DEFAULT_AGENTS, parseAgents } from './agents'
 import { agentIcon, icon, type IconName } from './icons'
+import { readPluginFontCache, restorePluginFont, syncPluginFont } from './fontload'
 import { buildLauncher, type LauncherChoice } from './launcher'
 import { buildMainMenu, buildRowMenu, closePopover, openPopover, type Popover } from './menu'
 import { allCollapsed, containerKeys, keepLooks, navigate, pathTo, visibleRows, type NavKey, type Row } from './rows'
@@ -17,7 +18,6 @@ import { renderMessage, renderRows } from './view'
 const COLLAPSED_KEY = 'collapsed'
 /** Bump the version when `ProjectTree` changes shape, so an old cache is not drawn. */
 const TREE_KEY = 'tree:v1'
-const FONT_KEY = 'font:v1'
 const SIDEBAR_KEY = 'sidebar:v1'
 const AGENTS_KEY = 'agents'
 const RELOAD_DEBOUNCE_MS = 300
@@ -540,8 +540,8 @@ function reloadOnLook(): void {
   const now = Date.now()
   if (now - lastLookAt < LOOK_RELOAD_MIN_MS) return
   lastLookAt = now
-  void applyFont()
   void loadSidebar()
+  void syncPluginFont()
   reloadSoon()
 }
 document.addEventListener('visibilitychange', () => {
@@ -554,6 +554,7 @@ orca.on('theme', () => {
   // The base has changed: the cached looks cover both, so the colours switch at once; then they are read again.
   applySidebar()
   void loadSidebar()
+  void syncPluginFont()
 })
 
 let sidebarLooks: SidebarLooks | null = null
@@ -585,24 +586,6 @@ async function loadSidebar(): Promise<void> {
   }
 }
 
-function setFont(family: string): void {
-  document.documentElement.style.setProperty('--app-font', family)
-}
-
-/**
- * Orca sends no event when the interface font changes, so it is read at start and on each look. The last
- * answer is kept (see `start`), so the first paint already has the right font and does not reflow.
- */
-async function applyFont(): Promise<void> {
-  try {
-    const { family } = await orca.plugin.request('font.get')
-    setFont(family)
-    orca.storage.set(FONT_KEY, family).catch(() => {})
-  } catch {
-    // Keep the font on screen; the stylesheet has Orca's default.
-  }
-}
-
 async function loadAgents(): Promise<void> {
   try {
     setState({ agents: parseAgents(await orca.settings.get(AGENTS_KEY)) })
@@ -622,15 +605,17 @@ function cachedTree(stored: unknown): Partial<State> {
 
 async function start(): Promise<void> {
   render()
+  // At once, beside the storage reads: the worker's answer is the slow part when the cache is empty.
+  void syncPluginFont()
   try {
-    const [stored, tree, font, sidebar] = await Promise.all([
+    const [stored, tree, sidebar, pluginFont] = await Promise.all([
       orca.storage.get(COLLAPSED_KEY),
       orca.storage.get(TREE_KEY),
-      orca.storage.get(FONT_KEY),
-      orca.storage.get(SIDEBAR_KEY)
+      orca.storage.get(SIDEBAR_KEY),
+      readPluginFontCache()
     ])
     // Before the cached tree is drawn: a later change of font would reflow every row.
-    if (typeof font === 'string') setFont(font)
+    restorePluginFont(pluginFont)
     sidebarLooks = parseLooks(sidebar)
     applySidebar()
     const keys = Array.isArray(stored) ? stored.filter((key): key is string => typeof key === 'string') : []
@@ -640,7 +625,7 @@ async function start(): Promise<void> {
   } catch (error: unknown) {
     flash(error)
   }
-  await Promise.all([loadAgents(), reload(), applyFont(), loadSidebar()])
+  await Promise.all([loadAgents(), reload(), loadSidebar()])
 }
 
 void start()

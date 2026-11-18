@@ -10,7 +10,7 @@ html, body { height: 100%; margin: 0; }
 body {
   display: flex; flex-direction: column;
   background: var(--panel-bg); color: var(--orca-foreground);
-  font: 12px/1.4 var(--app-font, 'Geist', -apple-system, BlinkMacSystemFont, sans-serif); user-select: none; overflow: hidden;
+  font: 12px/1.4 var(--orca-font-sans, 'Geist', -apple-system, BlinkMacSystemFont, sans-serif); user-select: none; overflow: hidden;
   letter-spacing: 0.01em; -webkit-font-smoothing: antialiased; /* as Orca's body */
 }
 .toolbar { display: flex; gap: 2px; align-items: center; padding: 8px 8px 6px; }

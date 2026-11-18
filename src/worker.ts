@@ -3,13 +3,13 @@
 import { homedir } from 'node:os'
 import type { OrcaWorkerApi } from 'orca/worker'
 import './protocol'
-import { readAppFont } from './appfont'
 import { readSidebarLooks } from './apptheme'
 import { createLooksCache, type LooksCache } from './appearance'
 import { buildTree } from './tree'
 import { createCatalogs } from './catalog/catalogs'
 import { launchAgent } from './launch'
 import { openNewWorktreeDialog } from './newworktree'
+import { readFontFace } from './pluginfont'
 import type { ProjectTree } from './types'
 
 export async function loadTree(orca: OrcaWorkerApi, looks: LooksCache): Promise<ProjectTree> {
@@ -42,7 +42,9 @@ export default function activate(orca: OrcaWorkerApi): void {
   const looks = createLooksCache(undefined, () => orca.panels.post('tree.changed', {}))
   orca.panels.handle('tree.load', () => loadTree(orca, looks))
 
-  orca.panels.handle('font.get', async () => ({ family: await readAppFont() }))
+  orca.panels.handle('font.face', ({ alias, index }) =>
+    readFontFace(requireId(alias, 'alias'), Number.isInteger(index) && index >= 0 ? index : 0)
+  )
   orca.panels.handle('theme.get', () => readSidebarLooks())
 
   orca.panels.handle('workspace.open', async ({ workspaceId }) => {

@@ -1,6 +1,6 @@
 // The colours of Orca's left sidebar, which the host does not pass to panels. The worker reads the
-// chosen app theme from Orca's profile database (read-only) and the theme plugin's own file, as it
-// does for the interface font. Anything it cannot read gives `null`, and the panel keeps its estimate.
+// chosen app theme from Orca's profile database (read-only) and the theme plugin's own file.
+// Anything it cannot read gives `null`, and the panel keeps its estimate.
 import { execFile } from 'node:child_process'
 import { readFile } from 'node:fs/promises'
 import { homedir } from 'node:os'
@@ -10,7 +10,7 @@ import type { SidebarLook, SidebarLooks } from './types'
 const SQLITE = '/usr/bin/sqlite3'
 const ORCA_DIR = join('Library', 'Application Support', 'orca')
 const PROFILE_DB = join(ORCA_DIR, 'profiles', 'local-default', 'profile-state.db')
-const PLUGINS_DIR = join(ORCA_DIR, 'plugins')
+export const PLUGINS_DIR = join(ORCA_DIR, 'plugins')
 const TIMEOUT_MS = 5000
 
 const QUERY = `select json_object(
@@ -113,25 +113,30 @@ function query(database: string): Promise<ThemeSettings | null> {
 
 export type ReadJson = (path: string) => Promise<unknown>
 
-const readJsonFile: ReadJson = async (path) => JSON.parse(await readFile(path, 'utf8'))
+export const readJsonFile: ReadJson = async (path) => JSON.parse(await readFile(path, 'utf8'))
 
-function record(value: unknown): Record<string, unknown> | null {
+export function record(value: unknown): Record<string, unknown> | null {
   return typeof value === 'object' && value !== null && !Array.isArray(value) ? (value as Record<string, unknown>) : null
 }
 
+/** The installed folder of a plugin: `plugins.lock.json` names the version, its `contentHash` is the folder name. */
+export async function findPluginRoot(pluginsDir: string, pluginKey: string, readJson: ReadJson): Promise<string | null> {
+  const lock = record(record(await readJson(join(pluginsDir, 'plugins.lock.json')))?.plugins)
+  const contentHash = record(lock?.[pluginKey])?.contentHash
+  if (typeof contentHash !== 'string' || !/^[0-9a-f]+$/.test(contentHash)) return null
+  return resolve(pluginsDir, pluginKey, contentHash)
+}
+
 /**
- * Finds a theme plugin's tokens on disk: `plugins.lock.json` names the installed version (its
- * `contentHash` is the folder name), the plugin's manifest lists the theme files. Read errors are not caught.
+ * Finds a theme plugin's tokens on disk: the plugin's manifest lists the theme files. Read errors are not caught.
  */
 export function createThemeReader(pluginsDir: string = join(homedir(), PLUGINS_DIR), readJson: ReadJson = readJsonFile): ReadThemeTokens {
   return async (slot) => {
     const match = SLOT.exec(slot)
     if (!match) return null
     const [, pluginKey, themeId] = match
-    const lock = record(record(await readJson(join(pluginsDir, 'plugins.lock.json')))?.plugins)
-    const contentHash = record(lock?.[pluginKey])?.contentHash
-    if (typeof contentHash !== 'string' || !/^[0-9a-f]+$/.test(contentHash)) return null
-    const root = resolve(pluginsDir, pluginKey, contentHash)
+    const root = await findPluginRoot(pluginsDir, pluginKey, readJson)
+    if (!root) return null
     const themes = record(record(await readJson(join(root, 'orca-plugin.json')))?.contributes)?.themes
     const entry = Array.isArray(themes) ? themes.map(record).find((theme) => theme?.id === themeId) : undefined
     if (typeof entry?.path !== 'string') return null

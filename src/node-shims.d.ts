@@ -7,6 +7,7 @@ declare module 'node:fs' {
 }
 declare module 'node:fs/promises' {
   export function readFile(path: string, encoding: 'utf8'): Promise<string>
+  export function readFile(path: string): Promise<{ length: number; toString(encoding: 'base64'): string }>
 }
 declare module 'node:path' {
   export function join(...parts: string[]): string
