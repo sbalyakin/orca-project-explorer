@@ -11,7 +11,7 @@ import { launchAgent } from './launch'
 import { fetchCliAgents, latestByPath, realPath, resolveAgentPaths, titleOf, type CliAgent } from './titles'
 import { openNewWorktreeDialog } from './newworktree'
 import { readFontFace } from './pluginfont'
-import type { ProjectTree } from './types'
+import type { AgentText, ProjectTree } from './types'
 
 export async function loadTree(orca: OrcaWorkerApi, looks: LooksCache): Promise<ProjectTree> {
   const [projects, workspaces] = await Promise.all([
@@ -40,20 +40,21 @@ function requireAgent(value: unknown): string {
 }
 
 /**
- * The agent title of each workspace, by workspace id. The CLI lists chats and terminal agents alike and is asked first;
+ * The title and last reply of each workspace's latest agent, by workspace id. The CLI lists chats and terminal agents alike and is asked first;
  * without it, one `agents.list` per workspace gives the terminal agents (a workspace whose list fails is left out).
  */
-export async function loadTitles(orca: OrcaWorkerApi, fetchAgents: () => Promise<CliAgent[] | null> = fetchCliAgents): Promise<Record<string, string>> {
+export async function loadTitles(orca: OrcaWorkerApi, fetchAgents: () => Promise<CliAgent[] | null> = fetchCliAgents): Promise<Record<string, AgentText>> {
   const [{ workspaces }, cli] = await Promise.all([orca.host.call('workspace.list', {}), fetchAgents()])
   const byPath = cli ? latestByPath(await resolveAgentPaths(cli)) : null
   const found = await Promise.all(
     workspaces.map(async ({ id, path }) => {
       if (byPath) return [id, byPath.get(await realPath(path))] as const
       const { agents } = await orca.host.call('agents.list', { workspaceId: id }).catch(() => ({ agents: [] }))
-      return [id, titleOf(agents)] as const
+      const title = titleOf(agents)
+      return [id, title ? { title } : undefined] as const
     })
   )
-  return Object.fromEntries(found.filter((entry): entry is readonly [string, string] => entry[1] !== undefined))
+  return Object.fromEntries(found.filter((entry): entry is readonly [string, AgentText] => entry[1] !== undefined))
 }
 
 export default function activate(orca: OrcaWorkerApi): void {
@@ -63,7 +64,7 @@ export default function activate(orca: OrcaWorkerApi): void {
   orca.panels.handle('font.face', ({ alias, index }) =>
     readFontFace(requireId(alias, 'alias'), Number.isInteger(index) && index >= 0 ? index : 0)
   )
-  orca.panels.handle('titles.get', () => loadTitles(orca))
+  orca.panels.handle('agents.text', () => loadTitles(orca))
   orca.panels.handle('theme.get', () => readSidebarLooks())
 
   orca.panels.handle('workspace.open', async ({ workspaceId }) => {

@@ -70,14 +70,14 @@ function titlesHost(agentLists: Record<string, unknown> = {}, firstPath = '/User
 
 test('titles come from the CLI by folder path, with a trailing slash ignored', async () => {
   const { orca, calls } = titlesHost()
-  const agents = [{ path: '/Users/me/app', title: 'Fix tests', updatedAt: 1 }]
-  assert.deepEqual(await main.loadTitles(orca, async () => agents), { w1: 'Fix tests' })
+  const agents = [{ path: '/Users/me/app', title: 'Fix tests', message: 'Done.', updatedAt: 1 }]
+  assert.deepEqual(await main.loadTitles(orca, async () => agents), { w1: { title: 'Fix tests', message: 'Done.' } })
   assert.deepEqual(calls, [])
 })
 
 test('without the CLI, titles come from agents.list per workspace', async () => {
   const { orca } = titlesHost({ w2: { agents: [{ title: 'Review PR', task: null }] } })
-  assert.deepEqual(await main.loadTitles(orca, async () => null), { w2: 'Review PR' })
+  assert.deepEqual(await main.loadTitles(orca, async () => null), { w2: { title: 'Review PR' } })
 })
 
 test('a workspace path through a symlink matches the real folder the CLI reports', async () => {
@@ -89,7 +89,7 @@ test('a workspace path through a symlink matches the real folder the CLI reports
     await symlink(real, link)
     const { orca } = titlesHost({}, link)
     const agents = [{ path: await realpath(real), title: 'Fix tests', updatedAt: 1 }]
-    assert.deepEqual(await main.loadTitles(orca, async () => agents), { w1: 'Fix tests' })
+    assert.deepEqual(await main.loadTitles(orca, async () => agents), { w1: { title: 'Fix tests' } })
   } finally {
     await rm(dir, { recursive: true, force: true })
   }

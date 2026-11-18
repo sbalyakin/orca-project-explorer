@@ -3,7 +3,7 @@
 import type {} from 'orca/frame'
 import '../protocol'
 import type { ModelCatalog, ProjectTree, SidebarLooks, WorkspaceNode } from '../types'
-import { DEFAULT_DISPLAY, parseDisplay, pruneTitles, recordTitle, type DisplayOptions, type WorkspaceTitles } from './display'
+import { DEFAULT_DISPLAY, parseDisplay, needsAgentText, pruneTitles, recordTitle, type DisplayOptions, type WorkspaceTexts } from './display'
 import { agentLabel, DEFAULT_AGENTS, parseAgents } from './agents'
 import { agentIcon, icon, projectIcon, type IconName } from './icons'
 import { readPluginFontCache, restorePluginFont, syncPluginFont } from './fontload'
@@ -55,8 +55,8 @@ let state: State = {
 }
 let rows: Row[] = []
 let pendingReveal: string | null = null
-/** The latest title each workspace's agents reported; shown after the name when the options ask for it. */
-const titles: WorkspaceTitles = new Map()
+/** What each workspace's latest agent says; shown after the name when the options ask for it. */
+const titles: WorkspaceTexts = new Map()
 
 // ---------------------------------------------------------------- page
 
@@ -276,12 +276,12 @@ let titlesAt = 0
 let titlesTimer: ReturnType<typeof setTimeout> | undefined
 
 /**
- * Reads each workspace's agent title from the host; only the title mode shows it, so only then is it asked for.
+ * Reads each workspace's agent title and last reply from the host; only the title and message modes show them, so only then is it asked for.
  * The read starts a CLI, so a busy agent's stream of events gets at most one read per `TITLES_MIN_MS` (the last
  * request is not lost: it runs when the pause ends). `now` skips the pause, for a change of mode.
  */
 function loadTitles(now = false): void {
-  if (state.display.detail !== 'title') return
+  if (!needsAgentText(state.display.detail)) return
   clearTimeout(titlesTimer)
   const wait = titlesAt + TITLES_MIN_MS - Date.now()
   if (!now && wait > 0) {
@@ -290,12 +290,12 @@ function loadTitles(now = false): void {
   }
   titlesAt = Date.now()
   const seq = ++titleSeq
-  orca.plugin.request('titles.get').then(
+  orca.plugin.request('agents.text').then(
     (found) => {
       // A newer read has started; this answer may be older than what is on screen.
       if (seq !== titleSeq) return
       titles.clear()
-      for (const [id, title] of Object.entries(found)) titles.set(id, title)
+      for (const [id, text] of Object.entries(found)) titles.set(id, text)
       render()
     },
     () => {
@@ -429,7 +429,7 @@ function showOptions(anchor: HTMLElement): void {
     onDetail: (detail) => {
       const display = { ...state.display, detail }
       setState({ display })
-      if (detail === 'title') loadTitles(true)
+      if (needsAgentText(detail)) loadTitles(true)
       orca.storage.set(DISPLAY_KEY, display).catch(flash)
     }
   })
@@ -646,7 +646,7 @@ orca.on('workspace.removed', reloadSoon)
 orca.on('agent.status.changed', (event) => {
   recordPane(panes, event)
   recordTitle(titles, event)
-  if (state.display.detail === 'title') render()
+  if (needsAgentText(state.display.detail)) render()
   reloadSoon()
 })
 orca.plugin.on('tree.changed', reloadSoon)

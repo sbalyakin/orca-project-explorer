@@ -1,7 +1,7 @@
 // What a row shows after its name. Pure: the choice, its stored form and the text it gives.
-import type { TreeNode } from '../types'
+import type { AgentText, TreeNode } from '../types'
 
-export const DETAIL_MODES = ['none', 'branch', 'title'] as const
+export const DETAIL_MODES = ['none', 'branch', 'title', 'message'] as const
 export type DetailMode = (typeof DETAIL_MODES)[number]
 
 export const DEFAULT_DETAIL: DetailMode = 'branch'
@@ -10,7 +10,8 @@ export const DEFAULT_DETAIL: DetailMode = 'branch'
 export const DETAIL_LABELS: Record<DetailMode, { short: string; full: string }> = {
   none: { short: 'None', full: 'Nothing' },
   branch: { short: 'Branch', full: 'Git branch' },
-  title: { short: 'Title', full: 'Active tab or agent title' }
+  title: { short: 'Title', full: 'Active tab or agent title' },
+  message: { short: 'Message', full: 'Last agent message' }
 }
 
 export type DisplayOptions = { detail: DetailMode }
@@ -23,24 +24,27 @@ export function parseDisplay(stored: unknown): DisplayOptions {
   return { detail: DETAIL_MODES.find((mode) => mode === detail) ?? DEFAULT_DETAIL }
 }
 
-/** The latest title an agent reported, per workspace. */
-export type WorkspaceTitles = Map<string, string>
+/** Whether a mode reads the agents' words, which costs a CLI call. */
+export const needsAgentText = (mode: DetailMode): boolean => mode === 'title' || mode === 'message'
+
+/** What the latest agent of each workspace says. */
+export type WorkspaceTexts = Map<string, AgentText>
 
 /** The parts of an `agent.status.changed` payload this module reads. */
 export type TitleEvent = { workspaceListId?: string; title?: string }
 
-export function recordTitle(titles: WorkspaceTitles, event: TitleEvent): void {
+export function recordTitle(texts: WorkspaceTexts, event: TitleEvent): void {
   const title = event.title?.trim()
-  if (event.workspaceListId && title) titles.set(event.workspaceListId, title)
+  if (event.workspaceListId && title) texts.set(event.workspaceListId, { ...texts.get(event.workspaceListId), title })
 }
 
 /** Forgets workspaces that are no longer in the tree. */
-export function pruneTitles(titles: WorkspaceTitles, present: ReadonlySet<string>): void {
-  for (const id of titles.keys()) if (!present.has(id)) titles.delete(id)
+export function pruneTitles(texts: WorkspaceTexts, present: ReadonlySet<string>): void {
+  for (const id of texts.keys()) if (!present.has(id)) texts.delete(id)
 }
 
 /** The text after a row's name; only a workspace has one. */
-export function detailFor(node: TreeNode, mode: DetailMode, titles: ReadonlyMap<string, string>): string | undefined {
+export function detailFor(node: TreeNode, mode: DetailMode, texts: ReadonlyMap<string, AgentText>): string | undefined {
   if (node.kind !== 'workspace') return undefined
   switch (mode) {
     case 'none':
@@ -48,7 +52,9 @@ export function detailFor(node: TreeNode, mode: DetailMode, titles: ReadonlyMap<
     case 'branch':
       return node.detail
     case 'title':
-      return titles.get(node.workspaceId)
+      return texts.get(node.workspaceId)?.title
+    case 'message':
+      return texts.get(node.workspaceId)?.message
     default: {
       const unreachable: never = mode
       return unreachable

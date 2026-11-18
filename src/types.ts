@@ -89,3 +89,6 @@ export type SidebarLooks = { light: SidebarLook | null; dark: SidebarLook | null
 
 /** One upright face of a plugin's font, as base64 data for a panel `@font-face`. */
 export type FontFace = { weight: string; mime: string; data: string }
+
+/** What a workspace's latest agent says of itself: its title, and its last reply. */
+export type AgentText = { title?: string; message?: string }

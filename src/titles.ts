@@ -3,6 +3,7 @@
 import { execFile } from 'node:child_process'
 import { realpath } from 'node:fs/promises'
 import { childEnv, findCommand } from './catalog/run'
+import type { AgentText } from './types'
 
 /** The parts of an `agents.list` row this module reads. */
 export type AgentRow = { title: string | null; task?: { title: string } | null }
@@ -30,11 +31,18 @@ export async function realPath(path: string): Promise<string> {
   }
 }
 
-/** One agent as the CLI lists it: the workspace folder it works in, its title, and when it last changed. */
-export type CliAgent = { path: string; title: string; updatedAt: number }
+const MESSAGE_MAX = 240
+
+/** A reply as one line: line breaks become spaces and Markdown emphasis marks go; cut at `MESSAGE_MAX`. */
+export function oneLine(message: string): string {
+  return message.replace(/[*`]/g, '').replace(/\s+/g, ' ').trim().slice(0, MESSAGE_MAX)
+}
+
+/** One agent as the CLI lists it: the workspace folder it works in, what it says, and when it last changed. */
+export type CliAgent = AgentText & { path: string; updatedAt: number }
 
 /**
- * The agents of `orca agent list --json` that have a title. The CLI's `worktreeId` is `<repo id>::<path>`, and
+ * The agents of `orca agent list --json` that have a title or a reply. The CLI's `worktreeId` is `<repo id>::<path>`, and
  * the path is what ties a row to a workspace.
  */
 export function parseCliAgents(stdout: string): CliAgent[] {
@@ -50,8 +58,14 @@ export function parseCliAgents(stdout: string): CliAgent[] {
     const id = typeof row.worktreeId === 'string' ? row.worktreeId : ''
     const cut = id.indexOf('::')
     const title = typeof row.title === 'string' ? row.title.trim() : ''
-    if (cut < 0 || !title) continue
-    agents.push({ path: normalizePath(id.slice(cut + 2)), title, updatedAt: typeof row.updatedAt === 'number' ? row.updatedAt : 0 })
+    const message = typeof row.lastAssistantMessage === 'string' ? oneLine(row.lastAssistantMessage) : ''
+    if (cut < 0 || (!title && !message)) continue
+    agents.push({
+      path: normalizePath(id.slice(cut + 2)),
+      ...(title ? { title } : {}),
+      ...(message ? { message } : {}),
+      updatedAt: typeof row.updatedAt === 'number' ? row.updatedAt : 0
+    })
   }
   return agents
 }
@@ -63,21 +77,27 @@ export async function resolveAgentPaths(agents: readonly CliAgent[]): Promise<Cl
   return agents.map((agent) => ({ ...agent, path: resolved.get(agent.path) ?? agent.path }))
 }
 
-/** Per folder path, the title of the agent that changed last. */
-export function latestByPath(agents: readonly CliAgent[]): Map<string, string> {
-  const newest = new Map<string, CliAgent>()
+/** Per folder path, the title of the newest agent that has one and the reply of the newest that has one (they may be two agents). */
+export function latestByPath(agents: readonly CliAgent[]): Map<string, AgentText> {
+  const newest = new Map<string, { title?: CliAgent; message?: CliAgent }>()
   for (const agent of agents) {
-    const known = newest.get(agent.path)
-    if (!known || agent.updatedAt > known.updatedAt) newest.set(agent.path, agent)
+    const known = newest.get(agent.path) ?? {}
+    for (const field of ['title', 'message'] as const) {
+      const best = known[field]
+      if (agent[field] && (!best || agent.updatedAt > best.updatedAt)) known[field] = agent
+    }
+    newest.set(agent.path, known)
   }
-  return new Map([...newest].map(([path, agent]) => [path, agent.title]))
+  return new Map(
+    [...newest].map(([path, { title, message }]) => [path, { ...(title?.title ? { title: title.title } : {}), ...(message?.message ? { message: message.message } : {}) }])
+  )
 }
 
 const APP_CLI = '/Applications/Orca.app/Contents/Resources/bin/orca'
 const TIMEOUT_MS = 15_000
 const MAX_BUFFER = 64 * 1024 * 1024
 
-/** The titled agents the CLI knows; null when the CLI is missing or fails, so the caller can fall back. */
+/** The agents with a title or reply the CLI knows; null when the CLI is missing or fails, so the caller can fall back. */
 export function fetchCliAgents(): Promise<CliAgent[] | null> {
   const cli = findCommand(['orca'], [APP_CLI])
   if (!cli) return Promise.resolve(null)

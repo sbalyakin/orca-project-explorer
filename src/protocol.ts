@@ -1,5 +1,5 @@
 // The panel <-> worker contract, declared once: both sides read it.
-import type { AgentLaunch, FontFace, ModelCatalog, ProjectTree, SidebarLooks } from './types'
+import type { AgentLaunch, AgentText, FontFace, ModelCatalog, ProjectTree, SidebarLooks } from './types'
 
 declare module 'orca' {
   interface PluginRequests {
@@ -20,8 +20,8 @@ declare module 'orca' {
     'models.get': { input: { agent: string; refresh?: boolean }; output: ModelCatalog }
     /** One face of a plugin's font named `Family (plugin.key)`, and how many there are; null when it cannot be found, `face: null` for a file that cannot be sent. */
     'font.face': { input: { alias: string; index: number }; output: { total: number; face: FontFace | null } | null }
-    /** The title of each workspace's agents, by workspace id; a workspace with none is left out. */
-    'titles.get': { output: Record<string, string> }
+    /** The title and last reply of each workspace's latest agent, by workspace id; a workspace with neither is left out. */
+    'agents.text': { output: Record<string, AgentText> }
     /** The left sidebar's colours under the chosen app theme, for both bases. */
     'theme.get': { output: SidebarLooks }
   }

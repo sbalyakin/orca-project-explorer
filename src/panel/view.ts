@@ -1,4 +1,5 @@
 // Draws rows into the tree element. Text only ever goes in through textContent.
+import type { AgentText } from '../types'
 import { detailFor, type DetailMode } from './display'
 import { icon, projectIcon } from './icons'
 import { rowDescription, type Row } from './rows'
@@ -12,9 +13,9 @@ export type ViewState = {
   currentWorkspaceId: string | null
   /** The row whose menu is open, kept marked while the menu covers the tree. */
   menuKey: string | null
-  /** What follows a row's name, and the agent titles it may come from. */
+  /** What follows a row's name, and what the agents say, which it may come from. */
   detailMode: DetailMode
-  titles: ReadonlyMap<string, string>
+  titles: ReadonlyMap<string, AgentText>
 }
 
 function glyphName(row: Row): 'folder' | 'folderOpen' | 'repo' | 'branch' {
