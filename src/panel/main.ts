@@ -4,11 +4,12 @@ import type {} from 'orca/frame'
 import '../protocol'
 import type { ModelCatalog, ProjectTree, SidebarLooks, WorkspaceNode } from '../types'
 import { agentLabel, DEFAULT_AGENTS, parseAgents } from './agents'
-import { agentIcon, icon, type IconName } from './icons'
+import { agentIcon, icon, projectIcon, type IconName } from './icons'
 import { readPluginFontCache, restorePluginFont, syncPluginFont } from './fontload'
 import { buildLauncher, type LauncherChoice } from './launcher'
 import { buildMainMenu, buildRowMenu, closePopover, openPopover, type Popover } from './menu'
-import { allCollapsed, containerKeys, keepLooks, navigate, pathTo, visibleRows, type NavKey, type Row } from './rows'
+import { buildProjectPicker } from './project-picker'
+import { allCollapsed, containerKeys, keepLooks, navigate, pathTo, projectOf, projectsOf, visibleRows, type NavKey, type Row } from './rows'
 import { lookFor, parseLooks } from './sidebar'
 import { CSS } from './style'
 import { shrinkImages } from './thumbs'
@@ -131,23 +132,16 @@ headerTitle.textContent = 'Projects'
 foldButton.classList.add('header-fold')
 const headerActions = document.createElement('div')
 headerActions.className = 'header-actions'
-// No tooltips yet. Settings is a placeholder; `+` opens Orca's own "Create worktree" window.
-for (const [name, label] of [['settings', 'Settings'], ['add', 'Create worktree']] as const) {
+// No tooltips yet. Settings is a placeholder; `+` opens a menu: a new workspace (Orca's own window) or a new tab.
+for (const [name, label] of [['settings', 'Settings'], ['add', 'Create…']] as const) {
   const button = document.createElement('button')
   button.className = 'tool'
   button.type = 'button'
   button.setAttribute('aria-label', label)
   button.appendChild(icon(name))
   if (name === 'add') {
-    // A second press while the shortcut is on its way would send it twice, and Orca's window may close again.
-    let busy = false
-    button.addEventListener('click', () => {
-      if (busy) return
-      busy = true
-      void run(() => orca.plugin.request('worktree.new', {})).finally(() => {
-        busy = false
-      })
-    })
+    button.setAttribute('aria-haspopup', 'menu')
+    button.addEventListener('click', () => showAddMenu(button))
   }
   headerActions.appendChild(button)
 }
@@ -352,13 +346,40 @@ function showRowMenu(node: WorkspaceNode, x: number, y: number): void {
   const popover = openRowMenu(node, x, y, menu)
 }
 
+/** The `+` menu, under its button: a new workspace (Orca's window, which picks the project itself) or a new tab. */
+function showAddMenu(anchor: HTMLElement): void {
+  const box = anchor.getBoundingClientRect()
+  const x = box.left
+  const y = box.bottom + 2
+  const menu = buildRowMenu({
+    labels: { tab: 'Create new tab', workspace: 'Create new workspace' },
+    onNewTab: () => {
+      popover.close()
+      showWorkspaceMenu(null, x, y, true)
+    },
+    onNewWorkspace: () => {
+      popover.close()
+      void run(() => orca.plugin.request('worktree.new', {}))
+    }
+  })
+  const popover = openRowMenu(null, x, y, menu)
+}
+
+/** The project a new tab starts on: the open workspace's, else the selected row's, else none. */
+function defaultProject(): WorkspaceNode | null {
+  const nodes = state.tree?.nodes ?? []
+  const selected = rowFor(state.selectedKey)?.node
+  return projectOf(nodes, state.currentWorkspaceId) ?? (selected?.kind === 'workspace' ? projectOf(nodes, selected.workspaceId) : null)
+}
+
 /**
  * Opens a menu for a row: marks the row as the menu's target and clears the mark on close, unless a newer menu has
- * taken over (so New tab, which closes one menu and opens the next, keeps the row marked). Returns the popover.
+ * taken over (so New tab, which closes one menu and opens the next, keeps the row marked). A menu with no row
+ * (the `+` one) marks nothing. Returns the popover.
  */
-function openRowMenu(node: WorkspaceNode, x: number, y: number, content: HTMLElement, onClose: () => void = () => {}): Popover {
+function openRowMenu(node: WorkspaceNode | null, x: number, y: number, content: HTMLElement, onClose: () => void = () => {}): Popover {
   const menuSeq = ++menuCount
-  setState({ selectedKey: node.key, menuKey: node.key })
+  if (node) setState({ selectedKey: node.key, menuKey: node.key })
   const popover = openPopover(
     {
       x,
@@ -375,28 +396,29 @@ function openRowMenu(node: WorkspaceNode, x: number, y: number, content: HTMLEle
   return popover
 }
 
-/** The right-click menu for a workspace row, opened at a screen point. */
-function showWorkspaceMenu(node: WorkspaceNode, x: number, y: number): void {
-  const { workspaceId } = node
+/**
+ * The menu to start a terminal or an agent, opened at a screen point. A row's menu has its workspace fixed; with
+ * `withProject` (the `+` menu, `node` is then null) a field on top picks the project, whose main workspace is used.
+ */
+function showWorkspaceMenu(node: WorkspaceNode | null, x: number, y: number, withProject = false): void {
+  let target: WorkspaceNode | null = node ?? (withProject ? defaultProject() : null)
+  /** Runs `action` on the target's workspace after closing the menu; nothing while no project is chosen. */
+  const onTarget = (action: (workspaceId: string) => void): void => {
+    if (!target) return
+    popover.close()
+    action(target.workspaceId)
+  }
   let openAgent: string | null = null
   let disposeSetup: (() => void) | null = null
   // A later request replaces an earlier one still reading the saved choice.
   let setupRequest = 0
 
   const menu = buildMainMenu({
+    ...(withProject ? { project: { onPress: (anchor: HTMLElement) => openProjects(anchor) } } : {}),
     agents: state.agents.map((agent) => ({ id: agent, label: agentLabel(agent), glyph: () => agentIcon(agent, agentLabel(agent)) })),
-    onOpen: () => {
-      popover.close()
-      void openWorkspace(workspaceId)
-    },
-    onTerminal: () => {
-      popover.close()
-      void run(() => orca.plugin.request('terminal.launch', { workspaceId }), 'Opening terminal…')
-    },
-    onLaunch: (agent) => {
-      popover.close()
-      void loadLast(agent).then((last) => launchAgent(workspaceId, agent, { prompt: '', ...last }))
-    },
+    onOpen: () => onTarget((workspaceId) => void openWorkspace(workspaceId)),
+    onTerminal: () => onTarget((workspaceId) => void run(() => orca.plugin.request('terminal.launch', { workspaceId }), 'Opening terminal…')),
+    onLaunch: (agent) => onTarget((workspaceId) => void loadLast(agent).then((last) => launchAgent(workspaceId, agent, { prompt: '', ...last }))),
     onSetup: (agent, anchor) => void openSetup(agent, anchor),
     onHover: (agent) => {
       if (agent === undefined || agent !== openAgent) popover.closeFlyout()
@@ -404,6 +426,29 @@ function showWorkspaceMenu(node: WorkspaceNode, x: number, y: number): void {
     hoverOpensSetup: () => !popover.flyoutCovers()
   })
   const popover = openRowMenu(node, x, y, menu.element, () => disposeSetup?.())
+  const showTarget = (): void => menu.setProject(target ? { label: target.label, glyph: projectIcon(target.icon, target.color) } : null)
+  if (withProject) showTarget()
+
+  /** The project list beside the field; picking one retargets the menu. */
+  function openProjects(anchor: HTMLElement): void {
+    // An agent flyout still being prepared must not open over the list.
+    setupRequest++
+    openAgent = null
+    menu.markOpen(null)
+    const projects = projectsOf(state.tree?.nodes ?? [])
+    const picker = buildProjectPicker({
+      projects: projects.map((project) => ({ id: project.workspaceId, label: project.label, glyph: () => projectIcon(project.icon, project.color) })),
+      current: target?.workspaceId ?? null,
+      showBack: popover.flyoutCovers(),
+      onBack: () => popover.closeFlyout(true),
+      onPick: (id) => {
+        target = projects.find((project) => project.workspaceId === id) ?? target
+        showTarget()
+        popover.closeFlyout(true)
+      }
+    })
+    popover.flyout(anchor, picker, () => {})
+  }
 
   async function openSetup(agent: string, anchor: HTMLElement): Promise<void> {
     if (openAgent === agent) return
@@ -424,10 +469,7 @@ function showWorkspaceMenu(node: WorkspaceNode, x: number, y: number): void {
       },
       onBack: () => popover.closeFlyout(true),
       showBack: popover.flyoutCovers(),
-      onLaunch: (choice) => {
-        popover.close()
-        void launchAgent(workspaceId, agent, choice)
-      }
+      onLaunch: (choice) => onTarget((workspaceId) => void launchAgent(workspaceId, agent, choice))
     })
     const { dispose } = launcher
     // Opening one flyout closes the last; its callback must not undo the new one's state.

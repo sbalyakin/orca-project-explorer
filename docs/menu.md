@@ -34,3 +34,11 @@ Menu 288 px + flyout 416 px do not fit side by side in the usual sidebar, so "ov
 ## Icons
 
 `build.py` reads Orca's icon components and bundled PNG favicons and writes `src/panel/agent-icon-data.ts` (11 SVG glyphs, 33 PNG data URIs). It also writes `src/panel/lucide-data.ts`: every Lucide icon the panel draws (chrome icons and Orca's 20 project icons), taken from the `lucide-react` version in Orca's `pnpm-lock.yaml` (0.577.0, checked 2026-11-17) via `npm pack`; an icon that version lacks stops the script. A new chrome icon needs its Lucide name in `PANEL_LUCIDE` (`build.py`) and `PANEL_ICONS` (`src/panel/icons.ts`). Rerun it after updating the Orca checkout; set `ORCA_SRC` for another path. An agent with no icon gets a letter in a box, as in Orca. `currentColor` glyphs (Pi, OpenCode, Codex) follow the theme.
+
+## The `+` menu (2026-11-18)
+
+The header `+` opens a two-item menu (`showAddMenu`, `main.ts`): `Create new workspace` (Orca's own window, which picks the project itself) and `Create new tab`. The second replaces it with the workspace menu plus a project field above the agent search (`buildMainMenu({ project })`, list in `project-picker.ts`).
+
+- The field's project is the open workspace's, else the selected row's, else none. With none, the terminal, open and agent items are off until one is picked.
+- The target is the project's main checkout (`projectsOf` in `rows.ts`); linked worktrees are not listed (user decision). The list is a flyout like the model list, so it follows `placeFlyout` and has the same back arrow when it covers the menu.
+- Checked live 2026-11-18: both menus open, the filter narrows the list, picking a project enables the items. No tab was launched during the check.

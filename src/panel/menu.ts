@@ -126,15 +126,21 @@ export function openPopover(options: { x: number; y: number; onClose: () => void
 }
 
 /** `onNewWorkspace` is absent for a linked worktree, whose menu has New tab only. */
-export type RowMenuOptions = { onNewTab: () => void; onNewWorkspace?: () => void }
+export type RowMenuOptions = {
+  onNewTab: () => void
+  onNewWorkspace?: () => void
+  /** The item texts; the `+` button's menu says "Create new …". */
+  labels?: { tab: string; workspace: string }
+}
 
 /** The menu of a project or worktree row: plain items, laid out like the agent rows of the main menu. */
 export function buildRowMenu(options: RowMenuOptions): HTMLElement {
   const menu = el('div', 'menu')
   menu.setAttribute('role', 'menu')
   const { onNewWorkspace } = options
-  const entries: (readonly ['add' | 'branch', string, () => void])[] = [['add', 'New tab', options.onNewTab]]
-  if (onNewWorkspace) entries.push(['branch', 'New workspace', onNewWorkspace])
+  const labels = options.labels ?? { tab: 'New tab', workspace: 'New workspace' }
+  const entries: (readonly ['add' | 'branch', string, () => void])[] = [['add', labels.tab, options.onNewTab]]
+  if (onNewWorkspace) entries.push(['branch', labels.workspace, onNewWorkspace])
   const items = entries.map(([name, text, onPress]) => {
     const item = el('button', 'menu-item')
     item.type = 'button'
@@ -166,7 +172,12 @@ export function buildRowMenu(options: RowMenuOptions): HTMLElement {
   return menu
 }
 
+/** The project field above the search: shows the project a new tab goes to; pressing it opens the project list. */
+export type ProjectField = { onPress: (anchor: HTMLElement) => void }
+
 export type MainMenuOptions = {
+  /** Absent for a workspace's own menu, whose target is fixed. */
+  project?: ProjectField
   agents: readonly AgentEntry[]
   onOpen: () => void
   onTerminal: () => void
@@ -180,7 +191,12 @@ export type MainMenuOptions = {
   hoverOpensSetup: () => boolean
 }
 
-export type MainMenu = { element: HTMLElement; markOpen: (agent: string | null) => void }
+export type MainMenu = {
+  element: HTMLElement
+  markOpen: (agent: string | null) => void
+  /** Shows the chosen project in the field; `null` means none, and the terminal, open and agent items stay off. */
+  setProject: (project: { label: string; glyph: Element } | null) => void
+}
 
 function el<K extends keyof HTMLElementTagNameMap>(tag: K, className: string): HTMLElementTagNameMap[K] {
   const node = document.createElement(tag)
@@ -202,7 +218,8 @@ export function buildMainMenu(options: MainMenuOptions): MainMenu {
   const menu = el('div', 'menu')
   menu.setAttribute('role', 'menu')
 
-  const omnibox = el('div', 'omnibox')
+  const projectField = options.project ? buildProjectField(options.project) : null
+  const omnibox = el('div', projectField ? 'omnibox after-field' : 'omnibox')
   const search = el('input', 'omnibox-input')
   search.type = 'text'
   search.placeholder = 'Search agents…'
@@ -218,6 +235,7 @@ export function buildMainMenu(options: MainMenuOptions): MainMenu {
   const empty = el('div', 'menu-empty')
   empty.textContent = 'No agents match your search.'
   empty.hidden = true
+  const segments: HTMLButtonElement[] = []
   const rows = options.agents.map((agent) => {
     const row = el('div', 'launch-row')
     row.dataset.agent = agent.id
@@ -233,6 +251,7 @@ export function buildMainMenu(options: MainMenuOptions): MainMenu {
     segment.setAttribute('aria-label', `${agent.label} setup`)
     segment.setAttribute('aria-haspopup', 'menu')
     segment.appendChild(icon('chevron'))
+    segments.push(segment)
     main.addEventListener('click', () => options.onLaunch(agent.id))
     main.addEventListener('pointerenter', () => options.onHover(agent.id))
     segment.addEventListener('click', (event) => {
@@ -254,10 +273,14 @@ export function buildMainMenu(options: MainMenuOptions): MainMenu {
     node.setAttribute('role', 'separator')
     return node
   }
+  if (projectField) menu.append(projectField.element, separator('menu-separator'))
   menu.append(omnibox, separator('menu-separator flush'), iconRow, separator('menu-separator'), list, empty)
 
   const visibleRows = () => rows.filter(({ row }) => !row.hidden)
-  const stops = (): HTMLElement[] => [search, iconButtons[0], ...visibleRows().map(({ main }) => main)]
+  const stops = (): HTMLElement[] =>
+    [...(projectField ? [projectField.button] : []), search, iconButtons[0], ...visibleRows().map(({ main }) => main)].filter(
+      (stop) => !(stop instanceof HTMLButtonElement && stop.disabled)
+    )
 
   search.addEventListener('input', () => {
     const needle = search.value.trim().toLowerCase()
@@ -269,7 +292,7 @@ export function buildMainMenu(options: MainMenuOptions): MainMenu {
     const active = document.activeElement as HTMLElement | null
     const all = stops()
     const inIcons = active instanceof HTMLButtonElement && iconButtons.includes(active)
-    const index = inIcons ? 1 : active ? all.indexOf(active) : -1
+    const index = inIcons ? all.indexOf(iconButtons[0]) : active ? all.indexOf(active) : -1
     const go = (target: HTMLElement | undefined): void => {
       target?.focus()
       event.preventDefault()
@@ -296,6 +319,10 @@ export function buildMainMenu(options: MainMenuOptions): MainMenu {
           options.onSetup(found.agent.id, found.row)
           event.preventDefault()
         }
+        if (projectField && active === projectField.button && event.key === 'ArrowRight') {
+          projectField.press()
+          event.preventDefault()
+        }
         return
       }
       case 'Enter':
@@ -314,6 +341,36 @@ export function buildMainMenu(options: MainMenuOptions): MainMenu {
     element: menu,
     markOpen: (agent) => {
       for (const { agent: entry, row } of rows) row.classList.toggle('open', entry.id === agent)
+    },
+    setProject: (project) => {
+      projectField?.show(project)
+      const off = projectField !== null && project === null
+      menu.classList.toggle('no-project', off)
+      for (const button of [...iconButtons, ...segments, ...rows.map(({ main }) => main)]) button.disabled = off
     }
   }
+}
+
+/** The field's button: the project's mark and name on the left, a chevron on the right. */
+function buildProjectField(field: ProjectField): { element: HTMLElement; button: HTMLButtonElement; press: () => void; show: MainMenu['setProject'] } {
+  // The wrapper is the flyout's anchor: closing the flyout with Escape returns focus to the button inside it.
+  const element = el('div', 'project-field')
+  const button = el('button', 'menu-item')
+  button.type = 'button'
+  button.setAttribute('role', 'menuitem')
+  button.setAttribute('aria-haspopup', 'menu')
+  const mark = el('span', 'project-mark')
+  const label = el('span', 'launch-label')
+  button.append(mark, label, icon('chevron'))
+  const press = (): void => field.onPress(element)
+  button.addEventListener('click', press)
+  element.appendChild(button)
+  const show: MainMenu['setProject'] = (project) => {
+    label.textContent = project?.label ?? 'Select project…'
+    label.classList.toggle('placeholder', project === null)
+    mark.replaceChildren(...(project ? [project.glyph] : []))
+    button.setAttribute('aria-label', `Project: ${label.textContent}`)
+  }
+  show(null)
+  return { element, button, press, show }
 }

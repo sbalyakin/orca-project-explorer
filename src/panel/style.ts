@@ -159,6 +159,12 @@ html.dark .icon-button:hover, html.dark .icon-button:focus-visible { background:
   display: flex; align-items: center; gap: 8px; width: 100%; height: 36px; padding: 0 8px; color: var(--orca-foreground);
   font: inherit; font-weight: 500; text-align: left; background: none; border: 0; border-radius: 7px; outline: none; cursor: pointer;
 }
+.omnibox.after-field { margin-top: 0; }
+.project-mark { display: grid; place-items: center; flex: none; width: 14px; height: 14px; }
+.project-mark > * { max-width: 14px; max-height: 14px; }
+.project-field .menu-item > svg:last-child { margin-left: auto; opacity: .6; }
+.launch-label.placeholder { color: var(--orca-muted-foreground); }
+.menu.no-project .icon-row, .menu.no-project .agent-list { opacity: .4; pointer-events: none; }
 .menu-item:hover, .menu-item:focus-visible { color: var(--orca-accent-foreground); background: var(--orca-accent); }
 .menu-item svg { flex: none; width: 14px; height: 14px; }
 .launch-label { flex: 1; min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }

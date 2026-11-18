@@ -1,6 +1,6 @@
 import { assert, test } from 'orca/testing'
 import type { Attention, TreeNode } from '../types'
-import { allCollapsed, containerKeys, keepLooks, navigate, pathTo, rowDescription, visibleRows } from './rows'
+import { allCollapsed, containerKeys, keepLooks, navigate, pathTo, projectOf, projectsOf, rowDescription, visibleRows } from './rows'
 
 function ws(id: string, label: string, attention: Attention = 'none', children: TreeNode[] = []): TreeNode {
   return { kind: 'workspace', key: `ws:${id}`, workspaceId: id, label, linked: false, attention, children }
@@ -74,4 +74,14 @@ test('arrow keys move, fold and unfold', () => {
   assert.equal(navigate(rows, 'g2', 'right').selectedKey, 'ws:a')
   const folded = visibleRows(tree, new Set(['g2']), '')
   assert.deepEqual(navigate(folded, 'g2', 'right').toggle, { key: 'g2', expanded: true })
+})
+
+test('projects are main checkouts; a worktree belongs to the project above it', () => {
+  const linked: TreeNode = { ...ws('w', 'feature'), linked: true } as TreeNode
+  const nested = [group('g', [ws('p', 'proj', 'none', [linked]), ws('q', 'other')])]
+  assert.deepEqual(projectsOf(nested).map((node) => node.workspaceId), ['p', 'q'])
+  assert.equal(projectOf(nested, 'w')?.workspaceId, 'p')
+  assert.equal(projectOf(nested, 'q')?.workspaceId, 'q')
+  assert.equal(projectOf(nested, 'missing'), null)
+  assert.equal(projectOf(nested, null), null)
 })

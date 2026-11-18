@@ -137,6 +137,26 @@ export function navigate(rows: readonly Row[], selectedKey: string | null, key: 
   }
 }
 
+/** Every project (a main checkout, not a linked worktree), in tree order. */
+export function projectsOf(nodes: readonly TreeNode[]): WorkspaceNode[] {
+  const found: WorkspaceNode[] = []
+  for (const node of nodes) {
+    if (node.kind === 'workspace' && !node.linked) found.push(node)
+    else found.push(...projectsOf(node.children))
+  }
+  return found
+}
+
+/** The project a workspace belongs to: itself when it is a main checkout, else the project above it. */
+export function projectOf(nodes: readonly TreeNode[], workspaceId: string | null): WorkspaceNode | null {
+  if (!workspaceId) return null
+  return projectsOf(nodes).find((project) => project.workspaceId === workspaceId || hasWorkspace(project.children, workspaceId)) ?? null
+}
+
+function hasWorkspace(nodes: readonly TreeNode[], workspaceId: string): boolean {
+  return nodes.some((node) => (node.kind === 'workspace' && node.workspaceId === workspaceId) || hasWorkspace(node.children, workspaceId))
+}
+
 type Look = Pick<WorkspaceNode, 'icon' | 'color'>
 
 /** Gives the workspaces of a tree that came without icons and colours the ones they had in an earlier tree. In place. */
