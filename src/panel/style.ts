@@ -84,7 +84,7 @@ html.dark .row.current {
 .glyph .project-image { width: 15px; height: 15px; border-radius: 4px; object-fit: contain; }
 .glyph .project-emoji { font-size: 13px; line-height: 1; }
 .label { overflow: hidden; text-overflow: ellipsis; flex: 0 1 auto; min-width: 0; }
-.detail { overflow: hidden; text-overflow: ellipsis; flex: 1 1 0; min-width: 0; color: var(--orca-muted-foreground); }
+.detail { overflow: hidden; text-overflow: ellipsis; flex: 1 1 0; min-width: 0; color: color-mix(in srgb, var(--orca-muted-foreground) 65%, transparent); }
 .spacer { flex: 1; }
 .slot { display: grid; place-items: center; flex: none; width: 20px; height: 20px; }
 .slot > * { grid-area: 1 / 1; }
