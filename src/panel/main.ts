@@ -10,6 +10,7 @@ import { buildLauncher, type LauncherChoice } from './launcher'
 import { buildMainMenu, buildRowMenu, closePopover, openPopover, type Popover } from './menu'
 import { buildProjectPicker } from './project-picker'
 import { allCollapsed, containerKeys, keepLooks, navigate, pathTo, projectOf, projectsOf, visibleRows, type NavKey, type Row } from './rows'
+import { applyMonitoring, prunePanes, recordPane, workspaceIds, type PaneStates } from './monitoring'
 import { lookFor, parseLooks } from './sidebar'
 import { CSS } from './style'
 import { shrinkImages } from './thumbs'
@@ -253,11 +254,18 @@ function findKey(workspaceId: string): string | null {
   return state.tree ? walk(state.tree.nodes) : null
 }
 
+/** What the agent events say per pane; Orca's workspace list cannot tell "works" from "waits for background work". */
+const panes: PaneStates = new Map()
+let knownWorkspaceIds = new Set<string>()
 let loadSeq = 0
 async function reload(): Promise<void> {
   const seq = ++loadSeq
   try {
-    const { looksPending, ...tree } = await orca.plugin.request('tree.load')
+    const { looksPending, ...loaded } = await orca.plugin.request('tree.load')
+    const ids = workspaceIds(loaded.nodes)
+    prunePanes(panes, knownWorkspaceIds, ids)
+    knownWorkspaceIds = ids
+    const tree = { ...loaded, nodes: applyMonitoring(loaded.nodes, panes) }
     await shrinkImages(tree.nodes)
     // A newer load has started; this answer may be older than what is on screen.
     if (seq !== loadSeq) return
@@ -572,7 +580,10 @@ orca.on('workspace.changed', ({ context }) => {
 })
 orca.on('workspace.created', reloadSoon)
 orca.on('workspace.removed', reloadSoon)
-orca.on('agent.status.changed', reloadSoon)
+orca.on('agent.status.changed', (event) => {
+  recordPane(panes, event)
+  reloadSoon()
+})
 orca.plugin.on('tree.changed', reloadSoon)
 // Orca sends no event when a project is added, renamed or recoloured (see docs/platform.md), so a look at
 // the panel is the trigger: the pointer entering it, the window regaining focus, or the panel being shown.

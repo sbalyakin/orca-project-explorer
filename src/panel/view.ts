@@ -46,15 +46,25 @@ function renderRow(row: Row, index: number, state: ViewState): HTMLElement {
   const label = document.createElement('span')
   label.className = 'label'
   label.textContent = node.label
-  // The status cell is on every row, empty or not, so icons stay aligned.
-  const status = document.createElement('span')
-  status.className = 'status'
-  if (row.attention !== 'none') {
+  // A workspace row has no chevron, so its status takes the chevron's cell: left of the icon, nothing shifts.
+  // A collapsed group keeps its chevron and shows the rolled-up status at the right edge instead.
+  const statusMark = (): Element => {
+    if (row.attention === 'permission') {
+      const mark = icon('permission')
+      mark.classList.add('permission-mark')
+      return mark
+    }
+    if (row.attention === 'monitoring') {
+      const pulse = icon('monitoring')
+      pulse.classList.add('monitoring-mark')
+      return pulse
+    }
     const dot = document.createElement('span')
     dot.className = `dot ${row.attention}`
-    status.appendChild(dot)
+    return dot
   }
-  el.append(twistie, status, glyph, label)
+  if (row.attention !== 'none' && !row.expandable) twistie.appendChild(statusMark())
+  el.append(twistie, glyph, label)
 
   if (node.kind === 'workspace' && node.detail) {
     const detail = document.createElement('span')
@@ -67,7 +77,15 @@ function renderRow(row: Row, index: number, state: ViewState): HTMLElement {
     el.appendChild(spacer)
   }
 
-  if (node.kind !== 'workspace') return el
+  const rolledUp = row.attention !== 'none' && row.expandable
+  if (node.kind !== 'workspace' && !rolledUp) return el
+  if (rolledUp) {
+    const tail = document.createElement('span')
+    tail.className = 'slot'
+    tail.appendChild(statusMark())
+    el.appendChild(tail)
+    return el
+  }
   const slot = document.createElement('span')
   slot.className = 'slot'
   const more = document.createElement('button')

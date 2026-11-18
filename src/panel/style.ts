@@ -88,15 +88,25 @@ html.dark .row.current {
 .spacer { flex: 1; }
 .slot { display: grid; place-items: center; flex: none; width: 20px; height: 20px; }
 .slot > * { grid-area: 1 / 1; }
-.status { display: grid; place-items: center; flex: none; width: 7px; margin-right: -1px; }
+/* Orca's --agent-question (orange-600, orange-500 in dark; not passed to plugins) on its MessageCircleQuestion glyph. */
+.permission-mark { width: 12px; height: 12px; transform: translateX(2px); color: oklch(64.6% 0.222 41.116); }
+/* Orca's Activity glyph for a monitoring agent, in --agent-working like the spinner. */
+.monitoring-mark { width: 12px; height: 12px; color: oklch(79.5% 0.184 86.047); }
+html.dark .permission-mark { color: oklch(70.5% 0.213 47.604); }
 .dot { width: 7px; height: 7px; border-radius: 50%; }
 /* Orca's --unread (blue-500, blue-400 in dark) is not passed to plugins. */
 .dot.unread { background: oklch(62.3% 0.214 259.815); }
 html.dark .dot.unread { background: oklch(70.7% 0.165 254.624); }
-.dot.permission { background: #d97706; }
-.dot.working { background: var(--orca-primary); animation: pulse 1.2s ease-in-out infinite; }
-@keyframes pulse { 50% { opacity: .25; } }
-@media (prefers-reduced-motion: reduce) { .dot.working { animation: none; } }
+/* Orca's AgentWorkingSpinner (main.css .agent-working-spinner): a ring with a transparent top, turning once a second,
+   in --agent-working (yellow-500, not passed to plugins). Its sidebar size is 8px with a 1.5px border. */
+.dot.working {
+  box-sizing: border-box; width: 10px; height: 10px; background: none;
+  border: 1.5px solid oklch(79.5% 0.184 86.047); border-top-color: transparent;
+  animation: spin 1s linear infinite;
+}
+@keyframes spin { to { transform: rotate(1turn); } }
+/* Frozen, the ring is closed so it still reads as a mark (as Orca does, #9515). */
+@media (prefers-reduced-motion: reduce) { .dot.working { animation: none; border-top-color: oklch(79.5% 0.184 86.047); } }
 .more { width: 20px; height: 20px; visibility: hidden; }
 .row:hover .more, .row.menu-target .more { visibility: visible; }
 .more svg { width: 14px; height: 14px; }

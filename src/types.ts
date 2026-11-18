@@ -1,7 +1,7 @@
 // Data shared by the worker, which builds the tree, and the panel, which draws it.
 
 /** How much a row needs the person; later entries win when a collapsed folder sums its rows. */
-export const ATTENTION_LEVELS = ['none', 'working', 'unread', 'permission'] as const
+export const ATTENTION_LEVELS = ['none', 'monitoring', 'working', 'unread', 'permission'] as const
 export type Attention = (typeof ATTENTION_LEVELS)[number]
 
 /** A folder on the way to a project. */

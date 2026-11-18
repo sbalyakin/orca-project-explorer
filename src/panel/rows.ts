@@ -73,6 +73,8 @@ function attentionWords(attention: Attention): string | null {
   switch (attention) {
     case 'none':
       return null
+    case 'monitoring':
+      return 'Monitoring background tasks'
     case 'working':
       return 'Agent working'
     case 'unread':

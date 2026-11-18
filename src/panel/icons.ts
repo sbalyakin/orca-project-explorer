@@ -23,7 +23,9 @@ const PANEL_ICONS = {
   enter: 'CornerDownLeft',
   close: 'X',
   settings: 'SlidersHorizontal',
-  add: 'Plus'
+  add: 'Plus',
+  permission: 'MessageCircleQuestion',
+  monitoring: 'Activity'
 } as const
 
 export type IconName = keyof typeof PANEL_ICONS
