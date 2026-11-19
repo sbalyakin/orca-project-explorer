@@ -129,6 +129,8 @@ export function openPopover(options: { x: number; y: number; onClose: () => void
 export type RowMenuOptions = {
   onNewTab: () => void
   onNewWorkspace?: () => void
+  /** Present for a row whose name the plugin can show and change (a linked worktree): adds `Edit Details…` below a separator. */
+  onEdit?: () => void
   /** The item texts; the `+` button's menu says "Create new …". */
   labels?: { tab: string; workspace: string }
 }
@@ -139,8 +141,9 @@ export function buildRowMenu(options: RowMenuOptions): HTMLElement {
   menu.setAttribute('role', 'menu')
   const { onNewWorkspace } = options
   const labels = options.labels ?? { tab: 'New tab', workspace: 'New workspace' }
-  const entries: (readonly ['add' | 'branch', string, () => void])[] = [['add', labels.tab, options.onNewTab]]
+  const entries: (readonly ['add' | 'branch' | 'edit', string, () => void])[] = [['add', labels.tab, options.onNewTab]]
   if (onNewWorkspace) entries.push(['branch', labels.workspace, onNewWorkspace])
+  if (options.onEdit) entries.push(['edit', 'Edit Details…', options.onEdit])
   const items = entries.map(([name, text, onPress]) => {
     const item = el('button', 'menu-item')
     item.type = 'button'
@@ -152,7 +155,11 @@ export function buildRowMenu(options: RowMenuOptions): HTMLElement {
     return item
   })
   items[0].dataset.autofocus = ''
-  menu.append(...items)
+  if (options.onEdit) {
+    const separator = el('div', 'menu-separator')
+    separator.setAttribute('role', 'separator')
+    menu.append(...items.slice(0, -1), separator, items[items.length - 1])
+  } else menu.append(...items)
   menu.addEventListener('keydown', (event) => {
     const at = items.findIndex((item) => item === document.activeElement)
     const go = (target: HTMLElement | undefined): void => {
@@ -170,6 +177,47 @@ export function buildRowMenu(options: RowMenuOptions): HTMLElement {
     }
   })
   return menu
+}
+
+export type EditFormOptions = {
+  name: string
+  /** Called with the trimmed name when it is not blank. */
+  onSave: (name: string) => void
+}
+
+/** The body of `Edit Details…`: one field for the workspace's name; Enter saves, Escape and Tab (the popover's) cancel. */
+export function buildEditForm(options: EditFormOptions): HTMLElement {
+  const form = el('form', 'edit-form')
+  const title = el('div', 'options-title')
+  title.textContent = 'Edit details'
+  const label = el('label', 'edit-label')
+  label.textContent = 'Name'
+  const input = el('input', 'edit-input')
+  input.type = 'text'
+  input.value = options.name
+  input.maxLength = 200
+  input.dataset.autofocus = ''
+  label.appendChild(input)
+  const save = el('button', 'btn primary edit-save')
+  save.type = 'submit'
+  save.textContent = 'Save'
+  const sync = (): void => {
+    save.disabled = input.value.trim() === ''
+  }
+  input.addEventListener('input', sync)
+  sync()
+  form.addEventListener('submit', (event) => {
+    event.preventDefault()
+    const name = input.value.trim()
+    if (name !== '') options.onSave(name)
+  })
+  form.addEventListener('keydown', (event) => {
+    if (event.key === 'Tab') closePopover()
+  })
+  form.append(title, label, save)
+  // Select the old name so typing replaces it.
+  queueMicrotask(() => input.select())
+  return form
 }
 
 /** The project field above the search: shows the project a new tab goes to; pressing it opens the project list. */

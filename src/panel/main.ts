@@ -8,11 +8,11 @@ import { agentLabel, DEFAULT_AGENTS, parseAgents } from './agents'
 import { agentIcon, icon, projectIcon, type IconName } from './icons'
 import { readPluginFontCache, restorePluginFont, syncPluginFont } from './fontload'
 import { buildLauncher, type LauncherChoice } from './launcher'
-import { buildMainMenu, buildRowMenu, closePopover, openPopover, type Popover } from './menu'
+import { buildEditForm, buildMainMenu, buildRowMenu, closePopover, openPopover, type Popover } from './menu'
 import { buildOptionsMenu } from './options-menu'
 import { buildProjectPicker } from './project-picker'
 import { groupTree } from './grouping'
-import { allCollapsed, containerKeys, keepLooks, navigate, pathTo, projectOf, projectsOf, visibleRows, type NavKey, type Row } from './rows'
+import { allCollapsed, canRename, containerKeys, keepLooks, navigate, pathTo, projectOf, projectsOf, visibleRows, type NavKey, type Row } from './rows'
 import { applyMonitoring, prunePanes, recordPane, workspaceIds, type PaneStates } from './monitoring'
 import { lookFor, parseLooks } from './sidebar'
 import { CSS } from './style'
@@ -409,6 +409,14 @@ function showRowMenu(node: WorkspaceNode, x: number, y: number): void {
       popover.close()
       showWorkspaceMenu(node, x, y)
     },
+    ...(canRename(node)
+      ? {
+          onEdit: () => {
+            popover.close()
+            showEditDetails(node, x, y)
+          }
+        }
+      : {}),
     ...(node.linked
       ? {}
       : {
@@ -419,6 +427,19 @@ function showRowMenu(node: WorkspaceNode, x: number, y: number): void {
         })
   })
   const popover = openRowMenu(node, x, y, menu)
+}
+
+/** `Edit Details…`: a name field in place of the row menu; saving renames the workspace and reloads the tree. */
+function showEditDetails(node: WorkspaceNode, x: number, y: number): void {
+  const form = buildEditForm({
+    name: node.label,
+    onSave: (name) => {
+      popover.close()
+      if (name === node.label) return
+      void run(() => orca.plugin.request('workspace.rename', { workspaceId: node.workspaceId, name }), 'Renaming…').then(reloadSoon)
+    }
+  })
+  const popover = openRowMenu(node, x, y, form)
 }
 
 /** The `+` menu, under its button: a new workspace (Orca's window, which picks the project itself) or a new tab. */

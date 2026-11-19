@@ -26,6 +26,7 @@ const PANEL_ICONS = {
   close: 'X',
   settings: 'SlidersHorizontal',
   add: 'Plus',
+  edit: 'Pencil',
   permission: 'MessageCircleQuestion',
   monitoring: 'Activity'
 } as const

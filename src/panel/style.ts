@@ -214,6 +214,15 @@ html.dark .icon-button:hover, html.dark .icon-button:focus-visible { background:
 .segment:focus-visible { position: relative; z-index: 1; border-color: var(--orca-ring); box-shadow: 0 0 0 3px color-mix(in srgb, var(--orca-ring) 50%, transparent); }
 .segment.on, .segment.on:hover { font-weight: 600; color: var(--orca-foreground); background: color-mix(in srgb, var(--orca-foreground) 10%, transparent); }
 .menu-empty { padding: 5px 10px; opacity: .4; }
+.edit-form { display: flex; flex-direction: column; gap: 8px; padding: 0 2px 2px; }
+.edit-label { display: flex; flex-direction: column; gap: 4px; padding: 0 6px; color: var(--orca-muted-foreground); font-size: 11px; font-weight: 600; }
+.edit-input {
+  height: 32px; padding: 0 8px; color: var(--orca-foreground); font: inherit; font-size: 13px; font-weight: 400; user-select: text;
+  background: transparent; border: 1px solid var(--orca-input); border-radius: 7px; outline: none;
+}
+.edit-input:focus-visible { border-color: var(--orca-ring); box-shadow: 0 0 0 3px color-mix(in srgb, var(--orca-ring) 50%, transparent); }
+.edit-save { align-self: flex-end; margin: 0 6px 4px; }
+.edit-save:disabled { opacity: .5; pointer-events: none; }
 .setup { display: flex; flex-direction: column; width: 100%; min-height: 0; }
 .cmd-input { display: flex; align-items: center; flex: none; height: 40px; padding: 0 10px; border-bottom: 1px solid var(--orca-border); }
 .cmd-input svg { flex: none; width: 14px; height: 14px; margin-right: 8px; opacity: .5; }

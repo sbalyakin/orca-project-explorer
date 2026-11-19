@@ -1,6 +1,6 @@
 import { assert, test } from 'orca/testing'
-import type { Attention, TreeNode } from '../types'
-import { allCollapsed, containerKeys, keepLooks, navigate, pathTo, projectOf, projectsOf, rowDescription, visibleRows } from './rows'
+import type { Attention, TreeNode, WorkspaceNode } from '../types'
+import { allCollapsed, canRename, containerKeys, keepLooks, navigate, pathTo, projectOf, projectsOf, rowDescription, visibleRows } from './rows'
 
 function ws(id: string, label: string, attention: Attention = 'none', children: TreeNode[] = []): TreeNode {
   return { kind: 'workspace', key: `ws:${id}`, workspaceId: id, label, linked: false, attention, children }
@@ -84,4 +84,13 @@ test('projects are main checkouts; a worktree belongs to the project above it', 
   assert.equal(projectOf(nested, 'q')?.workspaceId, 'q')
   assert.equal(projectOf(nested, 'missing'), null)
   assert.equal(projectOf(nested, null), null)
+})
+
+test('only a linked worktree row can be renamed', () => {
+  const project = { ...(ws('p', 'project') as WorkspaceNode) }
+  const primary = { ...project, primary: true as const, linked: true }
+  const linked = { ...project, linked: true }
+  assert.equal(canRename(project), false)
+  assert.equal(canRename(primary), false)
+  assert.equal(canRename(linked), true)
 })

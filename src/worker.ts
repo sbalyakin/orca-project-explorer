@@ -72,6 +72,12 @@ export default function activate(orca: OrcaWorkerApi): void {
     return { opened: true as const }
   })
 
+  orca.panels.handle('workspace.rename', async ({ workspaceId, name }) => {
+    const trimmed = typeof name === 'string' ? name.trim() : ''
+    if (trimmed.length === 0) throw invalidParams('name is required')
+    return orca.host.call('workspace.rename', { workspaceId: requireId(workspaceId, 'workspaceId'), name: trimmed })
+  })
+
   orca.panels.handle('terminal.launch', async ({ workspaceId }) => {
     const id = requireId(workspaceId, 'workspaceId')
     const { terminalId } = await orca.host.call('terminal.create', { workspaceId: id })

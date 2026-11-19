@@ -7,6 +7,8 @@ declare module 'orca' {
     'tree.load': { output: ProjectTree }
     /** Shows a workspace, as clicking it in Orca's own sidebar does. */
     'workspace.open': { input: { workspaceId: string }; output: { opened: true } }
+    /** Renames a workspace in Orca's sidebar; the answer is the name Orca kept. */
+    'workspace.rename': { input: { workspaceId: string; name: string }; output: { name: string } }
     /** Opens a terminal in a workspace and brings it to the front. */
     'terminal.launch': { input: { workspaceId: string }; output: { terminalId: string } }
     /** Starts an agent in a workspace, with a model, effort and prompt, as a chat or a terminal. */

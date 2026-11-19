@@ -144,6 +144,14 @@ export function navigate(rows: readonly Row[], selectedKey: string | null, key: 
   }
 }
 
+/**
+ * Whether a workspace row offers `Edit Details…`. A rename shows only on a row that draws the workspace's own name:
+ * a project row and the `primary` child draw the project's name instead.
+ */
+export function canRename(node: WorkspaceNode): boolean {
+  return node.linked && !node.primary
+}
+
 /** Every project (a main checkout, not a linked worktree), in tree order. */
 export function projectsOf(nodes: readonly TreeNode[]): WorkspaceNode[] {
   const found: WorkspaceNode[] = []

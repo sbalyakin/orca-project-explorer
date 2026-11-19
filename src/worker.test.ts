@@ -38,6 +38,16 @@ test('a terminal starts in the workspace and is brought to the front', async () 
   await worker.deactivate()
 })
 
+test('a rename passes the trimmed name to the host and refuses a blank one', async () => {
+  const h = mockHost({ capabilities: ['workspace:write'], results: { 'workspace.rename': { name: 'docs' } } })
+  const worker = await mountWorker(main, { host: h })
+  assert.deepEqual(await worker.request('workspace.rename', { workspaceId: 'w1', name: '  docs ' }), { name: 'docs' })
+  assert.deepEqual(h.callsOf('workspace.rename'), [{ workspaceId: 'w1', name: 'docs' }])
+  await assert.rejects(() => worker.request('workspace.rename', { workspaceId: 'w1', name: '   ' }))
+  await assert.rejects(() => worker.request('workspace.rename', { workspaceId: '', name: 'docs' }))
+  await worker.deactivate()
+})
+
 test('models of an agent that cannot list them come back empty and unsupported', async () => {
   const worker = await mountWorker(main, { host: host() })
   const catalog = await worker.request('models.get', { agent: 'gemini' })

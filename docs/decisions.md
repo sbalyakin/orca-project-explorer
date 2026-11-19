@@ -27,5 +27,7 @@
 - Right-click or `…` on a project (a main checkout, `linked: false`) shows two items, New tab and New workspace. A folder row has no menu.
   - A linked worktree row shows New tab only (user request, 2026-11-17). New tab opens the workspace menu for it (checked live by the user, 2026-11-18).
   - New tab on a project replaces the project menu with the workspace menu of the main checkout (same point). New workspace shows that checkout (`workspace.open`) and then sends Orca's create-worktree shortcut (see `platform.md`).
+  - `Edit Details…` (2026-11-18, user request): on a linked worktree row (not the `primary` child), below a separator. A name field that calls `workspace.rename` (max 200 characters, one line, see `host-api.md`) and reloads the tree. Not checked on the live panel.
+  - Only the name: Orca's own dialog also edits comment and links, which exist only in the CLI (`orca worktree set`); not added. Project rows and the primary child draw the project's name, not the workspace's, so a rename would not show there and they get no item.
 - Orca's window starts on the shown project (checked by the user, 2026-11-17), so the `workspace.open` step is how the project is passed in; there is no API for it.
 - Accepted: the worker sends the shortcut right after `workspace.open` without waiting for Orca to switch. A race (window on the previous project) was not seen; add a short wait or a poll of the active workspace only if it shows up, e.g. on a cold start. If the shortcut step fails, the switch to the project's workspace stays; the panel shows the error.
