@@ -1,0 +1,24 @@
+# Tree rows and Display options
+
+How rows are drawn and what must be checked when the tree or a row changes. The gear window's settings are in `display-options.md`. Moved here from `menu.md` and `decisions.md` on 2026-11-19; facts keep their dates. Nothing here is checked on the live panel unless it says so.
+
+## Before you change it
+
+- A new setting in the gear window: see `display-options.md`.
+- A new kind of tree node, or a node drawn differently (the status sections were the last): walk every reader of the tree: `filterNodes`, `allCollapsed`, `containerKeys`, `pathTo`, `visibleRows`, `rowDescription` in `rows.ts`, `shownNodes` in `main.ts`. A section's title must not match the filter; folded state is a key in `collapsed`. Any code that looks up or opens a workspace by id tests `isOpenable(node)` (`types.ts`).
+- Row arithmetic (indent, guides, status mark) lives in `src/panel/layout.ts` with a node test. Change a number there, never in `view.ts`.
+- Do not hard-code a row height: it is `--row-height` (see `display-options.md`, `Density`).
+- Checking by eye: `orca plugin shot local.project-tree --width 520` draws the live panel with the user's saved settings, and you must not change them for a test. So `Both`, `Arrows`, `Icons`, guides and density cannot be seen that way; cover the arithmetic with `layout.test.ts` and say in the report that the look was not checked.
+
+## Rows and states
+
+- Hover and the open workspace (`current`) must look different (2026-11-17). `current` copies Orca's active card (`main.css`, `data-worktree-card-active='primary'`): 1px border in the theme's `--worktree-sidebar-active-border`, wash `--worktree-sidebar-active`, `rounded-lg`, 4px side margin on every row (`GUTTER` in `layout.ts` is 8 so the card has room for its border).
+- The keyboard cursor outline was dropped at the user's request: a click already opens or folds, so a second marker meant nothing. `selected` stays as state for arrows and Enter, with no visible style, so arrow keys move unseen. The dot and `…` share one slot, so hover moves nothing.
+- Every state change rebuilds all rows (`render` in `main.ts`). An in-place update of row marks (selection, menu target, open workspace) was built and dropped (2026-11-17): a full rebuild of 28 rows measured 0.7-1.7 ms against about 0 ms for the marks, and no flicker, lost tooltip or lost hover was found. Revisit only with a visible problem or a tree of hundreds of rows. If it comes back, `reveal` must pass `collapsed` to `setState` only when its size changed, or every workspace change rebuilds anyway.
+- Errors under the tree stay until dismissed or the next action (were 5 s); a failed reload is cleared by the next good one.
+- Projects with worktrees (2026-11-18, user request): a project that has worktrees besides its main checkout is a folding row with no arrow in any `Folders` mode; a click only folds. Its first child is the main checkout: home icon, project name, text per `After project name`. A project without other worktrees stays one row that opens its workspace.
+- Their menus: New tab and New workspace stay on the project row; the primary child and linked worktrees get New tab only.
+- Their status: the rolled-up status of a folded folder or project is drawn at the left like a workspace's own (user request 2026-11-18, replacing the right edge); the open workspace's highlight stays on the real row. Cached tree key is `tree:v2` for this shape.
+- A folded project also shows a muted chevron (`.worktrees-mark`) right after its name to say worktrees are inside: down when open, right when folded (user request 2026-11-18; `ListChevrons…` and `ListCollapse` were tried and dropped). Its `Open in…` button is there like on any workspace row.
+- A workspace or project row never has an arrow cell, whatever `Folders` says (user request 2026-11-18). Its own status is drawn in the indent left of the icon (`.status`, absolutely placed, so no text moves; at depth 0 the indent is only 8 px). The numbers are a guess at what looks right, checked on the user's screenshots only.
+- Checked 2026-11-18 with `orca plugin shot` at `--width 520`: the status mark clears the icon at depth 1 and 2, and the chevron after a project's name points down open and right folded. A workspace never sits at depth 0, since `folderPath` always gives at least one folder.

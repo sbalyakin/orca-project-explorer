@@ -1,5 +1,5 @@
 // The "Display options" window under the gear: drawn like Orca's "Workspace options" popover.
-import { DENSITY_LABELS, DENSITY_MODES, DETAIL_LABELS, DETAIL_MODES, FOLDER_MARKS, FOLDER_MARK_LABELS, GROUP_LABELS, GROUP_MODES, GUIDE_LABELS, GUIDE_MODES, type DensityMode, type DetailMode, type FolderMark, type GroupMode, type GuideMode } from './display'
+import { DENSITY_LABELS, DENSITY_MODES, DETAIL_LABELS, DETAIL_MODES, FOLDER_MARKS, FOLDER_MARK_LABELS, GROUP_LABELS, GROUP_MODES, GUIDE_LABELS, GUIDE_MODES, SETTING_TITLES, type DensityMode, type DetailMode, type FolderMark, type GroupMode, type GuideMode } from './display'
 import { closePopover } from './menu'
 import { setTip } from './tooltip'
 
@@ -87,18 +87,18 @@ export function buildOptionsMenu(options: OptionsMenuOptions): HTMLElement {
   const folderOptions = el('div', 'options-folder')
   folderOptions.hidden = options.group !== 'folder'
   folderOptions.append(
-    ...segmented('Folders', FOLDER_MARKS, FOLDER_MARK_LABELS, options.folders, options.onFolders),
-    ...segmented('Tree guides', GUIDE_MODES, GUIDE_LABELS, options.guides, options.onGuides)
+    ...segmented(SETTING_TITLES.folders, FOLDER_MARKS, FOLDER_MARK_LABELS, options.folders, options.onFolders),
+    ...segmented(SETTING_TITLES.guides, GUIDE_MODES, GUIDE_LABELS, options.guides, options.onGuides)
   )
   root.append(
     title,
-    ...segmented('Group by', GROUP_MODES, GROUP_LABELS, options.group, (mode) => {
+    ...segmented(SETTING_TITLES.group, GROUP_MODES, GROUP_LABELS, options.group, (mode) => {
       folderOptions.hidden = mode !== 'folder'
       options.onGroup(mode)
     }),
-    ...segmented('After project name', DETAIL_MODES, DETAIL_LABELS, options.detail, options.onDetail),
+    ...segmented(SETTING_TITLES.detail, DETAIL_MODES, DETAIL_LABELS, options.detail, options.onDetail),
     folderOptions,
-    ...segmented('Density', DENSITY_MODES, DENSITY_LABELS, options.density, options.onDensity)
+    ...segmented(SETTING_TITLES.density, DENSITY_MODES, DENSITY_LABELS, options.density, options.onDensity)
   )
   root.addEventListener('keydown', (event) => {
     if (event.key === 'Tab') closePopover()

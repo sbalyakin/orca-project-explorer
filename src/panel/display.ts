@@ -61,6 +61,15 @@ export const GROUP_LABELS: Record<GroupMode, { short: string; full: string }> = 
 
 export type DisplayOptions = { group: GroupMode; detail: DetailMode; folders: FolderMark; guides: GuideMode; density: DensityMode }
 
+/** The title of each setting in the Display options window; `docs/display-options.md` must describe every one (see `docs.test.ts`). */
+export const SETTING_TITLES: Record<keyof DisplayOptions, string> = {
+  group: 'Group by',
+  detail: 'After project name',
+  folders: 'Folders',
+  guides: 'Tree guides',
+  density: 'Density'
+}
+
 export const DEFAULT_DISPLAY: DisplayOptions = {
   group: DEFAULT_GROUP,
   detail: DEFAULT_DETAIL,
