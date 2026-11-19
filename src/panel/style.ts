@@ -183,18 +183,20 @@ html.dark .icon-button:hover, html.dark .icon-button:focus-visible { background:
 }
 .launch-row:hover .launch-main, .launch-row:focus-within .launch-main, .launch-row.open .launch-main { color: var(--orca-accent-foreground); }
 .launch-main .agent-icon { width: 14px; height: 14px; }
+/* Mirrors Orca's menuItemVariants (ui/menu-item.ts): 26px row (py-[5px] px-2.5), rounded-md, 13px/16px normal, 15px muted icon, black/8 (white/14 dark) hover. */
 .menu-item {
-  display: flex; align-items: center; gap: 8px; width: 100%; height: 36px; padding: 0 8px; color: var(--orca-foreground);
-  font: inherit; font-weight: 500; text-align: left; background: none; border: 0; border-radius: 7px; outline: none; cursor: pointer;
+  display: flex; align-items: center; gap: 8px; width: 100%; padding: 5px 10px; color: var(--orca-foreground);
+  font: inherit; font-weight: 400; text-align: left; background: none; border: 0; border-radius: 6px; outline: none; cursor: default;
 }
 .omnibox.after-field { margin-top: 0; }
-.project-mark { display: grid; place-items: center; flex: none; width: 14px; height: 14px; }
-.project-mark > * { max-width: 14px; max-height: 14px; }
-.project-field .menu-item > svg:last-child { margin-left: auto; opacity: .6; }
+.project-mark { display: grid; place-items: center; flex: none; width: 15px; height: 15px; }
+.project-mark > * { max-width: 15px; max-height: 15px; }
+.project-field .menu-item > svg:last-child { margin-left: auto; width: 14px; height: 14px; color: currentColor; opacity: .7; }
 .launch-label.placeholder { color: var(--orca-muted-foreground); }
 .menu.no-project .icon-row, .menu.no-project .agent-list { opacity: .4; pointer-events: none; }
-.menu-item:hover, .menu-item:focus-visible { color: var(--orca-accent-foreground); background: var(--orca-accent); }
-.menu-item svg { flex: none; width: 14px; height: 14px; }
+.menu-item:hover, .menu-item:focus-visible { background: rgb(0 0 0 / .08); }
+html.dark .menu-item:hover, html.dark .menu-item:focus-visible { background: rgb(255 255 255 / .14); }
+.menu-item svg { flex: none; width: 15px; height: 15px; color: var(--orca-muted-foreground); }
 .launch-label { flex: 1; min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
 .launch-segment {
   display: grid; place-items: center; flex: none; align-self: stretch; width: 36px; min-height: 24px; padding: 0; color: inherit;
