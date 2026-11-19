@@ -53,7 +53,7 @@ body {
 .tree[data-density="spacious"] { --row-height: 32px; }
 .message { padding: 16px 12px; color: var(--orca-muted-foreground); }
 .message.error { color: var(--orca-destructive); }
-/* Rows are cards as in Orca's sidebar: 4px side margin, rounded-lg. The view's GUTTER and this padding allow for the margin. */
+/* Rows are cards as in Orca's sidebar: 4px side margin, rounded-lg. GUTTER in layout.ts and this padding allow for the margin. */
 .row {
   position: relative; display: flex; align-items: center; gap: 4px; height: var(--row-height); margin: 0 4px; padding-right: 4px;
   border-radius: 8px; cursor: pointer; white-space: nowrap;

@@ -2,12 +2,9 @@
 import { isOpenable, isProjectFolder, type AgentText } from '../types'
 import { detailFor, type DetailMode, type FolderMark, type GuideMode } from './display'
 import { icon, projectIcon } from './icons'
+import { rowLayout } from './layout'
 import { rowDescription, type Row } from './rows'
 import { setTip } from './tooltip'
-
-const INDENT = 20 // per level, for folders and projects alike
-const STATUS_GAP = 4 // between the status mark's cell and the row's first mark
-const GUTTER = 8 // the row's own 4px margin makes up the rest, so the open workspace's card has room for its border
 
 export type ViewState = {
   selectedKey: string | null
@@ -43,14 +40,14 @@ function renderRow(row: Row, index: number, state: ViewState): HTMLElement {
   if (node.key === state.menuKey) el.classList.add('menu-target')
   if (row.attention === 'unread') el.classList.add('unread')
   if (isOpenable(node) && node.workspaceId === state.currentWorkspaceId) el.classList.add('current')
-  const pad = GUTTER + row.depth * INDENT
-  el.style.paddingLeft = `${pad}px`
+  const layout = rowLayout(row.depth)
+  el.style.paddingLeft = `${layout.pad}px`
   if (state.guides !== 'none') {
     // One line per ancestor level, centred under that ancestor's first mark; rows touch, so the lines join up.
-    for (let level = 0; level < row.depth; level++) {
+    for (const left of layout.guides) {
       const guide = document.createElement('span')
       guide.className = `guide ${state.guides}`
-      guide.style.left = `${GUTTER + level * INDENT + 8}px`
+      guide.style.left = `${left}px`
       el.appendChild(guide)
     }
   }
@@ -102,13 +99,10 @@ function renderRow(row: Row, index: number, state: ViewState): HTMLElement {
   // The status (a workspace's own, or what a folded row sums up) sits in the indent left of the row's first mark,
   // out of the layout, so no row's text moves for it.
   if (row.attention !== 'none') {
-    const width = Math.min(12, pad)
     const status = document.createElement('span')
     status.className = 'status'
-    // Nested rows centre the mark on the parent's guide line (its 1px line centre is at pad - INDENT + 8.5).
-    const left = row.depth > 0 ? pad - INDENT + 8.5 - width / 2 : pad - width - STATUS_GAP
-    status.style.left = `${Math.max(0, left)}px`
-    status.style.width = `${width}px`
+    status.style.left = `${layout.status.left}px`
+    status.style.width = `${layout.status.width}px`
     status.appendChild(statusMark())
     el.appendChild(status)
   }
