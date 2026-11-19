@@ -27,7 +27,7 @@ The header gear opens a popover titled `Display options` (`src/panel/options-men
 - `Folders` and `Tree guides` show only for `Folder`; guides are also forced off in the other modes.
 - Board status (`todo`, `in-review`) is not used (see `host-data.md`, `Agent status`).
 
-### `After project name`
+### `Details`
 
 Segments `None`, `Branch` (default), `Title`, `Message`. Text for a workspace row only.
 
@@ -60,6 +60,6 @@ Segments `None`, `Branch` (default), `Title`, `Message`. Text for a workspace ro
 
 `compact` / `comfort` / `spacious` set the row height through `--row-height` on `.tree[data-density]` in `src/panel/style.ts`: 24 / 28 / 32 px (2026-11-18). The old fixed 24 px is `compact`; the default is `comfort` (28 px).
 
-### `Time`
+### `Show time`
 
-`show` (default) / `hide` (`TimeMode`, 2026-11-19, user request): the age at the right of a workspace row (`now`, `5m`, `1d`; see `tree.md`). `hide` draws no `.age`, so the `…` slot is back in the row's flow. Not checked on the live panel.
+`show` (default) / `hide` (`TimeMode`, 2026-11-19, user request): drawn as a switch row (`role="switch"`, like Orca's Filters) rather than segments. Toggles the age at the right of a workspace row (`now`, `5m`, `1d`; see `tree.md`). `hide` draws no `.age`, so the `…` slot is back in the row's flow. Not checked on the live panel.

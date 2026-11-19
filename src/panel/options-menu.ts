@@ -1,5 +1,6 @@
 // The "Display options" window under the gear: drawn like Orca's "Workspace options" popover.
-import { DENSITY_LABELS, DENSITY_MODES, DETAIL_LABELS, DETAIL_MODES, FOLDER_MARKS, FOLDER_MARK_LABELS, GROUP_LABELS, GROUP_MODES, GUIDE_LABELS, GUIDE_MODES, SETTING_TITLES, TIME_LABELS, TIME_MODES, type DensityMode, type DetailMode, type FolderMark, type GroupMode, type GuideMode, type TimeMode } from './display'
+import { DENSITY_LABELS, DENSITY_MODES, DETAIL_LABELS, DETAIL_MODES, FOLDER_MARKS, FOLDER_MARK_LABELS, GROUP_LABELS, GROUP_MODES, GUIDE_LABELS, GUIDE_MODES, SETTING_TITLES, type DensityMode, type DetailMode, type FolderMark, type GroupMode, type GuideMode, type TimeMode } from './display'
+import { icon, type IconName } from './icons'
 import { closePopover } from './menu'
 import { setTip } from './tooltip'
 
@@ -79,6 +80,35 @@ function segmented<T extends string>(title: string, values: readonly T[], labels
   return [section, group]
 }
 
+/** One switch row, as Orca's Filters in "Workspace options": icon and label on the left, pill toggle on the right. */
+function toggleRow(title: string, glyph: IconName, checked: boolean, onToggle: (next: boolean) => void): HTMLElement {
+  let on = checked
+  const button = el('button', 'options-toggle')
+  button.type = 'button'
+  button.setAttribute('role', 'switch')
+  const main = el('span', 'options-toggle-main')
+  const mark = el('span', 'options-toggle-icon')
+  mark.appendChild(icon(glyph))
+  const label = el('span', 'options-toggle-label')
+  label.textContent = title
+  main.append(mark, label)
+  const track = el('span', 'switch')
+  track.setAttribute('aria-hidden', 'true')
+  track.appendChild(el('span', 'switch-thumb'))
+  button.append(main, track)
+  const sync = (): void => {
+    button.setAttribute('aria-checked', String(on))
+    button.classList.toggle('on', on)
+  }
+  sync()
+  button.addEventListener('click', () => {
+    on = !on
+    sync()
+    onToggle(on)
+  })
+  return button
+}
+
 export function buildOptionsMenu(options: OptionsMenuOptions): HTMLElement {
   const root = el('div', 'menu options')
   root.setAttribute('role', 'dialog')
@@ -92,15 +122,18 @@ export function buildOptionsMenu(options: OptionsMenuOptions): HTMLElement {
     ...segmented(SETTING_TITLES.folders, FOLDER_MARKS, FOLDER_MARK_LABELS, options.folders, options.onFolders),
     ...segmented(SETTING_TITLES.guides, GUIDE_MODES, GUIDE_LABELS, options.guides, options.onGuides)
   )
+  const separator = el('div', 'menu-separator')
+  separator.setAttribute('role', 'separator')
   root.append(
     title,
     ...segmented(SETTING_TITLES.density, DENSITY_MODES, DENSITY_LABELS, options.density, options.onDensity),
+    ...segmented(SETTING_TITLES.detail, DETAIL_MODES, DETAIL_LABELS, options.detail, options.onDetail),
+    toggleRow(SETTING_TITLES.time, 'clock', options.time === 'show', (on) => options.onTime(on ? 'show' : 'hide')),
+    separator,
     ...segmented(SETTING_TITLES.group, GROUP_MODES, GROUP_LABELS, options.group, (mode) => {
       folderOptions.hidden = mode !== 'folder'
       options.onGroup(mode)
     }),
-    ...segmented(SETTING_TITLES.detail, DETAIL_MODES, DETAIL_LABELS, options.detail, options.onDetail),
-    ...segmented(SETTING_TITLES.time, TIME_MODES, TIME_LABELS, options.time, options.onTime),
     folderOptions
   )
   root.addEventListener('keydown', (event) => {

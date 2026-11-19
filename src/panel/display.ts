@@ -74,11 +74,11 @@ export type DisplayOptions = { group: GroupMode; detail: DetailMode; folders: Fo
 /** The title of each setting in the Display options window; `docs/display-options.md` must describe every one (see `docs.test.ts`). */
 export const SETTING_TITLES: Record<keyof DisplayOptions, string> = {
   group: 'Group by',
-  detail: 'After project name',
+  detail: 'Details',
   folders: 'Folders',
   guides: 'Tree guides',
   density: 'Density',
-  time: 'Time'
+  time: 'Show time'
 }
 
 export const DEFAULT_DISPLAY: DisplayOptions = {

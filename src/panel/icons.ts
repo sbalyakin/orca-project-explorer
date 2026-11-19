@@ -28,7 +28,8 @@ const PANEL_ICONS = {
   add: 'Plus',
   edit: 'Pencil',
   permission: 'MessageCircleQuestion',
-  monitoring: 'Activity'
+  monitoring: 'Activity',
+  clock: 'Clock'
 } as const
 
 export type IconName = keyof typeof PANEL_ICONS

@@ -219,6 +219,27 @@ html.dark .icon-button:hover, html.dark .icon-button:focus-visible { background:
 .segment:hover { color: var(--orca-accent-foreground); background: var(--orca-accent); }
 .segment:focus-visible { position: relative; z-index: 1; border-color: var(--orca-ring); box-shadow: 0 0 0 3px color-mix(in srgb, var(--orca-ring) 50%, transparent); }
 .segment.on, .segment.on:hover { font-weight: 600; color: var(--orca-foreground); background: color-mix(in srgb, var(--orca-foreground) 10%, transparent); }
+/* Mirrors Orca's FilterToggleRow + compact SwitchIndicator (FilterToggleRow.tsx, ui/switch.tsx). */
+.options-toggle {
+  display: flex; align-items: center; justify-content: space-between; gap: 8px; width: 100%; margin-top: 6px; padding: 6px 8px;
+  color: var(--orca-foreground); font: inherit; font-size: 12px; font-weight: 500; line-height: 16px; text-align: left;
+  background: transparent; border: 0; border-radius: 5px; outline: none; cursor: pointer;
+}
+.options-toggle:hover { background: var(--orca-muted, var(--orca-accent)); }
+.options-toggle:focus-visible { box-shadow: 0 0 0 1px var(--orca-ring); }
+.options-toggle-main { display: inline-flex; align-items: center; gap: 8px; }
+.options-toggle-icon { display: inline-flex; color: var(--orca-muted-foreground); }
+.options-toggle-icon svg { width: 14px; height: 14px; }
+.switch {
+  position: relative; display: inline-flex; align-items: center; flex: none; width: 24px; height: 14px; padding: 2px; border-radius: 999px;
+  background: color-mix(in srgb, var(--orca-muted-foreground) 30%, transparent); transition: background-color .15s;
+}
+.options-toggle.on .switch { background: var(--orca-primary); }
+.switch-thumb {
+  display: block; width: 10px; height: 10px; border-radius: 50%;
+  background: var(--orca-background); box-shadow: 0 1px 2px rgb(0 0 0 / .08); transition: transform .15s;
+}
+.options-toggle.on .switch-thumb { transform: translateX(10px); }
 .menu-empty { padding: 5px 10px; opacity: .4; }
 .edit-form { display: flex; flex-direction: column; gap: 8px; padding: 0 2px 2px; }
 .edit-label { display: flex; flex-direction: column; gap: 4px; padding: 0 6px; color: var(--orca-muted-foreground); font-size: 11px; font-weight: 600; }
