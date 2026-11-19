@@ -218,7 +218,7 @@ function renderRow(row: Row, index: number, state: ViewState, idPrefix: string):
   // A folder drops the cells it does not show; a workspace never has an arrow cell, even with worktrees under it, and always keeps its icon.
   el.append(...(isFolder && showArrow ? [twistie] : []), ...(showGlyph ? [glyph] : []))
   if (isOpenable(node)) {
-    // Baseline-align name, detail and age together while the row itself stays vertically centred on its icon.
+    // Baseline-align name and detail together while the row itself stays vertically centred on its icon.
     const text = document.createElement('span')
     text.className = 'row-text'
     text.appendChild(label)
@@ -233,13 +233,6 @@ function renderRow(row: Row, index: number, state: ViewState, idPrefix: string):
       const spacer = document.createElement('span')
       spacer.className = 'spacer'
       text.appendChild(spacer)
-    }
-    if (state.showTime && node.activeAt) {
-      const age = document.createElement('span')
-      age.className = 'age'
-      age.dataset.at = String(node.activeAt)
-      age.textContent = shortAge(node.activeAt, Date.now())
-      text.appendChild(age)
     }
     el.appendChild(text)
   } else {
@@ -277,6 +270,13 @@ function renderRow(row: Row, index: number, state: ViewState, idPrefix: string):
   more.appendChild(icon('more'))
   slot.append(fav, more)
   el.appendChild(slot)
+  if (isOpenable(node) && state.showTime && node.activeAt) {
+    const age = document.createElement('span')
+    age.className = 'age'
+    age.dataset.at = String(node.activeAt)
+    age.textContent = shortAge(node.activeAt, Date.now())
+    el.appendChild(age)
+  }
   return el
 }
 

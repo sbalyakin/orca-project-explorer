@@ -111,9 +111,9 @@ html.dark .row.current {
 .spacer { flex: 1; }
 /* Orca's card time (WorktreeCardSlot): text-3xs (10px, checked against the user's screenshot 2026-11-19), min-w-[22px], right-aligned; colour as the text after the name (.detail); it ends 16px inside the card. */
 .age { flex: none; min-width: 22px; margin: 0 12px 0 4px; text-align: right; font-size: 10px; line-height: 14px; font-variant-numeric: tabular-nums; color: color-mix(in srgb, var(--orca-muted-foreground) 65%, transparent); } /* same colour as .detail */
-/* With an age the "…" slot leaves the flow and covers the age while hovered, so the age ends at the row's edge. */
-.row:has(.age) .slot { position: absolute; right: 12px; }
-.row:hover .age, .row.menu-target .age { visibility: hidden; }
+/* With an age the hover actions sit to its left instead of covering it, hidden until hovered so text reaches the age. */
+.row:has(.age) .slot { display: none; }
+.row:has(.age):hover .slot, .row:has(.age).menu-target .slot { display: flex; }
 .slot { display: flex; align-items: center; gap: 2px; flex: none; }
 /* Orca's --agent-question (orange-600, orange-500 in dark; not passed to plugins) on its MessageCircleQuestion glyph. */
 .permission-mark { width: 12px; height: 12px; transform: translateX(2px); color: oklch(64.6% 0.222 41.116); }
