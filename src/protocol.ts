@@ -1,5 +1,5 @@
 // The panel <-> worker contract, declared once: both sides read it.
-import type { AgentLaunch, AgentText, FontFace, ModelCatalog, ProjectTree, SidebarLooks } from './types'
+import type { AgentLaunch, AgentText, FontFace, InstalledAgent, ModelCatalog, ProjectTree, SidebarLooks } from './types'
 
 declare module 'orca' {
   interface PluginRequests {
@@ -28,6 +28,8 @@ declare module 'orca' {
     'font.face': { input: { alias: string; index: number }; output: { total: number; face: FontFace | null } | null }
     /** The title and last reply of each workspace's latest agent, by workspace id; a workspace with neither is left out. */
     'agents.text': { output: Record<string, AgentText> }
+    /** Agents Orca detects on this host (enabled in Settings → Agents), or null when the CLI is missing or fails. */
+    'agents.installed': { output: InstalledAgent[] | null }
     /** The left sidebar's colours under the chosen app theme, for both bases. */
     'theme.get': { output: SidebarLooks }
   }

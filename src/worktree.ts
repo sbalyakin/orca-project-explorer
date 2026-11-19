@@ -28,8 +28,12 @@ export function parseOrcaJsonError(stdout: string, stderr: string, error: Error 
   return (stderr || error?.message || fallback).trim().slice(-300)
 }
 
+export function findOrcaCli(): string | null {
+  return findCommand(['orca'], [APP_CLI])
+}
+
 export function runOrcaJson(args: string[], options: { timeoutMs?: number; fallback: string }): Promise<void> {
-  const cli = findCommand(['orca'], [APP_CLI])
+  const cli = findOrcaCli()
   if (!cli) return Promise.reject(new Error('the orca command was not found'))
   return new Promise((resolve, reject) => {
     execFile(cli, args, { timeout: options.timeoutMs ?? TIMEOUT_MS, env: childEnv() }, (error, stdout, stderr) => {

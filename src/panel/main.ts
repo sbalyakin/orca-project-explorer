@@ -2,9 +2,9 @@
 // agent in a workspace. Orca wraps this module in a page; there is no build step.
 import type {} from 'orca/frame'
 import '../protocol'
-import { isOpenable, type ModelCatalog, type ProjectTree, type SidebarLooks, type TreeNode, type WorkspaceNode } from '../types'
+import { isOpenable, type InstalledAgent, type ModelCatalog, type ProjectTree, type SidebarLooks, type TreeNode, type WorkspaceNode } from '../types'
 import { DEFAULT_DISPLAY, parseDisplay, needsAgentText, parseTexts, pruneTitles, recordTitle, type DisplayOptions, type WorkspaceTexts } from './display'
-import { agentLabel, DEFAULT_AGENTS, parseAgents } from './agents'
+import { agentLabel, defaultAgents, parseAgentOverride, parseStoredAgents } from './agents'
 import { agentIcon, icon, projectIcon, type IconName } from './icons'
 import { readPluginFontCache, restorePluginFont, syncPluginFont } from './fontload'
 import { buildLauncher, type LauncherChoice } from './launcher'
@@ -28,6 +28,7 @@ const SIDEBAR_KEY = 'sidebar:v1'
 /** The last titles and replies, so the title and message modes have text on the first frame. */
 const TEXTS_KEY = 'texts:v1'
 const AGENTS_KEY = 'agents'
+const INSTALLED_AGENTS_KEY = 'agents:v1'
 const DISPLAY_KEY = 'display:v1'
 const MANUAL_ORDER_KEY = 'manualOrder:v1'
 const RELOAD_DEBOUNCE_MS = 300
@@ -42,7 +43,7 @@ type State = {
   selectedKey: string | null
   currentWorkspaceId: string | null
   menuKey: string | null
-  agents: readonly string[]
+  agents: readonly InstalledAgent[]
   display: DisplayOptions
   manualOrder: ManualOrder
 }
@@ -56,7 +57,7 @@ let state: State = {
   selectedKey: null,
   currentWorkspaceId: null,
   menuKey: null,
-  agents: parseAgents(DEFAULT_AGENTS),
+  agents: defaultAgents(),
   display: DEFAULT_DISPLAY,
   manualOrder: EMPTY_MANUAL_ORDER
 }
@@ -613,7 +614,7 @@ function showWorkspaceMenu(node: WorkspaceNode | null, x: number, y: number, wit
 
   const menu = buildMainMenu({
     ...(withProject ? { project: { onPress: (anchor: HTMLElement) => openProjects(anchor) } } : {}),
-    agents: state.agents.map((agent) => ({ id: agent, label: agentLabel(agent), glyph: () => agentIcon(agent, agentLabel(agent)) })),
+    agents: state.agents.map((agent) => ({ id: agent.id, label: agent.name, glyph: () => agentIcon(agent.id, agent.name) })),
     onOpen: () => onTarget((workspaceId) => void openWorkspace(workspaceId)),
     onTerminal: () => onTarget((workspaceId) => void run(() => orca.plugin.request('terminal.launch', { workspaceId }), 'Opening terminal…')),
     onLaunch: (agent) => onTarget((workspaceId) => void loadLast(agent).then((last) => launchAgent(workspaceId, agent, { prompt: '', ...last }))),
@@ -656,7 +657,7 @@ function showWorkspaceMenu(node: WorkspaceNode | null, x: number, y: number, wit
     const initial = await loadLast(agent)
     if (request !== setupRequest) return
     const launcher = buildLauncher({
-      agentLabel: agentLabel(agent),
+      agentLabel: agentName(agent),
       initial,
       load: (refresh) => orca.plugin.request('models.get', { agent, refresh }),
       subscribe: (listener) => {
@@ -683,10 +684,14 @@ function showWorkspaceMenu(node: WorkspaceNode | null, x: number, y: number, wit
   }
 }
 
+function agentName(id: string): string {
+  return state.agents.find((agent) => agent.id === id)?.name ?? agentLabel(id)
+}
+
 async function launchAgent(workspaceId: string, agent: string, choice: LauncherChoice): Promise<void> {
   const remembered: LastChoice = { ...(choice.model ? { model: choice.model } : {}), ...(choice.effort ? { effort: choice.effort } : {}) }
   orca.storage.set(lastKey(agent), remembered).catch(flash)
-  await run(() => orca.plugin.request('agent.launch', { workspaceId, agent, ...choice }), `Launching ${agentLabel(agent)}…`)
+  await run(() => orca.plugin.request('agent.launch', { workspaceId, agent, ...choice }), `Launching ${agentName(agent)}…`)
 }
 
 // ---------------------------------------------------------------- input
@@ -868,6 +873,7 @@ function reloadOnLook(): void {
   if (now - lastLookAt < LOOK_RELOAD_MIN_MS) return
   lastLookAt = now
   void loadSidebar()
+  void loadAgents()
   void syncPluginFont()
   reloadSoon()
 }
@@ -921,7 +927,16 @@ async function loadSidebar(): Promise<void> {
 
 async function loadAgents(): Promise<void> {
   try {
-    setState({ agents: parseAgents(await orca.settings.get(AGENTS_KEY)) })
+    const override = parseAgentOverride(await orca.settings.get(AGENTS_KEY))
+    if (override) {
+      setState({ agents: override })
+      return
+    }
+    const installed = await orca.plugin.request('agents.installed')
+    if (installed && installed.length > 0) {
+      setState({ agents: installed })
+      orca.storage.set(INSTALLED_AGENTS_KEY, installed).catch(() => {})
+    }
   } catch (error: unknown) {
     flash(error)
   }
@@ -941,14 +956,15 @@ async function start(): Promise<void> {
   // At once, beside the storage reads: the worker's answer is the slow part when the cache is empty.
   void syncPluginFont()
   try {
-    const [stored, tree, sidebar, pluginFont, display, texts, manualOrder] = await Promise.all([
+    const [stored, tree, sidebar, pluginFont, display, texts, manualOrder, storedAgents] = await Promise.all([
       orca.storage.get(COLLAPSED_KEY),
       orca.storage.get(TREE_KEY),
       orca.storage.get(SIDEBAR_KEY),
       readPluginFontCache(),
       orca.storage.get(DISPLAY_KEY),
       orca.storage.get(TEXTS_KEY),
-      orca.storage.get(MANUAL_ORDER_KEY)
+      orca.storage.get(MANUAL_ORDER_KEY),
+      orca.storage.get(INSTALLED_AGENTS_KEY)
     ])
     // Before the cached tree is drawn: a later change of font would reflow every row.
     restorePluginFont(pluginFont)
@@ -956,7 +972,14 @@ async function start(): Promise<void> {
     sidebarLooks = parseLooks(sidebar)
     applySidebar()
     const keys = Array.isArray(stored) ? stored.filter((key): key is string => typeof key === 'string') : []
-    setState({ collapsed: new Set(keys), display: parseDisplay(display), manualOrder: parseManualOrder(manualOrder), ...cachedTree(tree) })
+    const cachedAgents = parseStoredAgents(storedAgents)
+    setState({
+      collapsed: new Set(keys),
+      display: parseDisplay(display),
+      manualOrder: parseManualOrder(manualOrder),
+      ...(cachedAgents ? { agents: cachedAgents } : {}),
+      ...cachedTree(tree)
+    })
     // `reload` reveals only when the tree changes, and a fresh tree usually equals the cached one.
     if (state.currentWorkspaceId && !state.selectedKey) reveal(state.currentWorkspaceId)
   } catch (error: unknown) {

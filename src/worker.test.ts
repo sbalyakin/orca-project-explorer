@@ -50,8 +50,8 @@ test('a rename passes the trimmed name to the host and refuses a blank one', asy
 
 test('models of an agent that cannot list them come back empty and unsupported', async () => {
   const worker = await mountWorker(main, { host: host() })
-  const catalog = await worker.request('models.get', { agent: 'gemini' })
-  assert.deepEqual(catalog, { agent: 'gemini', models: [], fetchedAt: 0, supported: false })
+  const catalog = await worker.request('models.get', { agent: 'copilot' })
+  assert.deepEqual(catalog, { agent: 'copilot', models: [], fetchedAt: 0, supported: false })
   await assert.rejects(() => worker.request('models.get', { agent: 'Bad Agent' }))
   await worker.deactivate()
 })

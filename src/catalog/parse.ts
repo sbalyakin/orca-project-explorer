@@ -125,3 +125,14 @@ export function parseCursorModels(text: string): AgentModel[] {
   }
   return uniqueById(models)
 }
+
+/** `gemini --list-models`: `id (Label)` header lines with indented metadata lines below. */
+export function parseGeminiModels(text: string): AgentModel[] {
+  const models: AgentModel[] = []
+  for (const line of text.split(/\r?\n/)) {
+    const match = /^([a-z0-9][a-z0-9._-]*)\s+\((.+)\)\s*$/i.exec(line)
+    if (!match) continue
+    models.push({ id: match[1], label: match[2].trim(), efforts: [] })
+  }
+  return uniqueById(models)
+}

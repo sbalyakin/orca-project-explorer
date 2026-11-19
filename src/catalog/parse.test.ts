@@ -1,5 +1,5 @@
 import { assert, test } from 'orca/testing'
-import { parseClaudeModels, parseCodexModels, parseCursorModels, parseOpenCodeModels, parsePiModels, parsePiRpcModels } from './parse'
+import { parseClaudeModels, parseCodexModels, parseCursorModels, parseGeminiModels, parseOpenCodeModels, parsePiModels, parsePiRpcModels } from './parse'
 
 test('codex: visible models with their levels and defaults', () => {
   const rows = [
@@ -69,5 +69,23 @@ test('pi rpc: display names, provider-prefixed ids, levels from the model map', 
   assert.deepEqual(parsePiRpcModels(rows), [
     { id: 'jb-litellm/anthropic/claude-fable-5-2', label: 'Claude Fable 5.2 | JB', efforts: ['minimal', 'low', 'medium', 'high', 'xhigh', 'max'] },
     { id: 'local/plain', label: 'plain', efforts: [] }
+  ])
+})
+
+test('gemini: id (Label) lines under heading, indented metadata ignored', () => {
+  const text = [
+    'Available Gemini Models:',
+    '',
+    'auto (Auto)',
+    '  Description:   Let Gemini CLI decide the best model for the task: gemini-2.5-pro, gemini-3.5-flash',
+    '  Context limit: 1,048,576 input tokens / 8,192 output tokens',
+    '',
+    'gemini-2.5-pro (gemini-2.5-pro)',
+    '  Context limit: 1,048,576 input tokens / 8,192 output tokens',
+    ''
+  ].join('\n')
+  assert.deepEqual(parseGeminiModels(text), [
+    { id: 'auto', label: 'Auto', efforts: [] },
+    { id: 'gemini-2.5-pro', label: 'gemini-2.5-pro', efforts: [] }
   ])
 })

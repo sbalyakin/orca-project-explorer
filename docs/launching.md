@@ -1,5 +1,10 @@
 # Launching agents and listing models
 
+## Agent list (2026-11-19)
+
+- When the plugin's `agents` setting is empty (default), the menu lists the agents returned by `orca agent installed --json` (`src/agents.ts`, `agents.installed` worker request): enabled agents in Settings → Agents, including custom commands, in Orca's order.
+- Cached in panel storage (`agents:v1`) and refreshed on startup and on panel focus/look (`reloadOnLook`). Falls back to `DEFAULT_AGENTS` if the CLI is missing or fails; a non-empty `agents` setting overrides the list.
+
 ## Launch
 
 - `src/launch.ts` runs `orca agent launch --agent --worktree --focus --json` with optional `--model`, `--effort`, `--prompt`, `--surface`. The host API `agent.launch` takes only agent and prompt, which is why the CLI is used.
@@ -21,10 +26,11 @@ Each agent is asked through its own CLI, as Orca's picker does (`src/catalog/pro
 | Pi | `pi --mode rpc`, `{"type":"get_available_models"}`: display names, `thinkingLevelMap`; launch id is `provider/id`. Fallback: `pi --list-models` (table, printed to stdout and stderr) |
 | OpenCode 2 | `opencode-jb models`; no `--verbose`, no reasoning levels |
 | Cursor | `cursor-agent --list-models` |
+| Gemini | `gemini --list-models` (checked 2026-11-19) |
 
 - Pi levels: `off, minimal, low, medium, high`, plus `xhigh` and `max` only when the model maps them; a level mapped to `null` is dropped; a model without `reasoning` has none. Matches Orca's picker (2026-11-17).
 - The Codex and Claude protocols are undocumented. After an agent update, a failing probe is the first suspect.
-- Other agents (Gemini, Copilot, Droid, Grok, Kimi, Kiro) launch without a list; the flyout accepts a typed model id.
+- Other agents (Copilot, Droid, Grok, Kimi, Kiro) launch without a list; the flyout accepts a typed model id.
 
 ## Cache
 

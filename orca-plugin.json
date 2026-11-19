@@ -24,9 +24,9 @@
       {
         "key": "agents",
         "title": "Agents in the right-click menu",
-        "description": "Comma-separated agent ids, in menu order. Known ids: claude, codex, opencode, opencode2, pi, cursor, gemini, copilot, droid, grok, kimi, kiro.",
+        "description": "Leave empty to match Orca's installed agents. Otherwise comma-separated agent ids in menu order (e.g. claude, codex, opencode2, pi, cursor, gemini).",
         "type": "string",
-        "default": "claude,codex,opencode2,pi,cursor",
+        "default": "",
         "maxLength": 200
       }
     ]

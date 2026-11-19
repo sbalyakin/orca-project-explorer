@@ -117,3 +117,6 @@ export type FontFace = { weight: string; mime: string; data: string }
 
 /** What a workspace's latest agent says of itself: its title, and its last reply. */
 export type AgentText = { title?: string; message?: string; messageAt?: number; chats?: number }
+
+/** An agent CLI Orca knows on this host, from `orca agent installed --json`. */
+export type InstalledAgent = { id: string; name: string }
