@@ -140,6 +140,35 @@ html.dark .dot.unread { background: oklch(70.7% 0.165 254.624); }
 }
 .tooltip-arrow.below-bubble { bottom: -3px; }
 .tooltip-arrow.above-bubble { top: -3px; }
+.tooltip.rich {
+  width: min(300px, calc(100vw - 16px)); padding: 10px 12px; text-wrap: initial;
+  background: var(--orca-popover); color: var(--orca-popover-foreground);
+  border: 1px solid rgb(0 0 0 / .07); border-radius: 10px;
+  box-shadow: 0 1px 2px rgb(0 0 0 / .04), 0 8px 24px rgb(0 0 0 / .08);
+}
+html.dark .tooltip.rich { border-color: rgb(255 255 255 / .09); box-shadow: 0 12px 32px rgb(0 0 0 / .45); }
+.tooltip.rich .tooltip-arrow { background: var(--orca-popover); border: 1px solid rgb(0 0 0 / .07); }
+html.dark .tooltip.rich .tooltip-arrow { border-color: rgb(255 255 255 / .09); }
+.tooltip.rich .tooltip-arrow.below-bubble { bottom: -5px; border-top: 0; border-left: 0; }
+.tooltip.rich .tooltip-arrow.above-bubble { top: -5px; border-right: 0; border-bottom: 0; }
+.tip-card { display: flex; flex-direction: column; gap: 4px; }
+.tip-head { display: flex; align-items: center; gap: 6px; min-width: 0; }
+.tip-name { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; font-size: 13px; font-weight: 600; line-height: 18px; }
+.tip-meta { display: flex; align-items: center; gap: 5px; min-width: 0; color: var(--orca-muted-foreground); font-size: 11px; line-height: 15px; }
+.tip-branch { display: inline-flex; align-items: center; gap: 3px; min-width: 0; flex: 0 1 auto; }
+.tip-branch svg { flex: none; width: 11px; height: 11px; }
+.tip-branch-name { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.tip-dot { flex: none; opacity: .6; }
+.tip-tabs { flex: none; white-space: nowrap; }
+.tip-folder { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; color: var(--orca-muted-foreground); font-size: 11px; line-height: 14px; opacity: .8; }
+.tip-sep { height: 1px; margin: 4px -12px; background: rgb(0 0 0 / .07); }
+html.dark .tip-sep { background: rgb(255 255 255 / .1); }
+.tip-title { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; font-size: 12px; font-weight: 600; line-height: 16px; color: var(--orca-popover-foreground); }
+.tip-message {
+  display: -webkit-box; -webkit-box-orient: vertical; -webkit-line-clamp: 5; overflow: hidden;
+  font-size: 12px; line-height: 16px; color: color-mix(in srgb, var(--orca-popover-foreground) 80%, transparent); overflow-wrap: anywhere;
+}
+.tip-time { color: var(--orca-muted-foreground); font-size: 11px; line-height: 14px; }
 @keyframes tooltip-in { from { opacity: 0; } }
 @media (prefers-reduced-motion: reduce) { .tooltip { animation: none; } }
 .footer { display: flex; align-items: flex-start; gap: 6px; padding: 4px 10px; min-height: 22px; color: var(--orca-muted-foreground); }

@@ -8,3 +8,9 @@ export function shortAge(ts: number, now: number): string {
   if (hours < 24) return `${hours}h`
   return `${Math.floor(hours / 24)}d`
 }
+
+/** Tooltip age label: "just now", "5m ago", "13h ago", "2d ago". */
+export function longAge(ts: number, now: number): string {
+  const short = shortAge(ts, now)
+  return short === 'now' ? 'just now' : `${short} ago`
+}

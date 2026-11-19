@@ -28,7 +28,11 @@ const cli = JSON.stringify({
 })
 
 test('CLI agents are tied to a folder by the path in their worktree id, the newest title wins', () => {
-  assert.deepEqual([...latestByPath(parseCliAgents(cli))], [['/a/b', { title: 'new', message: 'Hi there x' }], ['/e', { message: 'only reply' }], ['/d', { title: 'chat' }]])
+  assert.deepEqual([...latestByPath(parseCliAgents(cli))], [
+    ['/a/b', { title: 'new', message: 'Hi there x', messageAt: 5 }],
+    ['/e', { message: 'only reply', messageAt: 3 }],
+    ['/d', { title: 'chat' }]
+  ])
 })
 
 test('unreadable CLI output gives no agents', () => {
@@ -41,5 +45,18 @@ test('title and reply come from the newest agent that has each, even when they a
     { path: '/a', title: 'old chat', message: 'An old reply', updatedAt: 1 },
     { path: '/a', title: 'new terminal', updatedAt: 9 }
   ]
-  assert.deepEqual([...latestByPath(agents)], [['/a', { title: 'new terminal', message: 'An old reply' }]])
+  assert.deepEqual([...latestByPath(agents)], [['/a', { title: 'new terminal', message: 'An old reply', messageAt: 1 }]])
+})
+
+test('native chats are counted per workspace even without a title or reply', () => {
+  const raw = JSON.stringify({
+    result: {
+      agents: [
+        { worktreeId: 'r1::/a', kind: 'chat', title: '', lastAssistantMessage: '', updatedAt: 1 },
+        { worktreeId: 'r1::/a', kind: 'chat', title: 'Hi', updatedAt: 2 },
+        { worktreeId: 'r1::/a', kind: 'terminal', title: 'Term', updatedAt: 3 }
+      ]
+    }
+  })
+  assert.deepEqual([...latestByPath(parseCliAgents(raw))], [['/a', { title: 'Term', chats: 2 }]])
 })

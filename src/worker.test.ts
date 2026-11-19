@@ -81,7 +81,7 @@ function titlesHost(agentLists: Record<string, unknown> = {}, firstPath = '/User
 test('titles come from the CLI by folder path, with a trailing slash ignored', async () => {
   const { orca, calls } = titlesHost()
   const agents = [{ path: '/Users/me/app', title: 'Fix tests', message: 'Done.', updatedAt: 1 }]
-  assert.deepEqual(await main.loadTitles(orca, async () => agents), { w1: { title: 'Fix tests', message: 'Done.' } })
+  assert.deepEqual(await main.loadTitles(orca, async () => agents), { w1: { title: 'Fix tests', message: 'Done.', messageAt: 1 } })
   assert.deepEqual(calls, [])
 })
 
@@ -122,6 +122,6 @@ test('two folder workspaces on one folder keep their own agents, told apart by t
   ]
   assert.deepEqual(await main.loadTitles(api as unknown as OrcaWorkerApi, async () => agents), {
     'r1::/Users/me/hacks': { title: 'main chat' },
-    'r1::/Users/me/hacks::workspace:abc': { title: 'MMM chat', message: 'Hi' }
+    'r1::/Users/me/hacks::workspace:abc': { title: 'MMM chat', message: 'Hi', messageAt: 2 }
   })
 })

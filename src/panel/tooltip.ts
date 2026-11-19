@@ -7,14 +7,24 @@ const EDGE = 4 // minimum distance from the page edge
 let bubble: HTMLDivElement | null = null
 let timer: ReturnType<typeof setTimeout> | undefined
 let current: HTMLElement | null = null
+const richTips = new WeakMap<HTMLElement, () => HTMLElement>()
 
 /** Sets the text a tooltip shows for `element`; the accessible name stays the caller's job. */
 export function setTip(element: HTMLElement, text: string): void {
+  richTips.delete(element)
+  delete element.dataset.richTip
   element.dataset.tip = text
 }
 
+/** Sets a popover-styled rich tooltip for `element`, built lazily when shown. */
+export function setRichTip(element: HTMLElement, build: () => HTMLElement): void {
+  delete element.dataset.tip
+  element.dataset.richTip = ''
+  richTips.set(element, build)
+}
+
 function tipTarget(node: EventTarget | null): HTMLElement | null {
-  return node instanceof Element ? node.closest<HTMLElement>('[data-tip]') : null
+  return node instanceof Element ? node.closest<HTMLElement>('[data-tip], [data-rich-tip]') : null
 }
 
 function hide(): void {
@@ -25,12 +35,15 @@ function hide(): void {
 }
 
 function show(target: HTMLElement): void {
-  if (!target.isConnected || !target.dataset.tip) return
+  if (!target.isConnected) return
+  const buildRich = richTips.get(target)
+  if (!buildRich && !target.dataset.tip) return
   bubble?.remove()
   const node = document.createElement('div')
-  node.className = 'tooltip'
+  node.className = buildRich ? 'tooltip rich' : 'tooltip'
   node.setAttribute('role', 'tooltip')
-  node.textContent = target.dataset.tip
+  if (buildRich) node.appendChild(buildRich())
+  else node.textContent = target.dataset.tip ?? ''
   const arrow = document.createElement('span')
   arrow.className = 'tooltip-arrow'
   node.appendChild(arrow)
@@ -39,8 +52,11 @@ function show(target: HTMLElement): void {
 
   const anchor = target.getBoundingClientRect()
   const size = node.getBoundingClientRect()
-  const above = anchor.top - GAP - size.height >= EDGE
-  const top = above ? anchor.top - GAP - size.height : anchor.bottom + GAP
+  const spaceAbove = anchor.top - GAP - EDGE
+  const spaceBelow = window.innerHeight - anchor.bottom - GAP - EDGE
+  const above = spaceAbove >= size.height || spaceAbove > spaceBelow
+  const rawTop = above ? anchor.top - GAP - size.height : anchor.bottom + GAP
+  const top = Math.max(EDGE, Math.min(rawTop, Math.max(EDGE, window.innerHeight - size.height - EDGE)))
   const center = anchor.left + anchor.width / 2
   const left = Math.max(EDGE, Math.min(center - size.width / 2, window.innerWidth - size.width - EDGE))
   node.style.top = `${top}px`
@@ -49,12 +65,24 @@ function show(target: HTMLElement): void {
   arrow.classList.add(above ? 'below-bubble' : 'above-bubble')
 }
 
+function sameRow(a: HTMLElement | null, b: HTMLElement | null): boolean {
+  const key = a?.dataset.key
+  return Boolean(key) && key === b?.dataset.key
+}
+
 function schedule(target: HTMLElement | null, delay: number): void {
   if (target === current) return
+  // Rebuilding rows replaces the DOM element under the pointer; keep the pending timer or open bubble for the same row.
+  if (sameRow(current, target)) {
+    current = target
+    return
+  }
   hide()
   if (!target) return
   current = target
-  timer = setTimeout(() => show(target), delay)
+  timer = setTimeout(() => {
+    if (current) show(current)
+  }, delay)
 }
 
 /** Listens once on the document, so rows redrawn by a reload keep their tooltips. */

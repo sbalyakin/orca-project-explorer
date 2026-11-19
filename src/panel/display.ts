@@ -147,9 +147,14 @@ export function parseTexts(stored: unknown): [string, AgentText][] {
   const texts: [string, AgentText][] = []
   for (const [id, value] of Object.entries(stored)) {
     if (typeof value !== 'object' || value === null) continue
-    const { title, message } = value as Record<string, unknown>
-    const text: AgentText = { ...(typeof title === 'string' && title ? { title } : {}), ...(typeof message === 'string' && message ? { message } : {}) }
-    if (text.title !== undefined || text.message !== undefined) texts.push([id, text])
+    const { title, message, messageAt, chats } = value as Record<string, unknown>
+    const text: AgentText = {
+      ...(typeof title === 'string' && title ? { title } : {}),
+      ...(typeof message === 'string' && message ? { message } : {}),
+      ...(typeof messageAt === 'number' && messageAt > 0 ? { messageAt } : {}),
+      ...(typeof chats === 'number' && chats > 0 ? { chats } : {})
+    }
+    if (text.title !== undefined || text.message !== undefined || text.chats !== undefined) texts.push([id, text])
   }
   return texts
 }

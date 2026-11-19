@@ -1,5 +1,5 @@
 import { assert, test } from 'orca/testing'
-import { shortAge } from './age'
+import { longAge, shortAge } from './age'
 
 const MIN = 60_000
 const HOUR = 60 * MIN
@@ -17,4 +17,12 @@ test('age steps through now, minutes, hours and days', () => {
 
 test('a time ahead of the clock reads as now', () => {
   assert.equal(shortAge(2_000, 1_000), 'now')
+})
+
+test('longAge adds ago and uses just now under one minute', () => {
+  const now = 10_000_000_000
+  assert.equal(longAge(now - 30_000, now), 'just now')
+  assert.equal(longAge(now - 5 * MIN, now), '5m ago')
+  assert.equal(longAge(now - 3 * HOUR, now), '3h ago')
+  assert.equal(longAge(now - 48 * HOUR, now), '2d ago')
 })

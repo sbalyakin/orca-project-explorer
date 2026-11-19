@@ -10,7 +10,7 @@ export type WorkspaceRow = {
   projectId?: string | null
   path: string
   branch: string | null
-  status?: { state: string; unread: boolean; lastActivityAt?: number | null }
+  status?: { state: string; unread: boolean; terminalCount?: number; lastActivityAt?: number | null }
 }
 
 function attentionOf(workspace: WorkspaceRow): Attention {
@@ -63,6 +63,8 @@ function workspaceNode(workspace: WorkspaceRow, label: string, linked: boolean):
   if (workspace.status?.unread) node.unread = true
   const activeAt = workspace.status?.lastActivityAt
   if (activeAt) node.activeAt = activeAt
+  const terminals = workspace.status?.terminalCount
+  if (terminals) node.terminals = terminals
   return node
 }
 

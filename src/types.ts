@@ -42,6 +42,8 @@ export type WorkspaceNode = {
   unread?: true
   /** Orca's `lastActivityAt` (ms since the epoch); absent when Orca has none. */
   activeAt?: number
+  /** Live terminals in this workspace (`status.terminalCount`). */
+  terminals?: number
   children: TreeNode[]
 }
 
@@ -114,4 +116,4 @@ export type SidebarLooks = { light: SidebarLook | null; dark: SidebarLook | null
 export type FontFace = { weight: string; mime: string; data: string }
 
 /** What a workspace's latest agent says of itself: its title, and its last reply. */
-export type AgentText = { title?: string; message?: string }
+export type AgentText = { title?: string; message?: string; messageAt?: number; chats?: number }

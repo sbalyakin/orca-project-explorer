@@ -293,7 +293,6 @@ let textsSignature = ''
  * request is not lost: it runs when the pause ends). `now` skips the pause, for a change of mode.
  */
 function loadTitles(now = false): void {
-  if (!needsAgentText(state.display.detail)) return
   clearTimeout(titlesTimer)
   const wait = titlesAt + TITLES_MIN_MS - Date.now()
   if (!now && wait > 0) {
@@ -306,11 +305,11 @@ function loadTitles(now = false): void {
     (found) => {
       // A newer read has started; this answer may be older than what is on screen.
       if (seq !== titleSeq) return
+      const signature = JSON.stringify(found)
+      if (signature === textsSignature) return
       titles.clear()
       for (const [id, text] of Object.entries(found)) titles.set(id, text)
       render()
-      const signature = JSON.stringify(found)
-      if (signature === textsSignature) return
       textsSignature = signature
       orca.storage.set(TEXTS_KEY, found).catch(() => {
         // Nothing (or the old value) is stored: write again at the next read.

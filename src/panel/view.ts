@@ -1,11 +1,11 @@
 // Draws rows into the tree element. Text only ever goes in through textContent.
 import { isOpenable, isProjectFolder, type AgentText } from '../types'
-import { shortAge } from './age'
+import { longAge, shortAge } from './age'
 import { detailFor, type DetailMode, type FolderMark, type GuideMode } from './display'
 import { icon, projectIcon } from './icons'
 import { rowLayout } from './layout'
 import { rowDescription, type Row } from './rows'
-import { setTip } from './tooltip'
+import { setRichTip, setTip } from './tooltip'
 
 export type ViewState = {
   selectedKey: string | null
@@ -29,6 +29,85 @@ function glyphName(row: Row): 'folder' | 'folderOpen' | 'repo' | 'branch' | 'hom
   if (row.node.kind === 'group') return row.expanded ? 'folderOpen' : 'folder'
   if (row.node.primary) return 'home'
   return row.node.linked ? 'branch' : 'repo'
+}
+
+function buildRowTooltip(row: Row, state: ViewState): HTMLElement {
+  const { node } = row
+  const card = document.createElement('div')
+  card.className = 'tip-card'
+  if (node.kind !== 'workspace') return card
+
+  const head = document.createElement('div')
+  head.className = 'tip-head'
+  const glyph = document.createElement('span')
+  glyph.className = 'glyph'
+  glyph.appendChild(!node.linked ? projectIcon(node.icon, node.color) : icon(glyphName(row)))
+  const name = document.createElement('span')
+  name.className = 'tip-name'
+  name.textContent = node.label
+  head.append(glyph, name)
+  card.appendChild(head)
+
+  const text = state.titles.get(node.workspaceId)
+  const tabCount = (node.terminals ?? 0) + (text?.chats ?? 0)
+  if (node.detail || tabCount > 0) {
+    const meta = document.createElement('div')
+    meta.className = 'tip-meta'
+    if (node.detail) {
+      const branch = document.createElement('span')
+      branch.className = 'tip-branch'
+      branch.appendChild(icon('branch'))
+      const branchText = document.createElement('span')
+      branchText.className = 'tip-branch-name'
+      branchText.textContent = node.detail
+      branch.appendChild(branchText)
+      meta.appendChild(branch)
+    }
+    if (node.detail && tabCount > 0) {
+      const sep = document.createElement('span')
+      sep.className = 'tip-dot'
+      sep.textContent = '·'
+      meta.appendChild(sep)
+    }
+    if (tabCount > 0) {
+      const tabs = document.createElement('span')
+      tabs.className = 'tip-tabs'
+      tabs.textContent = tabCount === 1 ? '1 tab' : `${tabCount} tabs`
+      meta.appendChild(tabs)
+    }
+    card.appendChild(meta)
+  }
+
+  if (node.folder) {
+    const folder = document.createElement('div')
+    folder.className = 'tip-folder'
+    folder.textContent = node.folder
+    card.appendChild(folder)
+  }
+
+  if (text?.message) {
+    const sep = document.createElement('div')
+    sep.className = 'tip-sep'
+    card.appendChild(sep)
+    if (text.title) {
+      const title = document.createElement('div')
+      title.className = 'tip-title'
+      title.textContent = text.title
+      card.appendChild(title)
+    }
+    const message = document.createElement('div')
+    message.className = 'tip-message'
+    message.textContent = text.message
+    card.appendChild(message)
+    if (text.messageAt) {
+      const time = document.createElement('div')
+      time.className = 'tip-time'
+      time.textContent = longAge(text.messageAt, Date.now())
+      card.appendChild(time)
+    }
+  }
+
+  return card
 }
 
 function renderRow(row: Row, index: number, state: ViewState): HTMLElement {
@@ -57,7 +136,8 @@ function renderRow(row: Row, index: number, state: ViewState): HTMLElement {
     }
   }
   const description = rowDescription(row)
-  setTip(el, description)
+  if (isOpenable(node)) setRichTip(el, () => buildRowTooltip(row, state))
+  else setTip(el, description)
   el.setAttribute('aria-label', description)
 
   const twistie = document.createElement('span')

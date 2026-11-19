@@ -90,3 +90,18 @@ test('parseDisplay reads the time setting and defaults to show', () => {
   assert.equal(parseDisplay({ time: 'x' }).time, 'show')
   assert.equal(parseDisplay(null).time, 'show')
 })
+
+test('parseTexts keeps messageAt and chats, including chat-only entries, and drops zero or invalid values', () => {
+  assert.deepEqual(
+    parseTexts({
+      a: { title: 'Hi', message: 'Body', messageAt: 1000, chats: 2 },
+      b: { chats: 1 },
+      c: { chats: 0, messageAt: 0 },
+      d: { chats: '2', messageAt: -5 }
+    }),
+    [
+      ['a', { title: 'Hi', message: 'Body', messageAt: 1000, chats: 2 }],
+      ['b', { chats: 1 }]
+    ]
+  )
+})

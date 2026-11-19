@@ -39,11 +39,11 @@ export function oneLine(message: string): string {
 }
 
 /** One agent as the CLI lists it: the workspace folder it works in, what it says, and when it last changed. */
-export type CliAgent = AgentText & { path: string; updatedAt: number }
+export type CliAgent = AgentText & { path: string; updatedAt: number; kind?: string }
 
 /**
- * The agents of `orca agent list --json` that have a title or a reply. The CLI's `worktreeId` is `<repo id>::<path>`, and
- * the path is what ties a row to a workspace.
+ * The agents of `orca agent list --json` that have a title, a reply, or are native chats (counted in tooltips).
+ * The CLI's `worktreeId` is `<repo id>::<path>`, and the path is what ties a row to a workspace.
  */
 export function parseCliAgents(stdout: string): CliAgent[] {
   let rows: unknown
@@ -57,11 +57,13 @@ export function parseCliAgents(stdout: string): CliAgent[] {
   for (const row of rows as Record<string, unknown>[]) {
     const id = typeof row.worktreeId === 'string' ? row.worktreeId : ''
     const cut = id.indexOf('::')
+    const kind = typeof row.kind === 'string' ? row.kind : undefined
     const title = typeof row.title === 'string' ? row.title.trim() : ''
     const message = typeof row.lastAssistantMessage === 'string' ? oneLine(row.lastAssistantMessage) : ''
-    if (cut < 0 || (!title && !message)) continue
+    if (cut < 0 || (!title && !message && kind !== 'chat')) continue
     agents.push({
       path: normalizePath(id.slice(cut + 2)),
+      ...(kind ? { kind } : {}),
       ...(title ? { title } : {}),
       ...(message ? { message } : {}),
       updatedAt: typeof row.updatedAt === 'number' ? row.updatedAt : 0
@@ -99,11 +101,12 @@ export async function resolveAgentPaths(agents: readonly CliAgent[]): Promise<Cl
   return agents.map((agent) => ({ ...agent, path: resolved.get(agent.path) ?? agent.path }))
 }
 
-/** Per folder path, the title of the newest agent that has one and the reply of the newest that has one (they may be two agents). */
+/** Per folder path, the title of the newest agent that has one, the reply and timestamp of the newest that has one, and the native chat count. */
 export function latestByPath(agents: readonly CliAgent[]): Map<string, AgentText> {
-  const newest = new Map<string, { title?: CliAgent; message?: CliAgent }>()
+  const newest = new Map<string, { title?: CliAgent; message?: CliAgent; chats: number }>()
   for (const agent of agents) {
-    const known = newest.get(agent.path) ?? {}
+    const known = newest.get(agent.path) ?? { chats: 0 }
+    if (agent.kind === 'chat') known.chats += 1
     for (const field of ['title', 'message'] as const) {
       const best = known[field]
       if (agent[field] && (!best || agent.updatedAt > best.updatedAt)) known[field] = agent
@@ -111,7 +114,15 @@ export function latestByPath(agents: readonly CliAgent[]): Map<string, AgentText
     newest.set(agent.path, known)
   }
   return new Map(
-    [...newest].map(([path, { title, message }]) => [path, { ...(title?.title ? { title: title.title } : {}), ...(message?.message ? { message: message.message } : {}) }])
+    [...newest].map(([path, { title, message, chats }]) => [
+      path,
+      {
+        ...(title?.title ? { title: title.title } : {}),
+        ...(message?.message ? { message: message.message } : {}),
+        ...(message?.message && message.updatedAt > 0 ? { messageAt: message.updatedAt } : {}),
+        ...(chats > 0 ? { chats } : {})
+      }
+    ])
   )
 }
 
