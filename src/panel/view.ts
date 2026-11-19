@@ -157,8 +157,8 @@ function renderRow(row: Row, index: number, state: ViewState): HTMLElement {
   const more = document.createElement('button')
   more.type = 'button'
   more.className = 'tool more'
-  setTip(more, 'Open in…')
-  more.setAttribute('aria-label', 'Open in…')
+  setTip(more, 'More actions')
+  more.setAttribute('aria-label', 'More actions')
   more.tabIndex = -1
   more.appendChild(icon('more'))
   slot.appendChild(more)

@@ -99,7 +99,7 @@ function toolButton(name: IconName, label: string, onPress: () => void): HTMLBut
 }
 
 /** One button for both directions; its label and icon name what a press will do (see `syncFoldButton`). */
-const foldButton = toolButton('collapseAll', 'Collapse all projects', () => {
+const foldButton = toolButton('collapseAll', 'Collapse all', () => {
   const nodes = shownNodes()
   setCollapsed(allCollapsed(nodes, state.collapsed) ? new Set() : new Set(containerKeys(nodes)))
 })
@@ -111,7 +111,7 @@ function shownNodes(): TreeNode[] {
 
 function syncFoldButton(): void {
   const expand = allCollapsed(shownNodes(), state.collapsed)
-  const label = expand ? 'Expand all projects' : 'Collapse all projects'
+  const label = expand ? 'Expand all' : 'Collapse all'
   setTip(foldButton, label)
   foldButton.setAttribute('aria-label', label)
   foldButton.replaceChildren(icon(expand ? 'expandAll' : 'collapseAll'))
@@ -157,10 +157,11 @@ for (const [name, label] of [['settings', 'Display options'], ['add', 'Create…
   button.appendChild(icon(name))
   if (name === 'add') {
     button.setAttribute('aria-haspopup', 'menu')
+    setTip(button, label)
     button.addEventListener('click', () => showAddMenu(button))
   } else {
     button.setAttribute('aria-haspopup', 'dialog')
-    setTip(button, 'Display options')
+    setTip(button, label)
     button.addEventListener('click', () => showOptions(button))
   }
   headerActions.appendChild(button)
