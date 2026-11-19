@@ -35,7 +35,16 @@ function compareRecent(a: WorkspaceNode, b: WorkspaceNode, dir: SortDirection): 
   return diff !== 0 ? diff : collator.compare(a.label, b.label)
 }
 
-function compareWorkspaces(a: WorkspaceNode, b: WorkspaceNode, sort: SortMode, dir: SortDirection): number {
+function compareManual(a: WorkspaceNode, b: WorkspaceNode, order: ReadonlyMap<string, number>): number {
+  const indexA = order.get(a.key)
+  const indexB = order.get(b.key)
+  if (indexA !== undefined && indexB !== undefined) return indexA - indexB
+  if (indexA !== undefined) return -1
+  if (indexB !== undefined) return 1
+  return collator.compare(a.label, b.label)
+}
+
+function compareWorkspaces(a: WorkspaceNode, b: WorkspaceNode, sort: SortMode, dir: SortDirection, manualOrder: ReadonlyMap<string, number>): number {
   switch (sort) {
     case 'name': {
       const diff = collator.compare(a.label, b.label)
@@ -49,6 +58,8 @@ function compareWorkspaces(a: WorkspaceNode, b: WorkspaceNode, sort: SortMode, d
       const rankDiff = dir === 'desc' ? rankB - rankA : rankA - rankB
       return rankDiff !== 0 ? rankDiff : compareRecent(a, b, 'desc')
     }
+    case 'manual':
+      return compareManual(a, b, manualOrder)
     default: {
       const unreachable: never = sort
       return unreachable
@@ -56,24 +67,30 @@ function compareWorkspaces(a: WorkspaceNode, b: WorkspaceNode, sort: SortMode, d
   }
 }
 
-/** Sorts a project's worktrees (including `primary`) using the active sort mode and direction. */
-function sortWorktrees(node: WorkspaceNode, sort: SortMode, dir: SortDirection): WorkspaceNode {
+/** Sorts a project's worktrees (including `primary`) using the active sort mode and direction; in manual mode they stay alphabetical. */
+function sortWorktrees(node: WorkspaceNode, sort: SortMode, dir: SortDirection, manualOrder: ReadonlyMap<string, number>): WorkspaceNode {
   if (node.children.length === 0) return node
   const children = [...node.children]
-  children.sort((a, b) => (a.kind === 'workspace' && b.kind === 'workspace' ? compareWorkspaces(a, b, sort, dir) : collator.compare(a.label, b.label)))
+  const worktreeSort: SortMode = sort === 'manual' ? 'name' : sort
+  const worktreeDir: SortDirection = sort === 'manual' ? 'asc' : dir
+  children.sort((a, b) =>
+    a.kind === 'workspace' && b.kind === 'workspace'
+      ? compareWorkspaces(a, b, worktreeSort, worktreeDir, manualOrder)
+      : collator.compare(a.label, b.label)
+  )
   return { ...node, children }
 }
 
 /** Sorts projects within each folder while keeping folders above projects and in alphabetical order. */
-function sortFolderTree(nodes: readonly TreeNode[], sort: SortMode, dir: SortDirection): TreeNode[] {
+function sortFolderTree(nodes: readonly TreeNode[], sort: SortMode, dir: SortDirection, manualOrder: ReadonlyMap<string, number>): TreeNode[] {
   const groups: TreeNode[] = []
   const projects: WorkspaceNode[] = []
   for (const node of nodes) {
-    if (node.kind === 'group') groups.push({ ...node, children: sortFolderTree(node.children, sort, dir) })
-    else projects.push(sortWorktrees(node, sort, dir))
+    if (node.kind === 'group') groups.push({ ...node, children: sortFolderTree(node.children, sort, dir, manualOrder) })
+    else projects.push(sortWorktrees(node, sort, dir, manualOrder))
   }
   groups.sort((a, b) => collator.compare(a.label, b.label))
-  projects.sort((a, b) => compareWorkspaces(a, b, sort, dir))
+  projects.sort((a, b) => compareWorkspaces(a, b, sort, dir, manualOrder))
   return [...groups, ...projects]
 }
 
@@ -89,12 +106,19 @@ function flatten(nodes: readonly TreeNode[], above: readonly string[], found: Wo
 }
 
 /** The tree as it is drawn: folders as built, one list, or sections by the strongest agent status of each project. */
-export function groupTree(nodes: TreeNode[], mode: GroupMode, sort: SortMode = 'name', dir: SortDirection = defaultSortDirection(sort)): TreeNode[] {
-  if (mode === 'folder') return sortFolderTree(nodes, sort, dir)
+export function groupTree(
+  nodes: TreeNode[],
+  mode: GroupMode,
+  sort: SortMode = 'name',
+  dir: SortDirection = defaultSortDirection(sort),
+  manualOrder: readonly string[] = []
+): TreeNode[] {
+  const orderMap = new Map(manualOrder.map((key, index) => [key, index]))
+  if (mode === 'folder') return sortFolderTree(nodes, sort, dir, orderMap)
   const projects: WorkspaceNode[] = []
   flatten(nodes, [], projects)
-  const sorted = projects.map((project) => sortWorktrees(project, sort, dir))
-  sorted.sort((a, b) => compareWorkspaces(a, b, sort, dir))
+  const sorted = projects.map((project) => sortWorktrees(project, sort, dir, orderMap))
+  sorted.sort((a, b) => compareWorkspaces(a, b, sort, dir, orderMap))
   switch (mode) {
     case 'none':
       return sorted

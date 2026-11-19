@@ -12,6 +12,7 @@ import { buildDeleteConfirm, buildEditForm, buildMainMenu, buildRowMenu, closePo
 import { buildOptionsMenu, buildSortMenu } from './options-menu'
 import { buildProjectPicker } from './project-picker'
 import { groupTree } from './grouping'
+import { EMPTY_MANUAL_ORDER, manualOrderBucket, parseManualOrder, pruneManualOrder, reorderProjects, type ManualOrder } from './manual-order'
 import { allCollapsed, canRename, containerKeys, keepLooks, navigate, pathTo, projectOf, projectsOf, visibleRows, type NavKey, type Row } from './rows'
 import { applyMonitoring, prunePanes, recordPane, workspaceIds, type PaneStates } from './monitoring'
 import { lookFor, parseLooks } from './sidebar'
@@ -28,6 +29,7 @@ const SIDEBAR_KEY = 'sidebar:v1'
 const TEXTS_KEY = 'texts:v1'
 const AGENTS_KEY = 'agents'
 const DISPLAY_KEY = 'display:v1'
+const MANUAL_ORDER_KEY = 'manualOrder:v1'
 const RELOAD_DEBOUNCE_MS = 300
 const LOOK_RELOAD_MIN_MS = 5000
 
@@ -42,6 +44,7 @@ type State = {
   menuKey: string | null
   agents: readonly string[]
   display: DisplayOptions
+  manualOrder: ManualOrder
 }
 
 let state: State = {
@@ -54,7 +57,8 @@ let state: State = {
   currentWorkspaceId: null,
   menuKey: null,
   agents: parseAgents(DEFAULT_AGENTS),
-  display: DEFAULT_DISPLAY
+  display: DEFAULT_DISPLAY,
+  manualOrder: EMPTY_MANUAL_ORDER
 }
 let rows: Row[] = []
 let pendingReveal: string | null = null
@@ -106,7 +110,8 @@ const foldButton = toolButton('collapseAll', 'Collapse all', () => {
 
 /** The tree as drawn: the worker's folders, one list, or status sections, per the Group by and Sort by options. */
 function shownNodes(): TreeNode[] {
-  return groupTree(state.tree?.nodes ?? [], state.display.group, state.display.sort, state.display.sortDir)
+  const bucket = manualOrderBucket(state.display.group)
+  return groupTree(state.tree?.nodes ?? [], state.display.group, state.display.sort, state.display.sortDir, state.manualOrder[bucket])
 }
 
 function syncFoldButton(): void {
@@ -225,7 +230,16 @@ function render(scrollToSelected = false): void {
     renderMessage(treeEl, state.filter ? 'No matching projects' : 'No projects yet')
     return
   }
-  renderRows(treeEl, rows, { ...state, detailMode: state.display.detail, folderMark: state.display.folders, guides: state.display.group === 'folder' ? state.display.guides : 'none', flat: state.display.group === 'none', showTime: state.display.time === 'show', titles })
+  renderRows(treeEl, rows, {
+    ...state,
+    detailMode: state.display.detail,
+    folderMark: state.display.folders,
+    guides: state.display.group === 'folder' ? state.display.guides : 'none',
+    flat: state.display.group === 'none',
+    showTime: state.display.time === 'show',
+    draggable: state.display.sort === 'manual' && state.filter.trim() === '',
+    titles
+  })
   const selected = treeEl.querySelector('.row.selected')
   if (!selected) return
   treeEl.setAttribute('aria-activedescendant', selected.id)
@@ -335,6 +349,8 @@ async function reload(): Promise<void> {
     prunePanes(panes, knownWorkspaceIds, ids)
     knownWorkspaceIds = ids
     pruneTitles(titles, ids)
+    const prunedOrder = pruneManualOrder(state.manualOrder, new Set(projectsOf(loaded.nodes).map((project) => project.key)))
+    if (prunedOrder) setManualOrder(prunedOrder)
     loadTitles()
     const tree = { ...loaded, nodes: applyMonitoring(loaded.nodes, panes) }
     await shrinkImages(tree.nodes)
@@ -504,13 +520,22 @@ function setDisplay(patch: Partial<DisplayOptions>): void {
   orca.storage.set(DISPLAY_KEY, display).catch(flash)
 }
 
+/** Saves the manual project order for the current or updated buckets. */
+function setManualOrder(manualOrder: ManualOrder): void {
+  setState({ manualOrder })
+  orca.storage.set(MANUAL_ORDER_KEY, manualOrder).catch(flash)
+}
+
 /** The sort menu under the header's sort button; stays open so clicking the active mode reverses direction. */
 function showSortMenu(anchor: HTMLElement): void {
   const box = anchor.getBoundingClientRect()
+  const bucket = manualOrderBucket(state.display.group)
   const menu = buildSortMenu({
     sort: state.display.sort,
     dir: state.display.sortDir,
-    onPick: (sort, sortDir) => setDisplay({ sort, sortDir })
+    canReset: state.manualOrder[bucket].length > 0,
+    onPick: (sort, sortDir) => setDisplay({ sort, sortDir }),
+    onReset: () => setManualOrder({ ...state.manualOrder, [bucket]: [] })
   })
   openRowMenu(null, box.right, box.bottom + 2, menu)
 }
@@ -691,6 +716,88 @@ treeEl.addEventListener('contextmenu', (event) => {
   if (row) showMenu(row, event.clientX, event.clientY)
 })
 
+type DragState = { key: string; container: string; sourceEl: HTMLElement }
+type DropTarget = { key: string; el: HTMLElement; position: 'before' | 'after' }
+let dragState: DragState | null = null
+let dropTarget: DropTarget | null = null
+
+function clearDropIndicator(): void {
+  if (!dropTarget) return
+  dropTarget.el.classList.remove('drop-before', 'drop-after')
+  dropTarget = null
+}
+
+function clearDrag(): void {
+  clearDropIndicator()
+  dragState?.sourceEl.classList.remove('dragging')
+  dragState = null
+}
+
+treeEl.addEventListener('dragstart', (event) => {
+  const rowEl = event.target instanceof Element ? event.target.closest<HTMLElement>('.row[data-draggable="true"]') : null
+  const key = rowEl?.dataset.key
+  if (!rowEl || !key) {
+    event.preventDefault()
+    return
+  }
+  dragState = { key, container: rowEl.dataset.container ?? '', sourceEl: rowEl }
+  event.dataTransfer?.setData('text/plain', key)
+  if (event.dataTransfer) {
+    event.dataTransfer.effectAllowed = 'move'
+    // Render the drag image on its own composited layer with no outer shadow, so the panel background does not bleed past rounded corners.
+    const rect = rowEl.getBoundingClientRect()
+    const ghost = rowEl.cloneNode(true) as HTMLElement
+    ghost.classList.add('drag-ghost')
+    ghost.style.width = `${rect.width}px`
+    ghost.style.height = `${rect.height}px`
+    document.body.appendChild(ghost)
+    event.dataTransfer.setDragImage(ghost, event.clientX - rect.left, event.clientY - rect.top)
+    requestAnimationFrame(() => ghost.remove())
+  }
+  requestAnimationFrame(() => rowEl.classList.add('dragging'))
+})
+
+treeEl.addEventListener('dragover', (event) => {
+  if (!dragState) return
+  const rowEl = event.target instanceof Element ? event.target.closest<HTMLElement>('.row') : null
+  const key = rowEl?.dataset.key
+  if (!rowEl || !key || rowEl.dataset.draggable !== 'true' || (rowEl.dataset.container ?? '') !== dragState.container || key === dragState.key) {
+    clearDropIndicator()
+    return
+  }
+  event.preventDefault()
+  if (event.dataTransfer) event.dataTransfer.dropEffect = 'move'
+  const rect = rowEl.getBoundingClientRect()
+  const position: 'before' | 'after' = event.clientY < rect.top + rect.height / 2 ? 'before' : 'after'
+  if (dropTarget?.el === rowEl && dropTarget.position === position) return
+  clearDropIndicator()
+  rowEl.classList.add(position === 'before' ? 'drop-before' : 'drop-after')
+  dropTarget = { key, el: rowEl, position }
+})
+
+treeEl.addEventListener('dragleave', (event) => {
+  if (!dragState) return
+  const related = event.relatedTarget instanceof Node ? event.relatedTarget : null
+  if (!related || !treeEl.contains(related)) clearDropIndicator()
+})
+
+treeEl.addEventListener('drop', (event) => {
+  if (!dragState) return
+  event.preventDefault()
+  const activeDrag = dragState
+  const activeDrop = dropTarget
+  clearDrag()
+  if (!activeDrop) return
+  const bucket = manualOrderBucket(state.display.group)
+  const visibleContainerKeys = rows
+    .filter((row) => row.node.kind === 'workspace' && !row.node.linked && (row.parentKey ?? '') === activeDrag.container)
+    .map((row) => row.node.key)
+  const nextBucket = reorderProjects(state.manualOrder[bucket], visibleContainerKeys, activeDrag.key, activeDrop.key, activeDrop.position)
+  setManualOrder({ ...state.manualOrder, [bucket]: nextBucket })
+})
+
+treeEl.addEventListener('dragend', () => clearDrag())
+
 const NAV_KEYS: Record<string, NavKey> = {
   ArrowUp: 'up',
   ArrowDown: 'down',
@@ -834,13 +941,14 @@ async function start(): Promise<void> {
   // At once, beside the storage reads: the worker's answer is the slow part when the cache is empty.
   void syncPluginFont()
   try {
-    const [stored, tree, sidebar, pluginFont, display, texts] = await Promise.all([
+    const [stored, tree, sidebar, pluginFont, display, texts, manualOrder] = await Promise.all([
       orca.storage.get(COLLAPSED_KEY),
       orca.storage.get(TREE_KEY),
       orca.storage.get(SIDEBAR_KEY),
       readPluginFontCache(),
       orca.storage.get(DISPLAY_KEY),
-      orca.storage.get(TEXTS_KEY)
+      orca.storage.get(TEXTS_KEY),
+      orca.storage.get(MANUAL_ORDER_KEY)
     ])
     // Before the cached tree is drawn: a later change of font would reflow every row.
     restorePluginFont(pluginFont)
@@ -848,7 +956,7 @@ async function start(): Promise<void> {
     sidebarLooks = parseLooks(sidebar)
     applySidebar()
     const keys = Array.isArray(stored) ? stored.filter((key): key is string => typeof key === 'string') : []
-    setState({ collapsed: new Set(keys), display: parseDisplay(display), ...cachedTree(tree) })
+    setState({ collapsed: new Set(keys), display: parseDisplay(display), manualOrder: parseManualOrder(manualOrder), ...cachedTree(tree) })
     // `reload` reveals only when the tree changes, and a fresh tree usually equals the cached one.
     if (state.currentWorkspaceId && !state.selectedKey) reveal(state.currentWorkspaceId)
   } catch (error: unknown) {

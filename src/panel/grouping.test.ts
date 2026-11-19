@@ -124,3 +124,20 @@ test('reverse direction flips name and recent while keeping missing timestamps l
     ['alpha', 'charlie', 'beta', 'delta']
   )
 })
+
+test('manual sort follows saved project keys, puts unseen projects last alphabetically, and keeps worktrees alphabetical', () => {
+  const dated: TreeNode[] = [
+    folder('~/work', [
+      ws('a', 'alpha', 'none', [], 100),
+      ws('b', 'beta', 'none', []),
+      ws('c', 'charlie', 'none', [ws('c1', 'zeta', 'none', [], 300), ws('c0', 'charlie', 'none', [], 50, true)]),
+      ws('d', 'delta', 'none', [])
+    ])
+  ]
+  const flat = groupTree(dated, 'none', 'manual', 'asc', ['ws:d', 'ws:b'])
+  assert.deepEqual(flat.map((node) => node.label), ['delta', 'beta', 'alpha', 'charlie'])
+  assert.deepEqual(flat[3].children.map((node) => node.label), ['charlie', 'zeta'])
+
+  const grouped = groupTree(dated, 'folder', 'manual', 'asc', ['ws:c', 'ws:a'])
+  assert.deepEqual(grouped[0].children.map((node) => node.label), ['charlie', 'alpha', 'beta', 'delta'])
+})

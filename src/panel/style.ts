@@ -61,6 +61,16 @@ body {
 /* Two states that must not look alike: hover (as Orca's sidebar rows) and the open workspace. */
 .row:hover, .row.menu-target { background: color-mix(in srgb, var(--panel-accent) 55%, transparent); }
 html.dark .row:hover, html.dark .row.menu-target { background: color-mix(in srgb, var(--orca-foreground) 3.5%, transparent); }
+.row.dragging { opacity: 0.4; }
+.row.drag-ghost { position: fixed; top: -9999px; left: 0; margin: 0; pointer-events: none; transform: translateZ(0); }
+.row.current.drag-ghost { box-shadow: inset 0 0 0 1px var(--panel-active-border, color-mix(in srgb, var(--orca-border) 40%, transparent)); }
+html.dark .row.current.drag-ghost { box-shadow: inset 0 0 0 1px var(--panel-active-border, color-mix(in srgb, var(--orca-foreground) 18%, var(--orca-border))); }
+.row.drop-before::before, .row.drop-after::after {
+  content: ''; position: absolute; left: var(--row-pad, 8px); right: 8px; height: 2px; border-radius: 1px;
+  background: var(--orca-ring); pointer-events: none; z-index: 2;
+}
+.row.drop-before::before { top: -1px; }
+.row.drop-after::after { bottom: -1px; }
 /* Orca's active card (main.css, data-worktree-card-active='primary'): a 1px border in the theme's --worktree-sidebar-active-border
    over the --worktree-sidebar-active wash. Without those tokens Orca derives them from the text colour, as below. Twice, since
    the dark hover rule above is more specific and would otherwise win over the wash. */
@@ -225,6 +235,7 @@ html.dark .icon-button:hover, html.dark .icon-button:focus-visible { background:
 .menu.no-project .icon-row, .menu.no-project .agent-list { opacity: .4; pointer-events: none; }
 .menu-item:hover, .menu-item:focus-visible { background: rgb(0 0 0 / .08); }
 html.dark .menu-item:hover, html.dark .menu-item:focus-visible { background: rgb(255 255 255 / .14); }
+.menu-item:disabled { opacity: .4; pointer-events: none; }
 .menu-item svg { flex: none; width: 15px; height: 15px; color: var(--orca-muted-foreground); }
 .menu-item.destructive { color: color-mix(in srgb, var(--orca-destructive) 78%, black); }
 html.dark .menu-item.destructive { color: var(--orca-destructive); }
@@ -234,6 +245,7 @@ html.dark .menu-item.destructive:hover, html.dark .menu-item.destructive:focus-v
 .launch-label { flex: 1; min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
 .sort-radio { display: grid; place-items: center; flex: none; width: 12px; height: 12px; }
 .sort-radio.on::before { content: ''; width: 6px; height: 6px; border-radius: 50%; background: var(--orca-foreground); }
+.sort-radio svg { width: 12px; height: 12px; }
 .launch-segment {
   display: grid; place-items: center; flex: none; align-self: stretch; width: 36px; min-height: 24px; padding: 0; color: inherit;
   background: none; border: 0; border-left: 1px solid var(--orca-border); border-radius: 0 7px 7px 0; outline: none; cursor: pointer;

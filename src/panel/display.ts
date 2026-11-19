@@ -69,7 +69,7 @@ export const GROUP_LABELS: Record<GroupMode, { short: string; full: string }> = 
   status: { short: 'Status', full: 'Group by agent status' }
 }
 
-export const SORT_MODES = ['name', 'recent', 'status'] as const
+export const SORT_MODES = ['name', 'recent', 'status', 'manual'] as const
 export type SortMode = (typeof SORT_MODES)[number]
 
 export const SORT_DIRECTIONS = ['asc', 'desc'] as const
@@ -78,13 +78,18 @@ export type SortDirection = (typeof SORT_DIRECTIONS)[number]
 export const DEFAULT_SORT: SortMode = 'name'
 
 export function defaultSortDirection(mode: SortMode): SortDirection {
-  return mode === 'name' ? 'asc' : 'desc'
+  return mode === 'name' || mode === 'manual' ? 'asc' : 'desc'
+}
+
+export function hasSortDirection(mode: SortMode): boolean {
+  return mode !== 'manual'
 }
 
 export const SORT_LABELS: Record<SortMode, string> = {
   name: 'Name',
   recent: 'Recent',
-  status: 'Status'
+  status: 'Status',
+  manual: 'Manual'
 }
 
 export type DisplayOptions = {

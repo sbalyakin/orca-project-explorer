@@ -36,7 +36,7 @@ PANEL_LUCIDE = [
     "ChevronsDownUp", "ChevronsUpDown", "Ellipsis", "ArrowLeft", "Check", "MessageSquare",
     "Search", "SquareTerminal", "CornerDownLeft", "X",
     "SlidersHorizontal", "Plus", "Pencil", "MessageCircleQuestion", "Activity", "House", "ChevronDown", "Clock", "Bell", "BellOff", "Trash2",
-    "ArrowUpDown", "ArrowUp", "ArrowDown",
+    "ArrowUpDown", "ArrowUp", "ArrowDown", "ListX",
 ]
 
 # agent id -> (source file, component function). Ids Orca maps to the same component share one glyph.

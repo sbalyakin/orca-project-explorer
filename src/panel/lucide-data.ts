@@ -54,4 +54,5 @@ export const LUCIDE: Record<string, readonly Shape[]> = {
   ArrowUpDown: [['path', {"d": "m21 16-4 4-4-4"}], ['path', {"d": "M17 20V4"}], ['path', {"d": "m3 8 4-4 4 4"}], ['path', {"d": "M7 4v16"}]],
   ArrowUp: [['path', {"d": "m5 12 7-7 7 7"}], ['path', {"d": "M12 19V5"}]],
   ArrowDown: [['path', {"d": "M12 5v14"}], ['path', {"d": "m19 12-7 7-7-7"}]],
+  ListX: [['path', {"d": "M16 5H3"}], ['path', {"d": "M11 12H3"}], ['path', {"d": "M16 19H3"}], ['path', {"d": "m15.5 9.5 5 5"}], ['path', {"d": "m20.5 9.5-5 5"}]],
 }

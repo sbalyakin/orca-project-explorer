@@ -1,5 +1,5 @@
 // The "Display options" window under the gear: drawn like Orca's "Workspace options" popover.
-import { DENSITY_LABELS, DENSITY_MODES, DETAIL_LABELS, DETAIL_MODES, FOLDER_MARKS, FOLDER_MARK_LABELS, GROUP_LABELS, GROUP_MODES, GUIDE_LABELS, GUIDE_MODES, SETTING_TITLES, SORT_LABELS, SORT_MODES, defaultSortDirection, type DensityMode, type DetailMode, type FolderMark, type GroupMode, type GuideMode, type SortDirection, type SortMode, type TimeMode } from './display'
+import { DENSITY_LABELS, DENSITY_MODES, DETAIL_LABELS, DETAIL_MODES, FOLDER_MARKS, FOLDER_MARK_LABELS, GROUP_LABELS, GROUP_MODES, GUIDE_LABELS, GUIDE_MODES, SETTING_TITLES, SORT_LABELS, SORT_MODES, defaultSortDirection, hasSortDirection, type DensityMode, type DetailMode, type FolderMark, type GroupMode, type GuideMode, type SortDirection, type SortMode, type TimeMode } from './display'
 import { icon, type IconName } from './icons'
 import { closePopover } from './menu'
 import { setTip } from './tooltip'
@@ -145,13 +145,16 @@ export function buildOptionsMenu(options: OptionsMenuOptions): HTMLElement {
 export type SortMenuOptions = {
   sort: SortMode
   dir: SortDirection
+  canReset: boolean
   onPick: (sort: SortMode, dir: SortDirection) => void
+  onReset: () => void
 }
 
 /** Compact menu under the header's sort button: picking an inactive mode applies its default order; clicking the active one reverses it. */
 export function buildSortMenu(options: SortMenuOptions): HTMLElement {
   let currentSort = options.sort
   let currentDir = options.dir
+  let canReset = options.canReset
   const root = el('div', 'menu')
   root.setAttribute('role', 'menu')
   root.setAttribute('aria-label', 'Sort by')
@@ -169,8 +172,10 @@ export function buildSortMenu(options: SortMenuOptions): HTMLElement {
     label.textContent = SORT_LABELS[mode]
     button.append(radio, label)
     button.addEventListener('click', () => {
-      if (mode === currentSort) currentDir = currentDir === 'asc' ? 'desc' : 'asc'
-      else {
+      if (mode === currentSort) {
+        if (!hasSortDirection(mode)) return
+        currentDir = currentDir === 'asc' ? 'desc' : 'asc'
+      } else {
         currentSort = mode
         currentDir = defaultSortDirection(mode)
       }
@@ -181,23 +186,45 @@ export function buildSortMenu(options: SortMenuOptions): HTMLElement {
     return { mode, button, radio, label }
   })
 
+  const resetSeparator = el('div', 'menu-separator')
+  resetSeparator.setAttribute('role', 'separator')
+  const resetButton = el('button', 'menu-item')
+  resetButton.type = 'button'
+  resetButton.tabIndex = -1
+  resetButton.setAttribute('role', 'menuitem')
+  const resetIcon = el('span', 'sort-radio')
+  resetIcon.setAttribute('aria-hidden', 'true')
+  resetIcon.appendChild(icon('reset'))
+  const resetLabel = el('span', 'launch-label')
+  resetLabel.textContent = 'Reset manual order'
+  resetButton.append(resetIcon, resetLabel)
+  resetButton.addEventListener('click', () => {
+    if (!canReset) return
+    canReset = false
+    sync()
+    options.onReset()
+  })
+  root.append(resetSeparator, resetButton)
+
   const sync = (): void => {
     for (const { mode, button, radio, label } of items) {
       const active = mode === currentSort
       button.setAttribute('aria-checked', String(active))
       button.tabIndex = active ? 0 : -1
       radio.classList.toggle('on', active)
-      button.replaceChildren(...(active ? [radio, label, icon(currentDir === 'asc' ? 'arrowUp' : 'arrowDown')] : [radio, label]))
+      button.replaceChildren(...(active && hasSortDirection(mode) ? [radio, label, icon(currentDir === 'asc' ? 'arrowUp' : 'arrowDown')] : [radio, label]))
     }
+    resetButton.disabled = !canReset
   }
   sync()
   const active = items.find(({ mode }) => mode === currentSort)
   if (active) active.button.dataset.autofocus = ''
 
   root.addEventListener('keydown', (event) => {
-    const at = items.findIndex(({ button }) => button === document.activeElement)
+    const focusable = [...items.map(({ button }) => button), ...(resetButton.disabled ? [] : [resetButton])]
+    const at = focusable.findIndex((button) => button === document.activeElement)
     const go = (index: number): void => {
-      items[(index + items.length) % items.length].button.focus()
+      focusable[(index + focusable.length) % focusable.length].focus()
       event.preventDefault()
     }
     if (event.key === 'ArrowDown') go(at + 1)

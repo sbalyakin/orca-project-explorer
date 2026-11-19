@@ -22,6 +22,8 @@ export type ViewState = {
   flat: boolean
   /** The age at the right of a workspace row (`Display options`, `Time`). */
   showTime: boolean
+  /** True in `Sort by: Manual` when no filter is active: project rows can be dragged within their container. */
+  draggable: boolean
   titles: ReadonlyMap<string, AgentText>
 }
 
@@ -116,6 +118,11 @@ function renderRow(row: Row, index: number, state: ViewState): HTMLElement {
   el.className = `row ${node.kind}`
   el.id = `row-${index}`
   el.dataset.key = node.key
+  if (state.draggable && node.kind === 'workspace' && !node.linked) {
+    el.draggable = true
+    el.dataset.draggable = 'true'
+    el.dataset.container = row.parentKey ?? ''
+  }
   el.setAttribute('role', 'treeitem')
   el.setAttribute('aria-level', String(row.depth + 1))
   el.setAttribute('aria-selected', String(node.key === state.selectedKey))
@@ -126,6 +133,7 @@ function renderRow(row: Row, index: number, state: ViewState): HTMLElement {
   if (isOpenable(node) && node.workspaceId === state.currentWorkspaceId) el.classList.add('current')
   const layout = rowLayout(row.depth, state.flat)
   el.style.paddingLeft = `${layout.pad}px`
+  el.style.setProperty('--row-pad', `${layout.pad}px`)
   if (state.guides !== 'none') {
     // One line per ancestor level, centred under that ancestor's first mark; rows touch, so the lines join up.
     for (const left of layout.guides) {
