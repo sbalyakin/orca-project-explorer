@@ -21,6 +21,15 @@ test('the folder mark is read, and anything else gives arrows', () => {
   assert.equal(parseDisplay(null).folders, 'arrows')
 })
 
+test('sort and sortDir are read, with direction defaulting per sort mode', () => {
+  assert.deepEqual({ sort: parseDisplay(null).sort, sortDir: parseDisplay(null).sortDir }, { sort: 'name', sortDir: 'asc' })
+  assert.deepEqual({ sort: parseDisplay({ sort: 'recent' }).sort, sortDir: parseDisplay({ sort: 'recent' }).sortDir }, { sort: 'recent', sortDir: 'desc' })
+  assert.deepEqual({ sort: parseDisplay({ sort: 'status' }).sort, sortDir: parseDisplay({ sort: 'status' }).sortDir }, { sort: 'status', sortDir: 'desc' })
+  assert.deepEqual({ sort: parseDisplay({ sort: 'name', sortDir: 'desc' }).sort, sortDir: parseDisplay({ sort: 'name', sortDir: 'desc' }).sortDir }, { sort: 'name', sortDir: 'desc' })
+  assert.deepEqual({ sort: parseDisplay({ sort: 'recent', sortDir: 'asc' }).sort, sortDir: parseDisplay({ sort: 'recent', sortDir: 'asc' }).sortDir }, { sort: 'recent', sortDir: 'asc' })
+  assert.deepEqual({ sort: parseDisplay({ sort: 'bad', sortDir: 'bad' }).sort, sortDir: parseDisplay({ sort: 'bad', sortDir: 'bad' }).sortDir }, { sort: 'name', sortDir: 'asc' })
+})
+
 test('each mode shows its own text', () => {
   const titles = new Map([['a', { title: 'Fix tests', message: 'All green.' }]])
   assert.equal(detailFor(node, 'none', titles), undefined)

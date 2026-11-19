@@ -69,10 +69,37 @@ export const GROUP_LABELS: Record<GroupMode, { short: string; full: string }> = 
   status: { short: 'Status', full: 'Group by agent status' }
 }
 
-export type DisplayOptions = { group: GroupMode; detail: DetailMode; folders: FolderMark; guides: GuideMode; density: DensityMode; time: TimeMode }
+export const SORT_MODES = ['name', 'recent', 'status'] as const
+export type SortMode = (typeof SORT_MODES)[number]
+
+export const SORT_DIRECTIONS = ['asc', 'desc'] as const
+export type SortDirection = (typeof SORT_DIRECTIONS)[number]
+
+export const DEFAULT_SORT: SortMode = 'name'
+
+export function defaultSortDirection(mode: SortMode): SortDirection {
+  return mode === 'name' ? 'asc' : 'desc'
+}
+
+export const SORT_LABELS: Record<SortMode, string> = {
+  name: 'Name',
+  recent: 'Recent',
+  status: 'Status'
+}
+
+export type DisplayOptions = {
+  group: GroupMode
+  sort: SortMode
+  sortDir: SortDirection
+  detail: DetailMode
+  folders: FolderMark
+  guides: GuideMode
+  density: DensityMode
+  time: TimeMode
+}
 
 /** The title of each setting in the Display options window; `docs/display-options.md` must describe every one (see `docs.test.ts`). */
-export const SETTING_TITLES: Record<keyof DisplayOptions, string> = {
+export const SETTING_TITLES: Record<Exclude<keyof DisplayOptions, 'sort' | 'sortDir'>, string> = {
   group: 'Group by',
   detail: 'Details',
   folders: 'Folders',
@@ -83,6 +110,8 @@ export const SETTING_TITLES: Record<keyof DisplayOptions, string> = {
 
 export const DEFAULT_DISPLAY: DisplayOptions = {
   group: DEFAULT_GROUP,
+  sort: DEFAULT_SORT,
+  sortDir: defaultSortDirection(DEFAULT_SORT),
   detail: DEFAULT_DETAIL,
   folders: DEFAULT_FOLDER_MARK,
   guides: DEFAULT_GUIDES,
@@ -93,8 +122,11 @@ export const DEFAULT_DISPLAY: DisplayOptions = {
 /** The saved choice; anything unreadable gives the default. */
 export function parseDisplay(stored: unknown): DisplayOptions {
   const saved = typeof stored === 'object' && stored !== null ? (stored as Record<string, unknown>) : {}
+  const sort = SORT_MODES.find((mode) => mode === saved.sort) ?? DEFAULT_SORT
   return {
     group: GROUP_MODES.find((mode) => mode === saved.group) ?? DEFAULT_GROUP,
+    sort,
+    sortDir: SORT_DIRECTIONS.find((dir) => dir === saved.sortDir) ?? defaultSortDirection(sort),
     detail: DETAIL_MODES.find((mode) => mode === saved.detail) ?? DEFAULT_DETAIL,
     folders: FOLDER_MARKS.find((mark) => mark === saved.folders) ?? DEFAULT_FOLDER_MARK,
     guides: GUIDE_MODES.find((mode) => mode === saved.guides) ?? DEFAULT_GUIDES,

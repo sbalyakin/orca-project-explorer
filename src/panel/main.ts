@@ -9,7 +9,7 @@ import { agentIcon, icon, projectIcon, type IconName } from './icons'
 import { readPluginFontCache, restorePluginFont, syncPluginFont } from './fontload'
 import { buildLauncher, type LauncherChoice } from './launcher'
 import { buildDeleteConfirm, buildEditForm, buildMainMenu, buildRowMenu, closePopover, openPopover, type Popover } from './menu'
-import { buildOptionsMenu } from './options-menu'
+import { buildOptionsMenu, buildSortMenu } from './options-menu'
 import { buildProjectPicker } from './project-picker'
 import { groupTree } from './grouping'
 import { allCollapsed, canRename, containerKeys, keepLooks, navigate, pathTo, projectOf, projectsOf, visibleRows, type NavKey, type Row } from './rows'
@@ -104,9 +104,9 @@ const foldButton = toolButton('collapseAll', 'Collapse all', () => {
   setCollapsed(allCollapsed(nodes, state.collapsed) ? new Set() : new Set(containerKeys(nodes)))
 })
 
-/** The tree as drawn: the worker's folders, one list, or status sections, per the Group by option. */
+/** The tree as drawn: the worker's folders, one list, or status sections, per the Group by and Sort by options. */
 function shownNodes(): TreeNode[] {
-  return groupTree(state.tree?.nodes ?? [], state.display.group)
+  return groupTree(state.tree?.nodes ?? [], state.display.group, state.display.sort, state.display.sortDir)
 }
 
 function syncFoldButton(): void {
@@ -148,8 +148,8 @@ headerTitle.textContent = 'Projects'
 foldButton.classList.add('header-fold')
 const headerActions = document.createElement('div')
 headerActions.className = 'header-actions'
-// The gear opens the display options; `+` opens a menu: a new workspace (Orca's own window) or a new tab.
-for (const [name, label] of [['settings', 'Display options'], ['add', 'Create…']] as const) {
+// Sort opens the sort menu; the gear opens display options; `+` opens the create menu.
+for (const [name, label] of [['sort', 'Sort'], ['settings', 'Display options'], ['add', 'Create…']] as const) {
   const button = document.createElement('button')
   button.className = 'tool'
   button.type = 'button'
@@ -159,6 +159,10 @@ for (const [name, label] of [['settings', 'Display options'], ['add', 'Create…
     button.setAttribute('aria-haspopup', 'menu')
     setTip(button, label)
     button.addEventListener('click', () => showAddMenu(button))
+  } else if (name === 'sort') {
+    button.setAttribute('aria-haspopup', 'menu')
+    setTip(button, label)
+    button.addEventListener('click', () => showSortMenu(button))
   } else {
     button.setAttribute('aria-haspopup', 'dialog')
     setTip(button, label)
@@ -498,6 +502,17 @@ function setDisplay(patch: Partial<DisplayOptions>): void {
   const display = { ...state.display, ...patch }
   setState({ display })
   orca.storage.set(DISPLAY_KEY, display).catch(flash)
+}
+
+/** The sort menu under the header's sort button; stays open so clicking the active mode reverses direction. */
+function showSortMenu(anchor: HTMLElement): void {
+  const box = anchor.getBoundingClientRect()
+  const menu = buildSortMenu({
+    sort: state.display.sort,
+    dir: state.display.sortDir,
+    onPick: (sort, sortDir) => setDisplay({ sort, sortDir })
+  })
+  openRowMenu(null, box.right, box.bottom + 2, menu)
 }
 
 /** The display options window, under the gear; a choice applies and is saved at once, and the window stays open as Orca's does. */

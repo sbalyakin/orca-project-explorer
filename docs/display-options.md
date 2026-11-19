@@ -27,6 +27,17 @@ The header gear opens a popover titled `Display options` (`src/panel/options-men
 - `Folders` and `Tree guides` show only for `Folder`; guides are also forced off in the other modes.
 - Board status (`todo`, `in-review`) is not used (see `host-data.md`, `Agent status`).
 
+## Sort button
+
+2026-11-19, user request: a separate header button (`ArrowUpDown`) to the left of `Display options` opens a compact `Sort by` menu (`buildSortMenu`, `options-menu.ts`), stored in `display:v1` as `sort` (`SortMode`, default `name`) and `sortDir` (`SortDirection`, default `asc` for `name`, `desc` for `recent` and `status`). Menu UI checked on the live panel 2026-11-19.
+
+- Items `Name`, `Recent`, `Status`. Picking an inactive item applies its default direction; clicking the active item toggles `asc` / `desc` (`ArrowUp` / `ArrowDown` on the right) and keeps the menu open.
+- `Name`: alphabetical by label (`Intl.Collator`), reversed in `desc`.
+- `Recent`: by `activeAt` (`lastActivityAt`; max across a project's worktrees); rows without `activeAt` always stay last by `Name`, even in `asc`.
+- `Status`: by strongest `Attention` (`permission` → `unread` → `working` → `monitoring` → `none`, reversed in `asc`), ties broken by `Recent` (`desc`), then `Name`.
+- In `Folder` mode, folders stay above projects in alphabetical order; projects inside each folder and worktrees inside each project (including `primary`) are sorted by the active rule.
+- Orca's `Manual` order is not supported because manual order and `isPinned` are not exposed in the host API (`host-api.md`).
+
 ### `Details`
 
 Segments `None`, `Branch` (default), `Title`, `Message`. Text for a workspace row only.

@@ -32,7 +32,10 @@ const PANEL_ICONS = {
   clock: 'Clock',
   bell: 'Bell',
   bellOff: 'BellOff',
-  trash: 'Trash2'
+  trash: 'Trash2',
+  sort: 'ArrowUpDown',
+  arrowUp: 'ArrowUp',
+  arrowDown: 'ArrowDown'
 } as const
 
 export type IconName = keyof typeof PANEL_ICONS

@@ -1,5 +1,5 @@
 // The "Display options" window under the gear: drawn like Orca's "Workspace options" popover.
-import { DENSITY_LABELS, DENSITY_MODES, DETAIL_LABELS, DETAIL_MODES, FOLDER_MARKS, FOLDER_MARK_LABELS, GROUP_LABELS, GROUP_MODES, GUIDE_LABELS, GUIDE_MODES, SETTING_TITLES, type DensityMode, type DetailMode, type FolderMark, type GroupMode, type GuideMode, type TimeMode } from './display'
+import { DENSITY_LABELS, DENSITY_MODES, DETAIL_LABELS, DETAIL_MODES, FOLDER_MARKS, FOLDER_MARK_LABELS, GROUP_LABELS, GROUP_MODES, GUIDE_LABELS, GUIDE_MODES, SETTING_TITLES, SORT_LABELS, SORT_MODES, defaultSortDirection, type DensityMode, type DetailMode, type FolderMark, type GroupMode, type GuideMode, type SortDirection, type SortMode, type TimeMode } from './display'
 import { icon, type IconName } from './icons'
 import { closePopover } from './menu'
 import { setTip } from './tooltip'
@@ -138,6 +138,71 @@ export function buildOptionsMenu(options: OptionsMenuOptions): HTMLElement {
   )
   root.addEventListener('keydown', (event) => {
     if (event.key === 'Tab') closePopover()
+  })
+  return root
+}
+
+export type SortMenuOptions = {
+  sort: SortMode
+  dir: SortDirection
+  onPick: (sort: SortMode, dir: SortDirection) => void
+}
+
+/** Compact menu under the header's sort button: picking an inactive mode applies its default order; clicking the active one reverses it. */
+export function buildSortMenu(options: SortMenuOptions): HTMLElement {
+  let currentSort = options.sort
+  let currentDir = options.dir
+  const root = el('div', 'menu')
+  root.setAttribute('role', 'menu')
+  root.setAttribute('aria-label', 'Sort by')
+  const heading = el('div', 'options-section')
+  heading.textContent = 'Sort by'
+  root.appendChild(heading)
+
+  const items = SORT_MODES.map((mode) => {
+    const button = el('button', 'menu-item')
+    button.type = 'button'
+    button.setAttribute('role', 'menuitemradio')
+    const radio = el('span', 'sort-radio')
+    radio.setAttribute('aria-hidden', 'true')
+    const label = el('span', 'launch-label')
+    label.textContent = SORT_LABELS[mode]
+    button.append(radio, label)
+    button.addEventListener('click', () => {
+      if (mode === currentSort) currentDir = currentDir === 'asc' ? 'desc' : 'asc'
+      else {
+        currentSort = mode
+        currentDir = defaultSortDirection(mode)
+      }
+      sync()
+      options.onPick(currentSort, currentDir)
+    })
+    root.appendChild(button)
+    return { mode, button, radio, label }
+  })
+
+  const sync = (): void => {
+    for (const { mode, button, radio, label } of items) {
+      const active = mode === currentSort
+      button.setAttribute('aria-checked', String(active))
+      button.tabIndex = active ? 0 : -1
+      radio.classList.toggle('on', active)
+      button.replaceChildren(...(active ? [radio, label, icon(currentDir === 'asc' ? 'arrowUp' : 'arrowDown')] : [radio, label]))
+    }
+  }
+  sync()
+  const active = items.find(({ mode }) => mode === currentSort)
+  if (active) active.button.dataset.autofocus = ''
+
+  root.addEventListener('keydown', (event) => {
+    const at = items.findIndex(({ button }) => button === document.activeElement)
+    const go = (index: number): void => {
+      items[(index + items.length) % items.length].button.focus()
+      event.preventDefault()
+    }
+    if (event.key === 'ArrowDown') go(at + 1)
+    else if (event.key === 'ArrowUp') go(at - 1)
+    else if (event.key === 'Tab') closePopover()
   })
   return root
 }

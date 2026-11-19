@@ -232,6 +232,8 @@ html.dark .menu-item.destructive { color: var(--orca-destructive); }
 .menu-item.destructive:hover, .menu-item.destructive:focus-visible { background: color-mix(in srgb, var(--orca-destructive) 10%, transparent); }
 html.dark .menu-item.destructive:hover, html.dark .menu-item.destructive:focus-visible { background: color-mix(in srgb, var(--orca-destructive) 20%, transparent); }
 .launch-label { flex: 1; min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.sort-radio { display: grid; place-items: center; flex: none; width: 12px; height: 12px; }
+.sort-radio.on::before { content: ''; width: 6px; height: 6px; border-radius: 50%; background: var(--orca-foreground); }
 .launch-segment {
   display: grid; place-items: center; flex: none; align-self: stretch; width: 36px; min-height: 24px; padding: 0; color: inherit;
   background: none; border: 0; border-left: 1px solid var(--orca-border); border-radius: 0 7px 7px 0; outline: none; cursor: pointer;
