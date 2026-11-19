@@ -31,7 +31,8 @@ const PANEL_ICONS = {
   monitoring: 'Activity',
   clock: 'Clock',
   bell: 'Bell',
-  bellOff: 'BellOff'
+  bellOff: 'BellOff',
+  trash: 'Trash2'
 } as const
 
 export type IconName = keyof typeof PANEL_ICONS

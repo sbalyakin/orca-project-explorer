@@ -133,6 +133,8 @@ export type RowMenuOptions = {
   markRead?: { unread: boolean; onToggle: () => void }
   /** Present for a row whose name the plugin can show and change (a linked worktree): adds `Edit Details…` below a separator. */
   onEdit?: () => void
+  /** Present for a linked worktree or non-root folder workspace: adds a red `Delete` item below a separator. */
+  onDelete?: () => void
   /** The item texts; the `+` button's menu says "Create new …". */
   labels?: { tab: string; workspace: string }
 }
@@ -141,16 +143,17 @@ export type RowMenuOptions = {
 export function buildRowMenu(options: RowMenuOptions): HTMLElement {
   const menu = el('div', 'menu')
   menu.setAttribute('role', 'menu')
-  const { onNewWorkspace, markRead, onEdit } = options
+  const { onNewWorkspace, markRead, onEdit, onDelete } = options
   const labels = options.labels ?? { tab: 'New tab', workspace: 'New workspace' }
-  type Entry = readonly ['add' | 'branch' | 'bell' | 'bellOff' | 'edit', string, () => void]
+  type Entry = readonly ['add' | 'branch' | 'bell' | 'bellOff' | 'edit' | 'trash', string, () => void, boolean?]
   const top: Entry[] = [['add', labels.tab, options.onNewTab]]
   if (onNewWorkspace) top.push(['branch', labels.workspace, onNewWorkspace])
   const bottom: Entry[] = []
   if (markRead) bottom.push([markRead.unread ? 'bellOff' : 'bell', markRead.unread ? 'Mark Read' : 'Mark Unread', markRead.onToggle])
   if (onEdit) bottom.push(['edit', 'Edit Details…', onEdit])
-  const makeItem = ([name, text, onPress]: Entry): HTMLElement => {
-    const item = el('button', 'menu-item')
+  if (onDelete) bottom.push(['trash', 'Delete', onDelete, true])
+  const makeItem = ([name, text, onPress, destructive]: Entry): HTMLElement => {
+    const item = el('button', destructive ? 'menu-item destructive' : 'menu-item')
     item.type = 'button'
     item.setAttribute('role', 'menuitem')
     const label = el('span', 'launch-label')
@@ -226,6 +229,32 @@ export function buildEditForm(options: EditFormOptions): HTMLElement {
   // Select the old name so typing replaces it.
   queueMicrotask(() => input.select())
   return form
+}
+
+export type DeleteConfirmOptions = { name: string; onConfirm: () => void; onCancel: () => void }
+
+/** Confirmation popover before deleting a workspace; Cancel takes initial focus so Enter cannot delete by accident. */
+export function buildDeleteConfirm(options: DeleteConfirmOptions): HTMLElement {
+  const root = el('div', 'edit-form')
+  root.setAttribute('role', 'alertdialog')
+  root.setAttribute('aria-label', `Delete ${options.name}`)
+  const title = el('div', 'options-title')
+  title.textContent = `Delete “${options.name}”?`
+  const note = el('div', 'confirm-text')
+  note.textContent = 'Removes a Git worktree from git and disk (branch kept), or removes a folder workspace from Orca, and stops its sessions.'
+  const actions = el('div', 'confirm-actions')
+  const cancel = el('button', 'btn')
+  cancel.type = 'button'
+  cancel.textContent = 'Cancel'
+  cancel.dataset.autofocus = ''
+  cancel.addEventListener('click', options.onCancel)
+  const confirm = el('button', 'btn destructive')
+  confirm.type = 'button'
+  confirm.textContent = 'Delete'
+  confirm.addEventListener('click', options.onConfirm)
+  actions.append(cancel, confirm)
+  root.append(title, note, actions)
+  return root
 }
 
 /** The project field above the search: shows the project a new tab goes to; pressing it opens the project list. */

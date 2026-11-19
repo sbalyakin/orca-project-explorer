@@ -197,6 +197,11 @@ html.dark .icon-button:hover, html.dark .icon-button:focus-visible { background:
 .menu-item:hover, .menu-item:focus-visible { background: rgb(0 0 0 / .08); }
 html.dark .menu-item:hover, html.dark .menu-item:focus-visible { background: rgb(255 255 255 / .14); }
 .menu-item svg { flex: none; width: 15px; height: 15px; color: var(--orca-muted-foreground); }
+.menu-item.destructive { color: color-mix(in srgb, var(--orca-destructive) 78%, black); }
+html.dark .menu-item.destructive { color: var(--orca-destructive); }
+.menu-item.destructive svg { color: currentColor; }
+.menu-item.destructive:hover, .menu-item.destructive:focus-visible { background: color-mix(in srgb, var(--orca-destructive) 10%, transparent); }
+html.dark .menu-item.destructive:hover, html.dark .menu-item.destructive:focus-visible { background: color-mix(in srgb, var(--orca-destructive) 20%, transparent); }
 .launch-label { flex: 1; min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
 .launch-segment {
   display: grid; place-items: center; flex: none; align-self: stretch; width: 36px; min-height: 24px; padding: 0; color: inherit;
@@ -205,7 +210,7 @@ html.dark .menu-item:hover, html.dark .menu-item:focus-visible { background: rgb
 .launch-segment svg { width: 14px; height: 14px; }
 /* Orca's "Workspace options" popover: a 16px title; the section label is MENU_LABEL_CLASS (px-2.5 pt-[5px] pb-[3px] text-2xs
    semibold muted); the segmented control is SidebarGroupByToggle (ToggleGroup outline, sm, h-6, text-[10px]) in a px-2 pt-0.5 pb-1 box. */
-.options-title { padding: 6px 8px 4px; font-size: 16px; font-weight: 600; line-height: 24px; letter-spacing: -0.01em; }
+.options-title { padding: 6px 8px 4px; font-size: 16px; font-weight: 600; line-height: 24px; letter-spacing: -0.01em; overflow-wrap: anywhere; }
 .options-section { padding: 5px 10px 3px; color: var(--orca-muted-foreground); font-size: 11px; font-weight: 600; line-height: 16px; }
 .options-group {
   display: flex; width: calc(100% - 16px); height: 24px; margin: 2px 8px 4px; border-radius: calc(var(--orca-radius) * 0.8);
@@ -250,6 +255,10 @@ html.dark .menu-item:hover, html.dark .menu-item:focus-visible { background: rgb
   background: transparent; border: 1px solid var(--orca-input); border-radius: 7px; outline: none;
 }
 .edit-input:focus-visible { border-color: var(--orca-ring); box-shadow: 0 0 0 3px color-mix(in srgb, var(--orca-ring) 50%, transparent); }
+.confirm-text { padding: 0 8px; color: var(--orca-muted-foreground); font-size: 12px; line-height: 16px; }
+.confirm-actions { display: flex; justify-content: flex-end; gap: 6px; padding: 4px 6px 2px; }
+.btn.destructive, html.dark .btn.destructive { color: #fff; background: var(--orca-destructive); border-color: transparent; box-shadow: none; }
+.btn.destructive:hover, html.dark .btn.destructive:hover { background: color-mix(in srgb, var(--orca-destructive) 90%, transparent); }
 .edit-save { align-self: flex-end; margin: 0 6px 4px; }
 .edit-save:disabled { opacity: .5; pointer-events: none; }
 .setup { display: flex; flex-direction: column; width: 100%; min-height: 0; }

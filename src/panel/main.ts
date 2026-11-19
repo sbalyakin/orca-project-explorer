@@ -8,7 +8,7 @@ import { agentLabel, DEFAULT_AGENTS, parseAgents } from './agents'
 import { agentIcon, icon, projectIcon, type IconName } from './icons'
 import { readPluginFontCache, restorePluginFont, syncPluginFont } from './fontload'
 import { buildLauncher, type LauncherChoice } from './launcher'
-import { buildEditForm, buildMainMenu, buildRowMenu, closePopover, openPopover, type Popover } from './menu'
+import { buildDeleteConfirm, buildEditForm, buildMainMenu, buildRowMenu, closePopover, openPopover, type Popover } from './menu'
 import { buildOptionsMenu } from './options-menu'
 import { buildProjectPicker } from './project-picker'
 import { groupTree } from './grouping'
@@ -429,6 +429,10 @@ function showRowMenu(node: WorkspaceNode, x: number, y: number): void {
           onEdit: () => {
             popover.close()
             showEditDetails(node, x, y)
+          },
+          onDelete: () => {
+            popover.close()
+            showDeleteConfirm(node, x, y)
           }
         }
       : {}),
@@ -455,6 +459,19 @@ function showEditDetails(node: WorkspaceNode, x: number, y: number): void {
     }
   })
   const popover = openRowMenu(node, x, y, form)
+}
+
+/** Confirmation popover before deleting a linked worktree or non-root folder workspace. */
+function showDeleteConfirm(node: WorkspaceNode, x: number, y: number): void {
+  const dialog = buildDeleteConfirm({
+    name: node.label,
+    onCancel: () => popover.close(),
+    onConfirm: () => {
+      popover.close()
+      void run(() => orca.plugin.request('workspace.delete', { workspaceId: node.workspaceId }), 'Deleting…').then(reloadSoon)
+    }
+  })
+  const popover = openRowMenu(node, x, y, dialog)
 }
 
 /** The `+` menu, under its button: a new workspace (Orca's window, which picks the project itself) or a new tab. */
