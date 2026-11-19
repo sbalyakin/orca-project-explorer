@@ -23,14 +23,18 @@ export function strongestBelow(node: TreeNode): Attention {
 }
 
 function ownText(node: TreeNode): string {
-  return node.kind === 'workspace' && node.detail ? `${node.label} ${node.detail}` : node.label
+  if (node.kind !== 'workspace') return node.label
+  const parts = [node.label]
+  if (node.projectLabel) parts.push(node.projectLabel)
+  if (node.detail) parts.push(node.detail)
+  return parts.join(' ')
 }
 
 /**
  * Keeps a node that matches, or has a match below it; a matching node keeps everything under it.
  * A status section never matches by its title ("work" must not pull in the whole `Working` section).
  */
-function filterNodes(nodes: readonly TreeNode[], needle: string): TreeNode[] {
+export function filterNodes(nodes: readonly TreeNode[], needle: string): TreeNode[] {
   const kept: TreeNode[] = []
   for (const node of nodes) {
     const isSection = node.kind === 'group' && node.section

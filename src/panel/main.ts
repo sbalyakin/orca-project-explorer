@@ -14,7 +14,7 @@ import { buildProjectPicker } from './project-picker'
 import { groupTree } from './grouping'
 import { FAVORITES_SECTION_KEY, buildFavoritesSection, canonicalKey, excludeFavorites, isFavoriteCopy, parseFavorites, pruneFavorites, reorderFavorites, toggleFavorite } from './favorites'
 import { EMPTY_MANUAL_ORDER, manualOrderBucket, parseManualOrder, pruneManualOrder, reorderProjects, type ManualOrder } from './manual-order'
-import { allCollapsed, canRename, containerKeys, keepLooks, navigate, pathTo, projectOf, projectsOf, visibleRows, type NavKey, type Row } from './rows'
+import { allCollapsed, canRename, containerKeys, filterNodes, keepLooks, navigate, pathTo, projectOf, projectsOf, visibleRows, type NavKey, type Row } from './rows'
 import { applyMonitoring, prunePanes, recordPane, workspaceIds, type PaneStates } from './monitoring'
 import { lookFor, parseLooks } from './sidebar'
 import { CSS } from './style'
@@ -260,17 +260,20 @@ function render(scrollToSelected = false): void {
   }
   const grouped = shownNodes()
   const favoritesSet = new Set(state.favorites)
-  const favoritesDraggable = state.filter.trim() === ''
-  const favSection = favoritesDraggable ? buildFavoritesSection(grouped, state.favorites) : null
+  const needle = state.filter.trim().toLowerCase()
+  const filtering = needle !== ''
+  const favoritesDraggable = !filtering
+  const favSection = buildFavoritesSection(grouped, state.favorites)
+  const favNodes = favSection ? (filtering ? filterNodes(favSection.children, needle) : favSection.children) : []
   let favRows: Row[] = []
-  if (favSection) {
+  if (favNodes.length > 0) {
     favSectionEl.hidden = false
-    const favExpanded = !state.collapsed.has(FAVORITES_SECTION_KEY)
-    favCount.textContent = String(favSection.children.length)
+    const favExpanded = filtering || !state.collapsed.has(FAVORITES_SECTION_KEY)
+    favCount.textContent = String(favNodes.length)
     favChevron.replaceChildren(icon(favExpanded ? 'chevronDown' : 'chevron'))
     favListEl.hidden = !favExpanded
     if (favExpanded) {
-      favRows = visibleRows(favSection.children, state.collapsed, '')
+      favRows = visibleRows(favNodes, filtering ? new Set() : state.collapsed, '')
       renderRows(
         favListEl,
         favRows,
@@ -300,7 +303,7 @@ function render(scrollToSelected = false): void {
   const treeRows = visibleRows(mainNodes, state.collapsed, state.filter)
   rows = [...favRows, ...treeRows]
   if (treeRows.length === 0) {
-    renderMessage(treeEl, state.filter ? 'No matching projects' : favSection ? 'All projects are in Favorites' : 'No projects yet')
+    renderMessage(treeEl, filtering ? (favRows.length > 0 ? 'No other matching projects' : 'No matching projects') : favSection ? 'All projects are in Favorites' : 'No projects yet')
   } else {
     renderRows(treeEl, treeRows, {
       ...state,
@@ -349,7 +352,7 @@ function reveal(workspaceId: string | null): void {
   if (!state.tree || !workspaceId) return setState({ currentWorkspaceId: workspaceId })
   const isIt = (node: TreeNode): boolean => isOpenable(node) && node.workspaceId === workspaceId
   const grouped = shownNodes()
-  const favSection = state.filter.trim() === '' ? buildFavoritesSection(grouped, state.favorites) : null
+  const favSection = buildFavoritesSection(grouped, state.favorites)
   const favAbove = favSection ? pathTo([favSection], isIt) : null
   const above = favAbove ?? pathTo(grouped, isIt) ?? []
   const collapsed = new Set([...state.collapsed].filter((key) => !above.includes(key)))

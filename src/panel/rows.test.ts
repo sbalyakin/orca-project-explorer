@@ -94,3 +94,9 @@ test('only a linked worktree row can be renamed', () => {
   assert.equal(canRename(primary), false)
   assert.equal(canRename(linked), true)
 })
+
+test('filter matches a favorited worktree by its projectLabel', () => {
+  const favWorktree: WorkspaceNode = { ...(ws('w', 'fix-login') as WorkspaceNode), linked: true, projectLabel: 'alpha' }
+  const rows = visibleRows([favWorktree], new Set(), 'alpha')
+  assert.deepEqual(rows.map((row) => row.node.key), ['ws:w'])
+})
