@@ -36,7 +36,8 @@ const PANEL_ICONS = {
   sort: 'ArrowUpDown',
   arrowUp: 'ArrowUp',
   arrowDown: 'ArrowDown',
-  reset: 'ListX'
+  reset: 'ListX',
+  star: 'Star'
 } as const
 
 export type IconName = keyof typeof PANEL_ICONS

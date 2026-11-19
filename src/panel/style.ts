@@ -48,7 +48,12 @@ body {
 .header-fold { margin-left: 4px; opacity: 0; transition: opacity .12s; }
 .header:hover .header-fold, .header-fold:focus-visible { opacity: 1; }
 .header-actions { display: flex; gap: 2px; margin-left: auto; }
-.tree { flex: 1; overflow: auto; padding: 2px 0 12px; outline: none; }
+.scroll { flex: 1; overflow: auto; }
+.fav-section { padding-bottom: 6px; }
+.fav-header { gap: 5px; cursor: pointer; }
+.fav-header .section-count { font-size: 11px; }
+.fav-tree { padding: 2px 0 0; }
+.tree { padding: 2px 0 12px; outline: none; }
 .tree[data-density="compact"] { --row-height: 24px; }
 .tree[data-density="comfort"] { --row-height: 28px; }
 .tree[data-density="spacious"] { --row-height: 32px; }
@@ -109,8 +114,7 @@ html.dark .row.current {
 /* With an age the "…" slot leaves the flow and covers the age while hovered, so the age ends at the row's edge. */
 .row:has(.age) .slot { position: absolute; right: 12px; }
 .row:hover .age, .row.menu-target .age { visibility: hidden; }
-.slot { display: grid; place-items: center; flex: none; width: 20px; height: 20px; }
-.slot > * { grid-area: 1 / 1; }
+.slot { display: flex; align-items: center; gap: 2px; flex: none; }
 /* Orca's --agent-question (orange-600, orange-500 in dark; not passed to plugins) on its MessageCircleQuestion glyph. */
 .permission-mark { width: 12px; height: 12px; transform: translateX(2px); color: oklch(64.6% 0.222 41.116); }
 /* Orca's Activity glyph for a monitoring agent, in --agent-working like the spinner. */
@@ -136,9 +140,10 @@ html.dark .dot.unread { background: oklch(70.7% 0.165 254.624); }
 .worktrees-mark { display: grid; place-items: center; flex: none; color: var(--orca-muted-foreground); }
 .worktrees-mark svg { width: 13px; height: 13px; }
 .status { position: absolute; top: 0; bottom: 0; display: grid; place-items: center; pointer-events: none; }
-.more { width: 20px; height: 20px; visibility: hidden; }
-.row:hover .more, .row.menu-target .more { visibility: visible; }
-.more svg { width: 14px; height: 14px; }
+.fav, .more { width: 20px; height: 20px; visibility: hidden; }
+.row:hover .fav, .row.menu-target .fav, .row:hover .more, .row.menu-target .more { visibility: visible; }
+.fav svg, .more svg { width: 14px; height: 14px; }
+.fav.active svg { fill: currentColor; }
 /* Orca's tooltip (ui/tooltip.tsx): bg-foreground, text-background, rounded-md, text-xs, px-3 py-1.5, a 10px arrow. */
 .tooltip {
   position: fixed; z-index: 90; width: fit-content; max-width: calc(100vw - 8px); padding: 6px 12px; pointer-events: none;

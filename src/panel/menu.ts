@@ -131,6 +131,8 @@ export type RowMenuOptions = {
   onNewWorkspace?: () => void
   /** Present for an openable workspace: adds `Mark Read` (when unread) or `Mark Unread` below a separator. */
   markRead?: { unread: boolean; onToggle: () => void }
+  /** Present for any project or worktree row: adds `Add to Favorites` / `Remove from Favorites` below a separator. */
+  favorite?: { active: boolean; onToggle: () => void }
   /** Present for a row whose name the plugin can show and change (a linked worktree): adds `Edit Details…` below a separator. */
   onEdit?: () => void
   /** Present for a linked worktree or non-root folder workspace: adds a red `Delete` item below a separator. */
@@ -143,12 +145,13 @@ export type RowMenuOptions = {
 export function buildRowMenu(options: RowMenuOptions): HTMLElement {
   const menu = el('div', 'menu')
   menu.setAttribute('role', 'menu')
-  const { onNewWorkspace, markRead, onEdit, onDelete } = options
+  const { onNewWorkspace, markRead, favorite, onEdit, onDelete } = options
   const labels = options.labels ?? { tab: 'New tab', workspace: 'New workspace' }
-  type Entry = readonly ['add' | 'branch' | 'bell' | 'bellOff' | 'edit' | 'trash', string, () => void, boolean?]
+  type Entry = readonly ['add' | 'branch' | 'bell' | 'bellOff' | 'star' | 'edit' | 'trash', string, () => void, boolean?]
   const top: Entry[] = [['add', labels.tab, options.onNewTab]]
   if (onNewWorkspace) top.push(['branch', labels.workspace, onNewWorkspace])
   const bottom: Entry[] = []
+  if (favorite) bottom.push(['star', favorite.active ? 'Remove from Favorites' : 'Add to Favorites', favorite.onToggle])
   if (markRead) bottom.push([markRead.unread ? 'bellOff' : 'bell', markRead.unread ? 'Mark Read' : 'Mark Unread', markRead.onToggle])
   if (onEdit) bottom.push(['edit', 'Edit Details…', onEdit])
   if (onDelete) bottom.push(['trash', 'Delete', onDelete, true])

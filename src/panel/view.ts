@@ -2,6 +2,7 @@
 import { isOpenable, isProjectFolder, type AgentText } from '../types'
 import { longAge, shortAge } from './age'
 import { detailFor, type DetailMode, type FolderMark, type GuideMode } from './display'
+import { FAVORITES_SECTION_KEY, canonicalKey, isFavoriteCopy } from './favorites'
 import { icon, projectIcon } from './icons'
 import { rowLayout } from './layout'
 import { rowDescription, type Row } from './rows'
@@ -24,6 +25,10 @@ export type ViewState = {
   showTime: boolean
   /** True in `Sort by: Manual` when no filter is active: project rows can be dragged within their container. */
   draggable: boolean
+  /** Canonical keys of favorited projects and worktrees. */
+  favorites: ReadonlySet<string>
+  /** True when no filter is active: items inside the Favorites section can be reordered by drag-and-drop. */
+  favoritesDraggable: boolean
   titles: ReadonlyMap<string, AgentText>
 }
 
@@ -43,7 +48,7 @@ function buildRowTooltip(row: Row, state: ViewState): HTMLElement {
   head.className = 'tip-head'
   const glyph = document.createElement('span')
   glyph.className = 'glyph'
-  glyph.appendChild(!node.linked ? projectIcon(node.icon, node.color) : icon(glyphName(row)))
+  glyph.appendChild(!node.linked || node.projectLabel !== undefined ? projectIcon(node.icon, node.color) : icon(glyphName(row)))
   const name = document.createElement('span')
   name.className = 'tip-name'
   name.textContent = node.label
@@ -80,6 +85,13 @@ function buildRowTooltip(row: Row, state: ViewState): HTMLElement {
     card.appendChild(meta)
   }
 
+  if (node.projectLabel) {
+    const project = document.createElement('div')
+    project.className = 'tip-folder'
+    project.textContent = node.projectLabel
+    card.appendChild(project)
+  }
+
   if (node.folder) {
     const folder = document.createElement('div')
     folder.className = 'tip-folder'
@@ -112,13 +124,17 @@ function buildRowTooltip(row: Row, state: ViewState): HTMLElement {
   return card
 }
 
-function renderRow(row: Row, index: number, state: ViewState): HTMLElement {
+function renderRow(row: Row, index: number, state: ViewState, idPrefix: string): HTMLElement {
   const { node } = row
   const el = document.createElement('div')
   el.className = `row ${node.kind}`
-  el.id = `row-${index}`
+  el.id = `${idPrefix}-${index}`
   el.dataset.key = node.key
-  if (state.draggable && node.kind === 'workspace' && !node.linked) {
+  if (isFavoriteCopy(node.key) && row.depth === 0 && state.favoritesDraggable) {
+    el.draggable = true
+    el.dataset.draggable = 'true'
+    el.dataset.container = FAVORITES_SECTION_KEY
+  } else if (state.draggable && node.kind === 'workspace' && !node.linked && !isFavoriteCopy(node.key)) {
     el.draggable = true
     el.dataset.draggable = 'true'
     el.dataset.container = row.parentKey ?? ''
@@ -156,7 +172,7 @@ function renderRow(row: Row, index: number, state: ViewState): HTMLElement {
   if (row.expandable && showArrow) twistie.appendChild(icon('chevron'))
   const glyph = document.createElement('span')
   glyph.className = 'glyph'
-  glyph.appendChild(node.kind === 'workspace' && !node.linked ? projectIcon(node.icon, node.color) : icon(glyphName(row)))
+  glyph.appendChild(node.kind === 'workspace' && (!node.linked || node.projectLabel !== undefined) ? projectIcon(node.icon, node.color) : icon(glyphName(row)))
   const label = document.createElement('span')
   label.className = 'label'
   label.textContent = node.label
@@ -206,7 +222,8 @@ function renderRow(row: Row, index: number, state: ViewState): HTMLElement {
     const text = document.createElement('span')
     text.className = 'row-text'
     text.appendChild(label)
-    const detailText = detailFor(node, state.detailMode, state.titles)
+    const baseDetail = detailFor(node, state.detailMode, state.titles)
+    const detailText = node.projectLabel ? (baseDetail ? `${node.projectLabel} · ${baseDetail}` : node.projectLabel) : baseDetail
     if (detailText) {
       const detail = document.createElement('span')
       detail.className = 'detail'
@@ -242,6 +259,15 @@ function renderRow(row: Row, index: number, state: ViewState): HTMLElement {
   if (node.kind !== 'workspace') return el
   const slot = document.createElement('span')
   slot.className = 'slot'
+  const isFav = state.favorites.has(canonicalKey(node.key))
+  const fav = document.createElement('button')
+  fav.type = 'button'
+  fav.className = isFav ? 'tool fav active' : 'tool fav'
+  const favLabel = isFav ? 'Remove from Favorites' : 'Add to Favorites'
+  setTip(fav, favLabel)
+  fav.setAttribute('aria-label', favLabel)
+  fav.tabIndex = -1
+  fav.appendChild(icon('star'))
   const more = document.createElement('button')
   more.type = 'button'
   more.className = 'tool more'
@@ -249,7 +275,7 @@ function renderRow(row: Row, index: number, state: ViewState): HTMLElement {
   more.setAttribute('aria-label', 'More actions')
   more.tabIndex = -1
   more.appendChild(icon('more'))
-  slot.appendChild(more)
+  slot.append(fav, more)
   el.appendChild(slot)
   return el
 }
@@ -262,8 +288,8 @@ export function refreshAges(container: HTMLElement, now = Date.now()): void {
   }
 }
 
-export function renderRows(container: HTMLElement, rows: readonly Row[], state: ViewState): void {
-  container.replaceChildren(...rows.map((row, index) => renderRow(row, index, state)))
+export function renderRows(container: HTMLElement, rows: readonly Row[], state: ViewState, idPrefix = 'row'): void {
+  container.replaceChildren(...rows.map((row, index) => renderRow(row, index, state, idPrefix)))
 }
 
 export function renderMessage(container: HTMLElement, text: string, isError = false): void {

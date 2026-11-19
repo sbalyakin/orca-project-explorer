@@ -12,6 +12,7 @@ import { buildDeleteConfirm, buildEditForm, buildMainMenu, buildRowMenu, closePo
 import { buildOptionsMenu, buildSortMenu } from './options-menu'
 import { buildProjectPicker } from './project-picker'
 import { groupTree } from './grouping'
+import { FAVORITES_SECTION_KEY, buildFavoritesSection, canonicalKey, excludeFavorites, isFavoriteCopy, parseFavorites, pruneFavorites, reorderFavorites, toggleFavorite } from './favorites'
 import { EMPTY_MANUAL_ORDER, manualOrderBucket, parseManualOrder, pruneManualOrder, reorderProjects, type ManualOrder } from './manual-order'
 import { allCollapsed, canRename, containerKeys, keepLooks, navigate, pathTo, projectOf, projectsOf, visibleRows, type NavKey, type Row } from './rows'
 import { applyMonitoring, prunePanes, recordPane, workspaceIds, type PaneStates } from './monitoring'
@@ -31,6 +32,7 @@ const AGENTS_KEY = 'agents'
 const INSTALLED_AGENTS_KEY = 'agents:v1'
 const DISPLAY_KEY = 'display:v1'
 const MANUAL_ORDER_KEY = 'manualOrder:v1'
+const FAVORITES_KEY = 'favorites:v1'
 const RELOAD_DEBOUNCE_MS = 300
 const LOOK_RELOAD_MIN_MS = 5000
 
@@ -46,6 +48,7 @@ type State = {
   agents: readonly InstalledAgent[]
   display: DisplayOptions
   manualOrder: ManualOrder
+  favorites: readonly string[]
 }
 
 let state: State = {
@@ -59,7 +62,8 @@ let state: State = {
   menuKey: null,
   agents: defaultAgents(),
   display: DEFAULT_DISPLAY,
-  manualOrder: EMPTY_MANUAL_ORDER
+  manualOrder: EMPTY_MANUAL_ORDER,
+  favorites: []
 }
 let rows: Row[] = []
 let pendingReveal: string | null = null
@@ -177,7 +181,31 @@ for (const [name, label] of [['sort', 'Sort'], ['settings', 'Display options'], 
   headerActions.appendChild(button)
 }
 header.append(headerTitle, foldButton, headerActions)
-document.body.append(toolbar, header, treeEl, footer)
+
+const favSectionEl = document.createElement('div')
+favSectionEl.className = 'fav-section'
+favSectionEl.hidden = true
+const favHeader = document.createElement('div')
+favHeader.className = 'header fav-header'
+const favTitle = document.createElement('span')
+favTitle.className = 'header-title'
+favTitle.textContent = 'Favorites'
+const favCount = document.createElement('span')
+favCount.className = 'section-count'
+const favChevron = document.createElement('span')
+favChevron.className = 'worktrees-mark'
+favHeader.append(favTitle, favCount, favChevron)
+favHeader.addEventListener('click', () => toggle(FAVORITES_SECTION_KEY, state.collapsed.has(FAVORITES_SECTION_KEY)))
+const favListEl = document.createElement('div')
+favListEl.className = 'tree fav-tree'
+favListEl.setAttribute('role', 'tree')
+favListEl.setAttribute('aria-label', 'Favorites')
+favSectionEl.append(favHeader, favListEl)
+
+const scrollEl = document.createElement('div')
+scrollEl.className = 'scroll'
+scrollEl.append(favSectionEl, header, treeEl)
+document.body.append(toolbar, scrollEl, footer)
 installTooltips()
 // ---------------------------------------------------------------- state
 
@@ -221,27 +249,71 @@ async function run(action: () => Promise<unknown>, pending = ''): Promise<void> 
 function render(scrollToSelected = false): void {
   syncFoldButton()
   treeEl.dataset.density = state.display.density
+  favListEl.dataset.density = state.display.density
   treeEl.removeAttribute('aria-activedescendant')
   if (!state.tree) {
+    favSectionEl.hidden = true
     renderMessage(treeEl, state.error ? `Could not load projects: ${state.error}` : 'Loading…', state.error !== null)
     return
   }
-  rows = visibleRows(shownNodes(), state.collapsed, state.filter)
-  if (rows.length === 0) {
-    renderMessage(treeEl, state.filter ? 'No matching projects' : 'No projects yet')
-    return
+  const grouped = shownNodes()
+  const favoritesSet = new Set(state.favorites)
+  const favoritesDraggable = state.filter.trim() === ''
+  const favSection = favoritesDraggable ? buildFavoritesSection(grouped, state.favorites) : null
+  let favRows: Row[] = []
+  if (favSection) {
+    favSectionEl.hidden = false
+    const favExpanded = !state.collapsed.has(FAVORITES_SECTION_KEY)
+    favCount.textContent = String(favSection.children.length)
+    favChevron.replaceChildren(icon(favExpanded ? 'chevronDown' : 'chevron'))
+    favListEl.hidden = !favExpanded
+    if (favExpanded) {
+      favRows = visibleRows(favSection.children, state.collapsed, '')
+      renderRows(
+        favListEl,
+        favRows,
+        {
+          ...state,
+          detailMode: state.display.detail,
+          folderMark: state.display.folders,
+          guides: 'none',
+          flat: true,
+          showTime: state.display.time === 'show',
+          draggable: false,
+          favorites: favoritesSet,
+          favoritesDraggable,
+          titles
+        },
+        'fav-row'
+      )
+    } else {
+      favListEl.replaceChildren()
+    }
+  } else {
+    favSectionEl.hidden = true
+    favListEl.replaceChildren()
   }
-  renderRows(treeEl, rows, {
-    ...state,
-    detailMode: state.display.detail,
-    folderMark: state.display.folders,
-    guides: state.display.group === 'folder' ? state.display.guides : 'none',
-    flat: state.display.group === 'none',
-    showTime: state.display.time === 'show',
-    draggable: state.display.sort === 'manual' && state.filter.trim() === '',
-    titles
-  })
-  const selected = treeEl.querySelector('.row.selected')
+
+  const mainNodes = favSection ? excludeFavorites(grouped, favoritesSet) : grouped
+  const treeRows = visibleRows(mainNodes, state.collapsed, state.filter)
+  rows = [...favRows, ...treeRows]
+  if (treeRows.length === 0) {
+    renderMessage(treeEl, state.filter ? 'No matching projects' : favSection ? 'All projects are in Favorites' : 'No projects yet')
+  } else {
+    renderRows(treeEl, treeRows, {
+      ...state,
+      detailMode: state.display.detail,
+      folderMark: state.display.folders,
+      guides: state.display.group === 'folder' ? state.display.guides : 'none',
+      flat: state.display.group === 'none',
+      showTime: state.display.time === 'show',
+      draggable: state.display.sort === 'manual' && state.filter.trim() === '',
+      favorites: favoritesSet,
+      favoritesDraggable,
+      titles
+    })
+  }
+  const selected = scrollEl.querySelector('.row.selected')
   if (!selected) return
   treeEl.setAttribute('aria-activedescendant', selected.id)
   if (scrollToSelected) selected.scrollIntoView({ block: 'nearest' })
@@ -274,24 +346,28 @@ function toggle(key: string, expanded: boolean): void {
 function reveal(workspaceId: string | null): void {
   if (!state.tree || !workspaceId) return setState({ currentWorkspaceId: workspaceId })
   const isIt = (node: TreeNode): boolean => isOpenable(node) && node.workspaceId === workspaceId
-  const above = pathTo(shownNodes(), isIt) ?? []
+  const grouped = shownNodes()
+  const favSection = state.filter.trim() === '' ? buildFavoritesSection(grouped, state.favorites) : null
+  const favAbove = favSection ? pathTo([favSection], isIt) : null
+  const above = favAbove ?? pathTo(grouped, isIt) ?? []
   const collapsed = new Set([...state.collapsed].filter((key) => !above.includes(key)))
-  const found = findKey(workspaceId)
+  const found = favAbove && favSection ? findKeyIn([favSection], workspaceId) : findKey(workspaceId)
   // A workspace that is not in the tree yet (just created) is revealed after the next load.
   pendingReveal = found ? null : workspaceId
   setState({ currentWorkspaceId: workspaceId, collapsed, selectedKey: found ?? state.selectedKey }, found !== null)
 }
 
-function findKey(workspaceId: string): string | null {
-  const walk = (nodes: ProjectTree['nodes']): string | null => {
-    for (const node of nodes) {
-      if (isOpenable(node) && node.workspaceId === workspaceId) return node.key
-      const below = walk(node.children)
-      if (below) return below
-    }
-    return null
+function findKeyIn(nodes: readonly TreeNode[], workspaceId: string): string | null {
+  for (const node of nodes) {
+    if (isOpenable(node) && node.workspaceId === workspaceId) return node.key
+    const below = findKeyIn(node.children, workspaceId)
+    if (below) return below
   }
-  return state.tree ? walk(state.tree.nodes) : null
+  return null
+}
+
+function findKey(workspaceId: string): string | null {
+  return state.tree ? findKeyIn(state.tree.nodes, workspaceId) : null
 }
 
 /** What the agent events say per pane; Orca's workspace list cannot tell "works" from "waits for background work". */
@@ -352,6 +428,8 @@ async function reload(): Promise<void> {
     pruneTitles(titles, ids)
     const prunedOrder = pruneManualOrder(state.manualOrder, new Set(projectsOf(loaded.nodes).map((project) => project.key)))
     if (prunedOrder) setManualOrder(prunedOrder)
+    const prunedFavorites = pruneFavorites(state.favorites, loaded.nodes)
+    if (prunedFavorites) setFavorites(prunedFavorites)
     loadTitles()
     const tree = { ...loaded, nodes: applyMonitoring(loaded.nodes, panes) }
     await shrinkImages(tree.nodes)
@@ -429,6 +507,13 @@ function showRowMenu(node: WorkspaceNode, x: number, y: number): void {
     onNewTab: () => {
       popover.close()
       showWorkspaceMenu(node, x, y)
+    },
+    favorite: {
+      active: state.favorites.includes(canonicalKey(node.key)),
+      onToggle: () => {
+        popover.close()
+        toggleFavoriteKey(node.key)
+      }
     },
     ...(isOpenable(node)
       ? {
@@ -525,6 +610,15 @@ function setDisplay(patch: Partial<DisplayOptions>): void {
 function setManualOrder(manualOrder: ManualOrder): void {
   setState({ manualOrder })
   orca.storage.set(MANUAL_ORDER_KEY, manualOrder).catch(flash)
+}
+
+function setFavorites(favorites: readonly string[]): void {
+  setState({ favorites })
+  orca.storage.set(FAVORITES_KEY, [...favorites]).catch(flash)
+}
+
+function toggleFavoriteKey(key: string): void {
+  setFavorites(toggleFavorite(state.favorites, key))
 }
 
 /** The sort menu under the header's sort button; stays open so clicking the active mode reverses direction. */
@@ -696,11 +790,15 @@ async function launchAgent(workspaceId: string, agent: string, choice: LauncherC
 
 // ---------------------------------------------------------------- input
 
-treeEl.addEventListener('click', (event) => {
+scrollEl.addEventListener('click', (event) => {
   const target = event.target instanceof Element ? event.target : null
   const rowEl = target?.closest<HTMLElement>('.row')
   const row = rowFor(rowEl?.dataset.key)
   if (!rowEl || !row) return
+  if (target?.closest('.fav')) {
+    toggleFavoriteKey(row.node.key)
+    return
+  }
   if (target?.closest('.more')) {
     const box = rowEl.querySelector('.more')?.getBoundingClientRect()
     if (box) showMenu(row, box.left, box.bottom + 2)
@@ -714,7 +812,7 @@ treeEl.addEventListener('click', (event) => {
   activate(row)
 })
 
-treeEl.addEventListener('contextmenu', (event) => {
+scrollEl.addEventListener('contextmenu', (event) => {
   event.preventDefault()
   const rowEl = event.target instanceof Element ? event.target.closest<HTMLElement>('.row') : null
   const row = rowFor(rowEl?.dataset.key)
@@ -738,7 +836,7 @@ function clearDrag(): void {
   dragState = null
 }
 
-treeEl.addEventListener('dragstart', (event) => {
+scrollEl.addEventListener('dragstart', (event) => {
   const rowEl = event.target instanceof Element ? event.target.closest<HTMLElement>('.row[data-draggable="true"]') : null
   const key = rowEl?.dataset.key
   if (!rowEl || !key) {
@@ -762,7 +860,7 @@ treeEl.addEventListener('dragstart', (event) => {
   requestAnimationFrame(() => rowEl.classList.add('dragging'))
 })
 
-treeEl.addEventListener('dragover', (event) => {
+scrollEl.addEventListener('dragover', (event) => {
   if (!dragState) return
   const rowEl = event.target instanceof Element ? event.target.closest<HTMLElement>('.row') : null
   const key = rowEl?.dataset.key
@@ -780,28 +878,32 @@ treeEl.addEventListener('dragover', (event) => {
   dropTarget = { key, el: rowEl, position }
 })
 
-treeEl.addEventListener('dragleave', (event) => {
+scrollEl.addEventListener('dragleave', (event) => {
   if (!dragState) return
   const related = event.relatedTarget instanceof Node ? event.relatedTarget : null
-  if (!related || !treeEl.contains(related)) clearDropIndicator()
+  if (!related || !scrollEl.contains(related)) clearDropIndicator()
 })
 
-treeEl.addEventListener('drop', (event) => {
+scrollEl.addEventListener('drop', (event) => {
   if (!dragState) return
   event.preventDefault()
   const activeDrag = dragState
   const activeDrop = dropTarget
   clearDrag()
   if (!activeDrop) return
+  if (activeDrag.container === FAVORITES_SECTION_KEY) {
+    setFavorites(reorderFavorites(state.favorites, activeDrag.key, activeDrop.key, activeDrop.position))
+    return
+  }
   const bucket = manualOrderBucket(state.display.group)
   const visibleContainerKeys = rows
-    .filter((row) => row.node.kind === 'workspace' && !row.node.linked && (row.parentKey ?? '') === activeDrag.container)
+    .filter((row) => row.node.kind === 'workspace' && !row.node.linked && !isFavoriteCopy(row.node.key) && (row.parentKey ?? '') === activeDrag.container)
     .map((row) => row.node.key)
   const nextBucket = reorderProjects(state.manualOrder[bucket], visibleContainerKeys, activeDrag.key, activeDrop.key, activeDrop.position)
   setManualOrder({ ...state.manualOrder, [bucket]: nextBucket })
 })
 
-treeEl.addEventListener('dragend', () => clearDrag())
+scrollEl.addEventListener('dragend', () => clearDrag())
 
 const NAV_KEYS: Record<string, NavKey> = {
   ArrowUp: 'up',
@@ -828,7 +930,7 @@ treeEl.addEventListener('keydown', (event) => {
     activate(row)
   } else if (event.key === 'ContextMenu' || (event.key === 'F10' && event.shiftKey)) {
     event.preventDefault()
-    const box = treeEl.querySelector('.row.selected')?.getBoundingClientRect()
+    const box = scrollEl.querySelector('.row.selected')?.getBoundingClientRect()
     showMenu(row, box ? box.left + 24 : 8, box ? box.bottom : 8)
   }
 })
@@ -879,10 +981,10 @@ function reloadOnLook(): void {
 }
 // Ages are drawn at render time, so a panel left open needs a tick, as Orca's sidebar has.
 const AGE_TICK_MS = 30_000
-setInterval(() => refreshAges(treeEl), AGE_TICK_MS)
+setInterval(() => refreshAges(scrollEl), AGE_TICK_MS)
 document.addEventListener('visibilitychange', () => {
   if (document.visibilityState === 'visible') {
-    refreshAges(treeEl)
+    refreshAges(scrollEl)
     reloadOnLook()
   }
 })
@@ -956,7 +1058,7 @@ async function start(): Promise<void> {
   // At once, beside the storage reads: the worker's answer is the slow part when the cache is empty.
   void syncPluginFont()
   try {
-    const [stored, tree, sidebar, pluginFont, display, texts, manualOrder, storedAgents] = await Promise.all([
+    const [stored, tree, sidebar, pluginFont, display, texts, manualOrder, storedFavorites, storedAgents] = await Promise.all([
       orca.storage.get(COLLAPSED_KEY),
       orca.storage.get(TREE_KEY),
       orca.storage.get(SIDEBAR_KEY),
@@ -964,6 +1066,7 @@ async function start(): Promise<void> {
       orca.storage.get(DISPLAY_KEY),
       orca.storage.get(TEXTS_KEY),
       orca.storage.get(MANUAL_ORDER_KEY),
+      orca.storage.get(FAVORITES_KEY),
       orca.storage.get(INSTALLED_AGENTS_KEY)
     ])
     // Before the cached tree is drawn: a later change of font would reflow every row.
@@ -977,6 +1080,7 @@ async function start(): Promise<void> {
       collapsed: new Set(keys),
       display: parseDisplay(display),
       manualOrder: parseManualOrder(manualOrder),
+      favorites: parseFavorites(storedFavorites),
       ...(cachedAgents ? { agents: cachedAgents } : {}),
       ...cachedTree(tree)
     })

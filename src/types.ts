@@ -37,6 +37,8 @@ export type WorkspaceNode = {
   color?: string
   /** The folders above a project, for its tooltip when the tree is not grouped by folder. Set by the panel. */
   folder?: string
+  /** The parent project's name, set on a favorited worktree so it stays identifiable outside its project. */
+  projectLabel?: string
   attention: Attention
   /** True when Orca's unread dot is set (tracked separately so `permission` does not hide it). */
   unread?: true
