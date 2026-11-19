@@ -409,6 +409,21 @@ function showRowMenu(node: WorkspaceNode, x: number, y: number): void {
       popover.close()
       showWorkspaceMenu(node, x, y)
     },
+    ...(isOpenable(node)
+      ? {
+          markRead: {
+            unread: Boolean(node.unread),
+            onToggle: () => {
+              popover.close()
+              const next = !node.unread
+              void run(
+                () => orca.plugin.request('workspace.setUnread', { workspaceId: node.workspaceId, unread: next }),
+                next ? 'Marking unread…' : 'Marking read…'
+              ).then(reloadSoon)
+            }
+          }
+        }
+      : {}),
     ...(canRename(node)
       ? {
           onEdit: () => {

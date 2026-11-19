@@ -9,6 +9,8 @@ declare module 'orca' {
     'workspace.open': { input: { workspaceId: string }; output: { opened: true } }
     /** Renames a workspace in Orca's sidebar; the answer is the name Orca kept. */
     'workspace.rename': { input: { workspaceId: string; name: string }; output: { name: string } }
+    /** Marks a workspace read or unread via `orca worktree set --read|--unread`. */
+    'workspace.setUnread': { input: { workspaceId: string; unread: boolean }; output: { ok: true } }
     /** Opens a terminal in a workspace and brings it to the front. */
     'terminal.launch': { input: { workspaceId: string }; output: { terminalId: string } }
     /** Starts an agent in a workspace, with a model, effort and prompt, as a chat or a terminal. */

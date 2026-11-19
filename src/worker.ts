@@ -10,6 +10,7 @@ import { createCatalogs } from './catalog/catalogs'
 import { launchAgent } from './launch'
 import { agentKey, fetchCliAgents, latestByPath, resolveAgentPaths, titleOf, workspaceSuffix, type CliAgent } from './titles'
 import { openNewWorktreeDialog } from './newworktree'
+import { setWorkspaceUnread } from './worktree'
 import { readFontFace } from './pluginfont'
 import type { AgentText, ProjectTree } from './types'
 
@@ -76,6 +77,12 @@ export default function activate(orca: OrcaWorkerApi): void {
     const trimmed = typeof name === 'string' ? name.trim() : ''
     if (trimmed.length === 0) throw invalidParams('name is required')
     return orca.host.call('workspace.rename', { workspaceId: requireId(workspaceId, 'workspaceId'), name: trimmed })
+  })
+
+  orca.panels.handle('workspace.setUnread', async ({ workspaceId, unread }) => {
+    if (typeof unread !== 'boolean') throw invalidParams('unread must be a boolean')
+    await setWorkspaceUnread(requireId(workspaceId, 'workspaceId'), unread)
+    return { ok: true as const }
   })
 
   orca.panels.handle('terminal.launch', async ({ workspaceId }) => {

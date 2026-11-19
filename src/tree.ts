@@ -60,6 +60,7 @@ function workspaceNode(workspace: WorkspaceRow, label: string, linked: boolean):
   }
   // The tree travels as JSON, so an absent detail is a missing key, never `undefined`.
   if (workspace.branch && workspace.branch !== label) node.detail = workspace.branch
+  if (workspace.status?.unread) node.unread = true
   const activeAt = workspace.status?.lastActivityAt
   if (activeAt) node.activeAt = activeAt
   return node

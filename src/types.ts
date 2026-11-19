@@ -38,6 +38,8 @@ export type WorkspaceNode = {
   /** The folders above a project, for its tooltip when the tree is not grouped by folder. Set by the panel. */
   folder?: string
   attention: Attention
+  /** True when Orca's unread dot is set (tracked separately so `permission` does not hide it). */
+  unread?: true
   /** Orca's `lastActivityAt` (ms since the epoch); absent when Orca has none. */
   activeAt?: number
   children: TreeNode[]

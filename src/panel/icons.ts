@@ -29,7 +29,9 @@ const PANEL_ICONS = {
   edit: 'Pencil',
   permission: 'MessageCircleQuestion',
   monitoring: 'Activity',
-  clock: 'Clock'
+  clock: 'Clock',
+  bell: 'Bell',
+  bellOff: 'BellOff'
 } as const
 
 export type IconName = keyof typeof PANEL_ICONS

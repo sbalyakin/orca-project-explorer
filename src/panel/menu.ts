@@ -129,22 +129,27 @@ export function openPopover(options: { x: number; y: number; onClose: () => void
 export type RowMenuOptions = {
   onNewTab: () => void
   onNewWorkspace?: () => void
+  /** Present for an openable workspace: adds `Mark Read` (when unread) or `Mark Unread` below a separator. */
+  markRead?: { unread: boolean; onToggle: () => void }
   /** Present for a row whose name the plugin can show and change (a linked worktree): adds `Edit Details…` below a separator. */
   onEdit?: () => void
   /** The item texts; the `+` button's menu says "Create new …". */
   labels?: { tab: string; workspace: string }
 }
 
-/** The menu of a project or worktree row: plain items, laid out like the agent rows of the main menu. */
+/** The menu of a project or worktree row: plain items, laid out like Orca's popup menu. */
 export function buildRowMenu(options: RowMenuOptions): HTMLElement {
   const menu = el('div', 'menu')
   menu.setAttribute('role', 'menu')
-  const { onNewWorkspace } = options
+  const { onNewWorkspace, markRead, onEdit } = options
   const labels = options.labels ?? { tab: 'New tab', workspace: 'New workspace' }
-  const entries: (readonly ['add' | 'branch' | 'edit', string, () => void])[] = [['add', labels.tab, options.onNewTab]]
-  if (onNewWorkspace) entries.push(['branch', labels.workspace, onNewWorkspace])
-  if (options.onEdit) entries.push(['edit', 'Edit Details…', options.onEdit])
-  const items = entries.map(([name, text, onPress]) => {
+  type Entry = readonly ['add' | 'branch' | 'bell' | 'bellOff' | 'edit', string, () => void]
+  const top: Entry[] = [['add', labels.tab, options.onNewTab]]
+  if (onNewWorkspace) top.push(['branch', labels.workspace, onNewWorkspace])
+  const bottom: Entry[] = []
+  if (markRead) bottom.push([markRead.unread ? 'bellOff' : 'bell', markRead.unread ? 'Mark Read' : 'Mark Unread', markRead.onToggle])
+  if (onEdit) bottom.push(['edit', 'Edit Details…', onEdit])
+  const makeItem = ([name, text, onPress]: Entry): HTMLElement => {
     const item = el('button', 'menu-item')
     item.type = 'button'
     item.setAttribute('role', 'menuitem')
@@ -153,13 +158,16 @@ export function buildRowMenu(options: RowMenuOptions): HTMLElement {
     item.append(icon(name), label)
     item.addEventListener('click', onPress)
     return item
-  })
+  }
+  const topItems = top.map(makeItem)
+  const bottomItems = bottom.map(makeItem)
+  const items = [...topItems, ...bottomItems]
   items[0].dataset.autofocus = ''
-  if (options.onEdit) {
+  if (bottomItems.length > 0) {
     const separator = el('div', 'menu-separator')
     separator.setAttribute('role', 'separator')
-    menu.append(...items.slice(0, -1), separator, items[items.length - 1])
-  } else menu.append(...items)
+    menu.append(...topItems, separator, ...bottomItems)
+  } else menu.append(...topItems)
   menu.addEventListener('keydown', (event) => {
     const at = items.findIndex((item) => item === document.activeElement)
     const go = (target: HTMLElement | undefined): void => {
