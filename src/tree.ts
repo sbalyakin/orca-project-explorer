@@ -10,7 +10,7 @@ export type WorkspaceRow = {
   projectId?: string | null
   path: string
   branch: string | null
-  status?: { state: string; unread: boolean }
+  status?: { state: string; unread: boolean; lastActivityAt?: number | null }
 }
 
 function attentionOf(workspace: WorkspaceRow): Attention {
@@ -60,6 +60,8 @@ function workspaceNode(workspace: WorkspaceRow, label: string, linked: boolean):
   }
   // The tree travels as JSON, so an absent detail is a missing key, never `undefined`.
   if (workspace.branch && workspace.branch !== label) node.detail = workspace.branch
+  const activeAt = workspace.status?.lastActivityAt
+  if (activeAt) node.activeAt = activeAt
   return node
 }
 

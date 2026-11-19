@@ -58,3 +58,7 @@ Segments `None`, `Branch` (default), `Title`, `Message`. Text for a workspace ro
 ### `Density`
 
 `compact` / `comfort` / `spacious` set the row height through `--row-height` on `.tree[data-density]` in `src/panel/style.ts`: 24 / 28 / 32 px (2026-11-18). The old fixed 24 px is `compact`; the default is `comfort` (28 px).
+
+### `Time`
+
+`show` (default) / `hide` (`TimeMode`, 2026-11-19, user request): the age at the right of a workspace row (`now`, `5m`, `1d`; see `tree.md`). `hide` draws no `.age`, so the `…` slot is back in the row's flow. Not checked on the live panel.

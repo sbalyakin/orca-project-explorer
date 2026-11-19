@@ -84,3 +84,9 @@ test('parseDisplay reads the density and defaults to comfort', () => {
   assert.equal(parseDisplay({ density: 'x' }).density, 'comfort')
   assert.equal(parseDisplay(null).density, 'comfort')
 })
+
+test('parseDisplay reads the time setting and defaults to show', () => {
+  assert.equal(parseDisplay({ time: 'hide' }).time, 'hide')
+  assert.equal(parseDisplay({ time: 'x' }).time, 'show')
+  assert.equal(parseDisplay(null).time, 'show')
+})

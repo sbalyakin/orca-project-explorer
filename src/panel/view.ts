@@ -1,5 +1,6 @@
 // Draws rows into the tree element. Text only ever goes in through textContent.
 import { isOpenable, isProjectFolder, type AgentText } from '../types'
+import { shortAge } from './age'
 import { detailFor, type DetailMode, type FolderMark, type GuideMode } from './display'
 import { icon, projectIcon } from './icons'
 import { rowLayout } from './layout'
@@ -19,6 +20,8 @@ export type ViewState = {
   guides: GuideMode
   /** `Group by: None`: the list is flat, so its first level gets room for the status mark. */
   flat: boolean
+  /** The age at the right of a workspace row (`Display options`, `Time`). */
+  showTime: boolean
   titles: ReadonlyMap<string, AgentText>
 }
 
@@ -131,6 +134,14 @@ function renderRow(row: Row, index: number, state: ViewState): HTMLElement {
   }
 
   if (node.kind !== 'workspace') return el
+  // Time since the workspace's last activity, as in Orca's own sidebar; a project that only folds has none.
+  if (state.showTime && isOpenable(node) && node.activeAt) {
+    const age = document.createElement('span')
+    age.className = 'age'
+    age.dataset.at = String(node.activeAt)
+    age.textContent = shortAge(node.activeAt, Date.now())
+    el.appendChild(age)
+  }
   const slot = document.createElement('span')
   slot.className = 'slot'
   const more = document.createElement('button')
@@ -143,6 +154,14 @@ function renderRow(row: Row, index: number, state: ViewState): HTMLElement {
   slot.appendChild(more)
   el.appendChild(slot)
   return el
+}
+
+/** Re-reads the clock for every shown age without rebuilding rows, so a row under the pointer keeps its hover. */
+export function refreshAges(container: HTMLElement, now = Date.now()): void {
+  for (const age of container.querySelectorAll<HTMLElement>('.age')) {
+    const text = shortAge(Number(age.dataset.at), now)
+    if (age.textContent !== text) age.textContent = text
+  }
 }
 
 export function renderRows(container: HTMLElement, rows: readonly Row[], state: ViewState): void {

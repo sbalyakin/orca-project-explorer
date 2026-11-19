@@ -1,5 +1,5 @@
 // The "Display options" window under the gear: drawn like Orca's "Workspace options" popover.
-import { DENSITY_LABELS, DENSITY_MODES, DETAIL_LABELS, DETAIL_MODES, FOLDER_MARKS, FOLDER_MARK_LABELS, GROUP_LABELS, GROUP_MODES, GUIDE_LABELS, GUIDE_MODES, SETTING_TITLES, type DensityMode, type DetailMode, type FolderMark, type GroupMode, type GuideMode } from './display'
+import { DENSITY_LABELS, DENSITY_MODES, DETAIL_LABELS, DETAIL_MODES, FOLDER_MARKS, FOLDER_MARK_LABELS, GROUP_LABELS, GROUP_MODES, GUIDE_LABELS, GUIDE_MODES, SETTING_TITLES, TIME_LABELS, TIME_MODES, type DensityMode, type DetailMode, type FolderMark, type GroupMode, type GuideMode, type TimeMode } from './display'
 import { closePopover } from './menu'
 import { setTip } from './tooltip'
 
@@ -14,6 +14,8 @@ export type OptionsMenuOptions = {
   onGuides: (mode: GuideMode) => void
   density: DensityMode
   onDensity: (mode: DensityMode) => void
+  time: TimeMode
+  onTime: (mode: TimeMode) => void
 }
 
 function el<K extends keyof HTMLElementTagNameMap>(tag: K, className: string): HTMLElementTagNameMap[K] {
@@ -97,6 +99,7 @@ export function buildOptionsMenu(options: OptionsMenuOptions): HTMLElement {
       options.onGroup(mode)
     }),
     ...segmented(SETTING_TITLES.detail, DETAIL_MODES, DETAIL_LABELS, options.detail, options.onDetail),
+    ...segmented(SETTING_TITLES.time, TIME_MODES, TIME_LABELS, options.time, options.onTime),
     folderOptions,
     ...segmented(SETTING_TITLES.density, DENSITY_MODES, DENSITY_LABELS, options.density, options.onDensity)
   )

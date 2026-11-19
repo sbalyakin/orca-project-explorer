@@ -48,6 +48,16 @@ export const DENSITY_LABELS: Record<DensityMode, { short: string; full: string }
   spacious: { short: 'Spacious', full: 'Spacious rows' }
 }
 
+export const TIME_MODES = ['show', 'hide'] as const
+export type TimeMode = (typeof TIME_MODES)[number]
+
+export const DEFAULT_TIME: TimeMode = 'show'
+
+export const TIME_LABELS: Record<TimeMode, { short: string; full: string }> = {
+  show: { short: 'Show', full: 'Show time since last activity' },
+  hide: { short: 'Hide', full: 'Hide time since last activity' }
+}
+
 export const GROUP_MODES = ['none', 'folder', 'status'] as const
 export type GroupMode = (typeof GROUP_MODES)[number]
 
@@ -59,7 +69,7 @@ export const GROUP_LABELS: Record<GroupMode, { short: string; full: string }> = 
   status: { short: 'Status', full: 'Group by agent status' }
 }
 
-export type DisplayOptions = { group: GroupMode; detail: DetailMode; folders: FolderMark; guides: GuideMode; density: DensityMode }
+export type DisplayOptions = { group: GroupMode; detail: DetailMode; folders: FolderMark; guides: GuideMode; density: DensityMode; time: TimeMode }
 
 /** The title of each setting in the Display options window; `docs/display-options.md` must describe every one (see `docs.test.ts`). */
 export const SETTING_TITLES: Record<keyof DisplayOptions, string> = {
@@ -67,7 +77,8 @@ export const SETTING_TITLES: Record<keyof DisplayOptions, string> = {
   detail: 'After project name',
   folders: 'Folders',
   guides: 'Tree guides',
-  density: 'Density'
+  density: 'Density',
+  time: 'Time'
 }
 
 export const DEFAULT_DISPLAY: DisplayOptions = {
@@ -75,7 +86,8 @@ export const DEFAULT_DISPLAY: DisplayOptions = {
   detail: DEFAULT_DETAIL,
   folders: DEFAULT_FOLDER_MARK,
   guides: DEFAULT_GUIDES,
-  density: DEFAULT_DENSITY
+  density: DEFAULT_DENSITY,
+  time: DEFAULT_TIME
 }
 
 /** The saved choice; anything unreadable gives the default. */
@@ -86,7 +98,8 @@ export function parseDisplay(stored: unknown): DisplayOptions {
     detail: DETAIL_MODES.find((mode) => mode === saved.detail) ?? DEFAULT_DETAIL,
     folders: FOLDER_MARKS.find((mark) => mark === saved.folders) ?? DEFAULT_FOLDER_MARK,
     guides: GUIDE_MODES.find((mode) => mode === saved.guides) ?? DEFAULT_GUIDES,
-    density: DENSITY_MODES.find((mode) => mode === saved.density) ?? DEFAULT_DENSITY
+    density: DENSITY_MODES.find((mode) => mode === saved.density) ?? DEFAULT_DENSITY,
+    time: TIME_MODES.find((mode) => mode === saved.time) ?? DEFAULT_TIME
   }
 }
 

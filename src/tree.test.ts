@@ -106,3 +106,15 @@ test('status becomes the strongest need: permission over unread over working', (
   const attention = root.children.map((node) => (node.kind === 'workspace' ? node.attention : null))
   assert.deepEqual(attention, ['unread', 'permission', 'working', 'none'])
 })
+
+test('a workspace carries its last activity time; none or zero leaves it out', () => {
+  const projects = [{ id: 'p1', name: 'app', path: `${HOME}/app` }]
+  const row = { id: 'w1', name: 'app', projectId: 'p1', path: `${HOME}/app`, branch: 'main' }
+  const find = (lastActivityAt?: number | null): TreeNode => {
+    const [group] = buildTree(projects, [{ ...row, status: { state: 'done', unread: false, lastActivityAt } }], HOME)
+    return (group as GroupNode).children[0]
+  }
+  assert.equal((find(1234) as { activeAt?: number }).activeAt, 1234)
+  assert.equal('activeAt' in find(null), false)
+  assert.equal('activeAt' in find(0), false)
+})

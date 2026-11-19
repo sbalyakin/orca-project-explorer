@@ -18,7 +18,7 @@ import { lookFor, parseLooks } from './sidebar'
 import { CSS } from './style'
 import { shrinkImages } from './thumbs'
 import { installTooltips, setTip } from './tooltip'
-import { renderMessage, renderRows } from './view'
+import { refreshAges, renderMessage, renderRows } from './view'
 
 const COLLAPSED_KEY = 'collapsed'
 /** Bump the version when `ProjectTree` changes shape, so an old cache is not drawn. */
@@ -220,7 +220,7 @@ function render(scrollToSelected = false): void {
     renderMessage(treeEl, state.filter ? 'No matching projects' : 'No projects yet')
     return
   }
-  renderRows(treeEl, rows, { ...state, detailMode: state.display.detail, folderMark: state.display.folders, guides: state.display.group === 'folder' ? state.display.guides : 'none', flat: state.display.group === 'none', titles })
+  renderRows(treeEl, rows, { ...state, detailMode: state.display.detail, folderMark: state.display.folders, guides: state.display.group === 'folder' ? state.display.guides : 'none', flat: state.display.group === 'none', showTime: state.display.time === 'show', titles })
   const selected = treeEl.querySelector('.row.selected')
   if (!selected) return
   treeEl.setAttribute('aria-activedescendant', selected.id)
@@ -480,6 +480,8 @@ function showOptions(anchor: HTMLElement): void {
     onGuides: (guides) => setDisplay({ guides }),
     density: state.display.density,
     onDensity: (density) => setDisplay({ density }),
+    time: state.display.time,
+    onTime: (time) => setDisplay({ time }),
     onFolders: (folders) => setDisplay({ folders }),
     onDetail: (detail) => {
       setDisplay({ detail })
@@ -715,8 +717,14 @@ function reloadOnLook(): void {
   void syncPluginFont()
   reloadSoon()
 }
+// Ages are drawn at render time, so a panel left open needs a tick, as Orca's sidebar has.
+const AGE_TICK_MS = 30_000
+setInterval(() => refreshAges(treeEl), AGE_TICK_MS)
 document.addEventListener('visibilitychange', () => {
-  if (document.visibilityState === 'visible') reloadOnLook()
+  if (document.visibilityState === 'visible') {
+    refreshAges(treeEl)
+    reloadOnLook()
+  }
 })
 document.documentElement.addEventListener('pointerenter', reloadOnLook)
 window.addEventListener('focus', reloadOnLook)
