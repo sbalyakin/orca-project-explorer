@@ -1,6 +1,6 @@
 # Project Tree (Orca plugin)
 
-Orca plugin `local.project-tree`: a project tree in the right sidebar with a right-click menu that opens a workspace, a terminal, or an agent. Usage is in `README.md`. What the code does not show lives in `docs/`.
+Orca plugin `local.project-explorer`: a project tree in the right sidebar with a right-click menu that opens a workspace, a terminal, or an agent. Usage is in `README.md`. What the code does not show lives in `docs/`.
 
 ## Read first
 
@@ -32,7 +32,7 @@ A doc is a starting point, not proof. Every fact has a date or a version; check 
 ```sh
 scripts/check.sh                      # tsc + `orca plugin test .`; run before every commit
 git config core.hooksPath .githooks   # once per clone: the pre-commit hook runs check.sh
-orca plugin logs local.project-tree   # first stop when the panel is blank
+orca plugin logs local.project-explorer   # first stop when the panel is blank
 ```
 
 Orca reloads the plugin when its files change, so no manual reload is needed. `plugin shot` and live-panel testing are in `docs/platform.md`.

@@ -8,7 +8,7 @@ How rows are drawn and what must be checked when the tree or a row changes. The 
 - A new kind of tree node, or a node drawn differently (the status sections were the last): walk every reader of the tree: `filterNodes`, `allCollapsed`, `containerKeys`, `pathTo`, `visibleRows`, `rowDescription` in `rows.ts`, `shownNodes` in `main.ts`. A section's title must not match the filter; folded state is a key in `collapsed`. Any code that looks up or opens a workspace by id tests `isOpenable(node)` (`types.ts`).
 - Row arithmetic (indent, guides, status mark) lives in `src/panel/layout.ts` with a node test. Change a number there, never in `view.ts`.
 - Do not hard-code a row height: it is `--row-height` (see `display-options.md`, `Density`).
-- Checking by eye: `orca plugin shot local.project-tree --width 520` draws the live panel with the user's saved settings, and you must not change them for a test. So `Both`, `Arrows`, `Icons`, guides and density cannot be seen that way; cover the arithmetic with `layout.test.ts` and say in the report that the look was not checked.
+- Checking by eye: `orca plugin shot local.project-explorer --width 520` draws the live panel with the user's saved settings, and you must not change them for a test. So `Both`, `Arrows`, `Icons`, guides and density cannot be seen that way; cover the arithmetic with `layout.test.ts` and say in the report that the look was not checked.
 
 ## Rows and states
 

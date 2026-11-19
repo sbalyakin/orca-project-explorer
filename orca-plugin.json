@@ -1,7 +1,7 @@
 {
   "manifestVersion": 2,
-  "id": "project-tree",
-  "name": "Project Tree",
+  "id": "project-explorer",
+  "name": "Project Explorer",
   "version": "0.1.0",
   "description": "Your projects and workspaces as a folder tree, with a right-click menu to open a terminal or launch an agent with a model, effort and prompt.",
   "engines": {
@@ -13,8 +13,8 @@
   "contributes": {
     "panels": [
       {
-        "id": "project-tree",
-        "title": "Project Tree",
+        "id": "project-explorer",
+        "title": "Project Explorer",
         "icon": "layers",
         "entry": "src/panel/index.html",
         "ui": "html"
