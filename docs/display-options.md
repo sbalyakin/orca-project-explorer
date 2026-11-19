@@ -8,7 +8,7 @@ Add its key to `DisplayOptions`, a title to `SETTING_TITLES` (`display.ts`; the 
 
 ## The window
 
-The header gear opens a popover titled `Display options` (`src/panel/options-menu.ts`), drawn after Orca's "Workspace options". Not compared pixel by pixel. The user checked the `Title` mode live on 2026-11-18 and it works.
+The toolbar gear (to the right of the filter field, since options apply to both `Favorites` and `Projects`) opens a popover titled `Display options` (`src/panel/options-menu.ts`), drawn after Orca's "Workspace options". Not compared pixel by pixel. The user checked the `Title` mode live on 2026-11-18 and it works.
 
 - Every setting is Orca's segmented control: `SidebarGroupByToggle.tsx` (`ToggleGroup` outline, `sm`, `h-6`, `text-[10px]`, selected `bg-foreground/10 font-semibold`) in a `px-2 pt-0.5 pb-1` box under a `MENU_LABEL_CLASS` label (`ui/menu-item.ts`, `text-2xs` = 11px per `assets/main.css`). Full names are the tooltip and `aria-label`. The window stays open after a pick, as Orca's does.
 - A submenu design (one row with a value and a flyout) was tried and replaced at the user's request, so `menu.ts` has no flyout extension for it.
@@ -53,7 +53,7 @@ Segments `None`, `Branch` (default), `Title`, `Message`. Text for a workspace ro
 
 ### `Folders`
 
-2026-11-18, user request: what marks a group row. Segments `Arrows` (default), `Icons`, `Both`, `None` (`FolderMark`). It only touches group rows.
+2026-11-18, user request: what marks a group row. Segments `None`, `Arrows` (default), `Icons`, `Both` (`FolderMark`). It only touches group rows.
 
 - A hidden chevron or icon leaves no cell (user request 2026-11-18), so the folder's name moves left: `Arrows` and `Icons` by one cell, `None` by two.
 - The indent per level is 20 for folders and projects in every mode (`INDENT` in `layout.ts`, user 2026-11-18), with no extra pull for projects in `None` (a 12 px pull was tried and dropped by the user).
@@ -61,7 +61,7 @@ Segments `None`, `Branch` (default), `Title`, `Message`. Text for a workspace ro
 
 ### `Tree guides`
 
-`none` (default), `visible`, `subtle`: a vertical line through the indent of each ancestor level (`.guide`, `pointer-events: none`). Read from code, not checked on the live panel.
+`none` (default), `subtle`, `visible`: a vertical line through the indent of each ancestor level (`.guide`, `pointer-events: none`). Read from code, not checked on the live panel.
 
 - One line per ancestor level at `GUIDE_CENTER` (8 px) under that ancestor's first mark, so lines of touching rows join up (`layout.ts`).
 - A nested row's status mark is centred on its parent's guide line, whether guides show or not.
@@ -69,8 +69,8 @@ Segments `None`, `Branch` (default), `Title`, `Message`. Text for a workspace ro
 
 ### `Density`
 
-`compact` / `comfort` / `spacious` set the row height through `--row-height` on `.tree[data-density]` in `src/panel/style.ts`: 24 / 28 / 32 px (2026-11-18). The old fixed 24 px is `compact`; the default is `comfort` (28 px).
+`compact` / `comfort` (label `Normal`) / `spacious` set the row height through `--row-height` on `.tree[data-density]` in `src/panel/style.ts`: 24 / 28 / 32 px (2026-11-18). The old fixed 24 px is `compact`; the default is `comfort` (28 px).
 
-### `Show time`
+### `Activity time`
 
 `show` (default) / `hide` (`TimeMode`, 2026-11-19, user request): drawn as a switch row (`role="switch"`, like Orca's Filters) rather than segments. Toggles the age at the right of a workspace row (`now`, `5m`, `1d`; see `tree.md`). `hide` draws no `.age`, so the `…` slot is back in the row's flow. Not checked on the live panel.

@@ -147,7 +147,15 @@ clearButton.addEventListener('click', () => {
   search.focus()
 })
 searchBox.append(searchIcon, search, clearButton)
-toolbar.append(searchBox)
+const settingsButton = document.createElement('button')
+settingsButton.className = 'tool'
+settingsButton.type = 'button'
+settingsButton.setAttribute('aria-label', 'Display options')
+settingsButton.setAttribute('aria-haspopup', 'dialog')
+setTip(settingsButton, 'Display options')
+settingsButton.appendChild(icon('settings'))
+settingsButton.addEventListener('click', () => showOptions(settingsButton))
+toolbar.append(searchBox, settingsButton)
 
 // The header under the filter, as Orca's sidebar header: the fold button appears only while the pointer is over it.
 const header = document.createElement('div')
@@ -158,25 +166,19 @@ headerTitle.textContent = 'Projects'
 foldButton.classList.add('header-fold')
 const headerActions = document.createElement('div')
 headerActions.className = 'header-actions'
-// Sort opens the sort menu; the gear opens display options; `+` opens the create menu.
-for (const [name, label] of [['sort', 'Sort'], ['settings', 'Display options'], ['add', 'Create…']] as const) {
+// Sort opens the sort menu; `+` opens the create menu.
+for (const [name, label] of [['sort', 'Sort'], ['add', 'Create…']] as const) {
   const button = document.createElement('button')
   button.className = 'tool'
   button.type = 'button'
   button.setAttribute('aria-label', label)
+  button.setAttribute('aria-haspopup', 'menu')
+  setTip(button, label)
   button.appendChild(icon(name))
   if (name === 'add') {
-    button.setAttribute('aria-haspopup', 'menu')
-    setTip(button, label)
     button.addEventListener('click', () => showAddMenu(button))
-  } else if (name === 'sort') {
-    button.setAttribute('aria-haspopup', 'menu')
-    setTip(button, label)
-    button.addEventListener('click', () => showSortMenu(button))
   } else {
-    button.setAttribute('aria-haspopup', 'dialog')
-    setTip(button, label)
-    button.addEventListener('click', () => showOptions(button))
+    button.addEventListener('click', () => showSortMenu(button))
   }
   headerActions.appendChild(button)
 }

@@ -10,31 +10,31 @@ export const DEFAULT_DETAIL: DetailMode = 'branch'
 export const DETAIL_LABELS: Record<DetailMode, { short: string; full: string }> = {
   none: { short: 'None', full: 'Nothing' },
   branch: { short: 'Branch', full: 'Git branch' },
-  title: { short: 'Title', full: 'Active tab or agent title' },
+  title: { short: 'Title', full: 'Latest agent title' },
   message: { short: 'Message', full: 'Last agent message' }
 }
 
-export const FOLDER_MARKS = ['arrows', 'icons', 'both', 'none'] as const
+export const FOLDER_MARKS = ['none', 'arrows', 'icons', 'both'] as const
 export type FolderMark = (typeof FOLDER_MARKS)[number]
 
 export const DEFAULT_FOLDER_MARK: FolderMark = 'arrows'
 
 export const FOLDER_MARK_LABELS: Record<FolderMark, { short: string; full: string }> = {
+  none: { short: 'None', full: 'Neither arrows nor icons' },
   arrows: { short: 'Arrows', full: 'Arrows only' },
   icons: { short: 'Icons', full: 'Folder icons only' },
-  both: { short: 'Both', full: 'Arrows and folder icons' },
-  none: { short: 'None', full: 'Neither arrows nor icons' }
+  both: { short: 'Both', full: 'Arrows and folder icons' }
 }
 
-export const GUIDE_MODES = ['none', 'visible', 'subtle'] as const
+export const GUIDE_MODES = ['none', 'subtle', 'visible'] as const
 export type GuideMode = (typeof GUIDE_MODES)[number]
 
 export const DEFAULT_GUIDES: GuideMode = 'none'
 
 export const GUIDE_LABELS: Record<GuideMode, { short: string; full: string }> = {
   none: { short: 'None', full: 'No tree guides' },
-  visible: { short: 'Visible', full: 'Visible tree guides' },
-  subtle: { short: 'Subtle', full: 'Barely visible tree guides' }
+  subtle: { short: 'Subtle', full: 'Barely visible tree guides' },
+  visible: { short: 'Visible', full: 'Visible tree guides' }
 }
 
 export const DENSITY_MODES = ['compact', 'comfort', 'spacious'] as const
@@ -44,7 +44,7 @@ export const DEFAULT_DENSITY: DensityMode = 'comfort'
 
 export const DENSITY_LABELS: Record<DensityMode, { short: string; full: string }> = {
   compact: { short: 'Compact', full: 'Compact rows' },
-  comfort: { short: 'Comfort', full: 'Comfortable rows' },
+  comfort: { short: 'Normal', full: 'Normal rows' },
   spacious: { short: 'Spacious', full: 'Spacious rows' }
 }
 
@@ -110,7 +110,7 @@ export const SETTING_TITLES: Record<Exclude<keyof DisplayOptions, 'sort' | 'sort
   folders: 'Folders',
   guides: 'Tree guides',
   density: 'Density',
-  time: 'Show time'
+  time: 'Activity time'
 }
 
 export const DEFAULT_DISPLAY: DisplayOptions = {

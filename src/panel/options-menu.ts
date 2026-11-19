@@ -81,11 +81,12 @@ function segmented<T extends string>(title: string, values: readonly T[], labels
 }
 
 /** One switch row, as Orca's Filters in "Workspace options": icon and label on the left, pill toggle on the right. */
-function toggleRow(title: string, glyph: IconName, checked: boolean, onToggle: (next: boolean) => void): HTMLElement {
+function toggleRow(title: string, tip: string, glyph: IconName, checked: boolean, onToggle: (next: boolean) => void): HTMLElement {
   let on = checked
   const button = el('button', 'options-toggle')
   button.type = 'button'
   button.setAttribute('role', 'switch')
+  setTip(button, tip)
   const main = el('span', 'options-toggle-main')
   const mark = el('span', 'options-toggle-icon')
   mark.appendChild(icon(glyph))
@@ -124,12 +125,15 @@ export function buildOptionsMenu(options: OptionsMenuOptions): HTMLElement {
   )
   const separator = el('div', 'menu-separator')
   separator.setAttribute('role', 'separator')
+  const projectsHeading = el('div', 'options-subtitle')
+  projectsHeading.textContent = 'Projects'
   root.append(
     title,
     ...segmented(SETTING_TITLES.density, DENSITY_MODES, DENSITY_LABELS, options.density, options.onDensity),
     ...segmented(SETTING_TITLES.detail, DETAIL_MODES, DETAIL_LABELS, options.detail, options.onDetail),
-    toggleRow(SETTING_TITLES.time, 'clock', options.time === 'show', (on) => options.onTime(on ? 'show' : 'hide')),
+    toggleRow(SETTING_TITLES.time, 'Time since last activity', 'clock', options.time === 'show', (on) => options.onTime(on ? 'show' : 'hide')),
     separator,
+    projectsHeading,
     ...segmented(SETTING_TITLES.group, GROUP_MODES, GROUP_LABELS, options.group, (mode) => {
       folderOptions.hidden = mode !== 'folder'
       options.onGroup(mode)

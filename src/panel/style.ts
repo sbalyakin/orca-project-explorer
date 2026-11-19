@@ -13,7 +13,7 @@ body {
   font: 12px/1.4 var(--orca-font-sans, 'Geist', -apple-system, BlinkMacSystemFont, sans-serif); user-select: none; overflow: hidden;
   letter-spacing: 0.01em; -webkit-font-smoothing: antialiased; /* as Orca's body */
 }
-.toolbar { display: flex; gap: 2px; align-items: center; padding: 8px 8px 6px; }
+.toolbar { display: flex; gap: 4px; align-items: center; padding: 8px 8px 6px; }
 /* Mirrors Orca's sidebar Search button: bg foreground/5, px-2 py-1.5, 13px medium, rounded-md (0.8 radius), icon 16px at foreground/30. */
 .search-box {
   flex: 1; min-width: 0; display: flex; align-items: center; gap: 8px; padding: 6px 8px;
@@ -260,6 +260,7 @@ html.dark .menu-item.destructive:hover, html.dark .menu-item.destructive:focus-v
 /* Orca's "Workspace options" popover: a 16px title; the section label is MENU_LABEL_CLASS (px-2.5 pt-[5px] pb-[3px] text-2xs
    semibold muted); the segmented control is SidebarGroupByToggle (ToggleGroup outline, sm, h-6, text-[10px]) in a px-2 pt-0.5 pb-1 box. */
 .options-title { padding: 6px 8px 4px; font-size: 16px; font-weight: 600; line-height: 24px; letter-spacing: -0.01em; overflow-wrap: anywhere; }
+.options-subtitle { padding: 4px 10px 2px; font-size: 12px; font-weight: 600; line-height: 16px; color: var(--orca-foreground); }
 .options-section { padding: 5px 10px 3px; color: var(--orca-muted-foreground); font-size: 11px; font-weight: 600; line-height: 16px; }
 .options-group {
   display: flex; width: calc(100% - 16px); height: 24px; margin: 2px 8px 4px; border-radius: calc(var(--orca-radius) * 0.8);
