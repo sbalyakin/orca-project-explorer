@@ -2,8 +2,8 @@
 
 ## Agent list (2026-11-19)
 
-- When the plugin's `agents` setting is empty (default), the menu lists the agents returned by `orca agent installed --json` (`src/agents.ts`, `agents.installed` worker request): enabled agents in Settings → Agents, including custom commands, in Orca's order.
-- Cached in panel storage (`agents:v1`) and refreshed on startup and on panel focus/look (`reloadOnLook`). Falls back to `DEFAULT_AGENTS` if the CLI is missing or fails; a non-empty `agents` setting overrides the list.
+- The menu lists the agents returned by `orca agent installed --json` (`src/agents.ts`, `agents.installed` worker request): enabled agents in Settings → Agents, including custom commands, in Orca's order.
+- Cached in panel storage (`agents:v1`) and refreshed on startup and on panel focus/look (`reloadOnLook`). Falls back to `DEFAULT_AGENT_IDS` if the CLI is missing or fails.
 
 ## Launch
 

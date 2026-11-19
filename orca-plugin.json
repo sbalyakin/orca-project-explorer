@@ -19,16 +19,6 @@
         "entry": "src/panel/index.html",
         "ui": "html"
       }
-    ],
-    "settings": [
-      {
-        "key": "agents",
-        "title": "Agents in the right-click menu",
-        "description": "Leave empty to match Orca's installed agents. Otherwise comma-separated agent ids in menu order (e.g. claude, codex, opencode2, pi, cursor, gemini).",
-        "type": "string",
-        "default": "",
-        "maxLength": 200
-      }
     ]
   },
   "capabilities": [
@@ -46,9 +36,6 @@
     },
     {
       "kind": "storage:own"
-    },
-    {
-      "kind": "settings:own"
     }
   ]
 }

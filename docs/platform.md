@@ -31,7 +31,7 @@ Facts about Orca's plugin system that the code does not show. The installed Orca
 
 ## Capabilities in use
 
-`workspace:read`, `workspace:write`, `terminal:send`, `agent:read`, `storage:own`, `settings:own`. `agent:launch` is not requested: launching goes through the CLI (see `launching.md`). `engines.orca` is `>=1.4.259`.
+`workspace:read`, `workspace:write`, `terminal:send`, `agent:read`, `storage:own`. `agent:launch` is not requested: launching goes through the CLI (see `launching.md`). `engines.orca` is `>=1.4.259`.
 
 ## Dev loop
 

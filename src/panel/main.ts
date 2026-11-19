@@ -4,7 +4,7 @@ import type {} from 'orca/frame'
 import '../protocol'
 import { isOpenable, type InstalledAgent, type ModelCatalog, type ProjectTree, type SidebarLooks, type TreeNode, type WorkspaceNode } from '../types'
 import { DEFAULT_DISPLAY, parseDisplay, needsAgentText, parseTexts, pruneTitles, recordTitle, type DisplayOptions, type WorkspaceTexts } from './display'
-import { agentLabel, defaultAgents, parseAgentOverride, parseStoredAgents } from './agents'
+import { agentLabel, defaultAgents, parseStoredAgents } from './agents'
 import { agentIcon, icon, projectIcon, type IconName } from './icons'
 import { readPluginFontCache, restorePluginFont, syncPluginFont } from './fontload'
 import { buildLauncher, type LauncherChoice } from './launcher'
@@ -28,7 +28,6 @@ const TREE_KEY = 'tree:v2' // v1 had no primary child under a project with workt
 const SIDEBAR_KEY = 'sidebar:v1'
 /** The last titles and replies, so the title and message modes have text on the first frame. */
 const TEXTS_KEY = 'texts:v1'
-const AGENTS_KEY = 'agents'
 const INSTALLED_AGENTS_KEY = 'agents:v1'
 const DISPLAY_KEY = 'display:v1'
 const MANUAL_ORDER_KEY = 'manualOrder:v1'
@@ -1034,11 +1033,6 @@ async function loadSidebar(): Promise<void> {
 
 async function loadAgents(): Promise<void> {
   try {
-    const override = parseAgentOverride(await orca.settings.get(AGENTS_KEY))
-    if (override) {
-      setState({ agents: override })
-      return
-    }
     const installed = await orca.plugin.request('agents.installed')
     if (installed && installed.length > 0) {
       setState({ agents: installed })
@@ -1048,9 +1042,6 @@ async function loadAgents(): Promise<void> {
     flash(error)
   }
 }
-orca.settings.onDidChange(({ key }) => {
-  if (key === AGENTS_KEY) void loadAgents()
-})
 
 /** The tree from the last session. Orca stops an idle worker after 5 minutes, and a cold `tree.load` takes about 2 s. */
 function cachedTree(stored: unknown): Partial<State> {

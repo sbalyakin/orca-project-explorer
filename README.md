@@ -5,8 +5,8 @@ to start a terminal or an agent in any workspace.
 
 - Click a row to open its workspace; click a folder or its arrow to fold it.
 - Right-click a workspace, press the `…` button on its row, or use `Shift+F10` / the Menu key. The
-  menu copies Orca's new-tab menu: a search field, icon buttons (Terminal, Open workspace) and the
-  agents from the plugin's `agents` setting (Settings → Plugins).
+  menu copies Orca's new-tab menu: a search field, icon buttons (Terminal, Open workspace) and
+  Orca's installed agents (Settings → Agents).
 - Pressing an agent row launches it with the model and effort you used last, in the surface Orca
   has set for that agent. The chevron (or hovering it, or `→`) opens its setup: search the agent's
   models, pick a reasoning level, add a prompt, then Launch terminal or Launch chat (`Enter` = chat,

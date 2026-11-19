@@ -1,7 +1,7 @@
-// The agents the right-click menu offers: Orca's installed agents by default, or the plugin's `agents` setting when set.
+// The agents the right-click menu offers: Orca's installed agents, with a built-in fallback.
 import type { InstalledAgent } from '../types'
 
-const DEFAULT_AGENTS = 'claude,codex,opencode2,pi,cursor'
+const DEFAULT_AGENT_IDS = ['claude', 'codex', 'opencode2', 'pi', 'cursor'] as const
 
 const NAMES: Record<string, string> = {
   claude: 'Claude',
@@ -18,30 +18,13 @@ const NAMES: Record<string, string> = {
   kiro: 'Kiro'
 }
 
-/** Agent ids from a comma-separated setting: lower-case, unique, in the order written. */
-function parseAgents(value: unknown): string[] {
-  const text = typeof value === 'string' ? value : DEFAULT_AGENTS
-  const ids = text
-    .split(',')
-    .map((part) => part.trim().toLowerCase())
-    .filter((id) => /^[a-z0-9-]+$/.test(id))
-  return [...new Set(ids)]
-}
-
 export function agentLabel(id: string): string {
   return NAMES[id] ?? id
 }
 
 /** Fallback list used before the first `agents.installed` response or when the CLI is unavailable. */
 export function defaultAgents(): InstalledAgent[] {
-  return parseAgents(DEFAULT_AGENTS).map((id) => ({ id, name: agentLabel(id) }))
-}
-
-/** Parses a manual `agents` setting override; returns null when empty so Orca's installed agents are used. */
-export function parseAgentOverride(value: unknown): InstalledAgent[] | null {
-  if (typeof value !== 'string' || !value.trim()) return null
-  const ids = parseAgents(value)
-  return ids.length > 0 ? ids.map((id) => ({ id, name: agentLabel(id) })) : null
+  return DEFAULT_AGENT_IDS.map((id) => ({ id, name: agentLabel(id) }))
 }
 
 /** Parses a cached `InstalledAgent[]` list from plugin storage. */
