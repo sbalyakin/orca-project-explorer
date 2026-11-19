@@ -94,14 +94,14 @@ export function buildOptionsMenu(options: OptionsMenuOptions): HTMLElement {
   )
   root.append(
     title,
+    ...segmented(SETTING_TITLES.density, DENSITY_MODES, DENSITY_LABELS, options.density, options.onDensity),
     ...segmented(SETTING_TITLES.group, GROUP_MODES, GROUP_LABELS, options.group, (mode) => {
       folderOptions.hidden = mode !== 'folder'
       options.onGroup(mode)
     }),
     ...segmented(SETTING_TITLES.detail, DETAIL_MODES, DETAIL_LABELS, options.detail, options.onDetail),
     ...segmented(SETTING_TITLES.time, TIME_MODES, TIME_LABELS, options.time, options.onTime),
-    folderOptions,
-    ...segmented(SETTING_TITLES.density, DENSITY_MODES, DENSITY_LABELS, options.density, options.onDensity)
+    folderOptions
   )
   root.addEventListener('keydown', (event) => {
     if (event.key === 'Tab') closePopover()
