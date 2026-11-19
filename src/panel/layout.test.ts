@@ -16,6 +16,21 @@ test('a top-level status mark stays inside the row and never goes negative', () 
   assert.equal(status.left, 0)
 })
 
+test('a flat list leaves room for a full status mark left of its first level', () => {
+  const { pad, status } = rowLayout(0, true)
+  assert.equal(pad, 24)
+  assert.equal(status.width, 12)
+  assert.equal(status.left, 8)
+  assert.equal(status.left + status.width + 4, pad)
+})
+
+test('worktrees under a flat project keep the status mark centred on the project icon cell', () => {
+  const parent = rowLayout(0, true)
+  const child = rowLayout(1, true)
+  assert.equal(child.pad - parent.pad, 20)
+  assert.equal(child.status.left + child.status.width / 2, parent.pad + 8.5)
+})
+
 test('a nested status mark is centred on its parent guide', () => {
   for (const depth of [1, 2, 5]) {
     const { guides, status } = rowLayout(depth)

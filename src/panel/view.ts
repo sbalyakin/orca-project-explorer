@@ -17,6 +17,8 @@ export type ViewState = {
   folderMark: FolderMark
   /** Vertical lines through the indent of each ancestor level. */
   guides: GuideMode
+  /** `Group by: None`: the list is flat, so its first level gets room for the status mark. */
+  flat: boolean
   titles: ReadonlyMap<string, AgentText>
 }
 
@@ -40,7 +42,7 @@ function renderRow(row: Row, index: number, state: ViewState): HTMLElement {
   if (node.key === state.menuKey) el.classList.add('menu-target')
   if (row.attention === 'unread') el.classList.add('unread')
   if (isOpenable(node) && node.workspaceId === state.currentWorkspaceId) el.classList.add('current')
-  const layout = rowLayout(row.depth)
+  const layout = rowLayout(row.depth, state.flat)
   el.style.paddingLeft = `${layout.pad}px`
   if (state.guides !== 'none') {
     // One line per ancestor level, centred under that ancestor's first mark; rows touch, so the lines join up.

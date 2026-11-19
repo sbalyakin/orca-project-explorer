@@ -15,9 +15,14 @@ export type RowLayout = {
   status: { left: number; width: number }
 }
 
-export function rowLayout(depth: number): RowLayout {
-  const pad = GUTTER + depth * INDENT
-  const guides = Array.from({ length: depth }, (_, level) => GUTTER + level * INDENT + GUIDE_CENTER)
+/**
+ * `flat` is the `None` grouping: projects sit at depth 0 with no folder above to leave room, so the whole list
+ * starts one status cell further in, or the status mark would be squeezed into the 8px gutter.
+ */
+export function rowLayout(depth: number, flat = false): RowLayout {
+  const origin = flat ? GUTTER + STATUS_WIDTH + STATUS_GAP : GUTTER
+  const pad = origin + depth * INDENT
+  const guides = Array.from({ length: depth }, (_, level) => origin + level * INDENT + GUIDE_CENTER)
   const width = Math.min(STATUS_WIDTH, pad)
   // Nested rows centre the mark on the parent's guide line, so guides and marks line up when both show.
   const left = depth > 0 ? pad - INDENT + GUIDE_CENTER + GUIDE_WIDTH / 2 - width / 2 : pad - width - STATUS_GAP

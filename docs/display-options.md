@@ -23,6 +23,7 @@ The header gear opens a popover titled `Display options` (`src/panel/options-men
 - A section is a `group` node with `section: true`, drawn `title count chevron` (chevron right folded, down open; no folder mark, no status dot). Its folded state is in `collapsed` under `status:<level>`. 10px of margin separates sections.
 - The filter never matches a section by its title (`filterNodes`), only the projects below it.
 - In `None` and `Status` the folders above a project go into its tooltip (`folder`, set by `groupTree`).
+- In `None` the list starts at 24 px, not 8 (`rowLayout(depth, flat)`, 2026-11-19, user report): projects sit at depth 0 with no folder above, and the 8 px gutter squeezed the status mark to 8 px at `left: 0`. `Folder` mode still has this at depth 0 for a folded top-level folder; not changed, nobody reported it. Checked by node test only, not on the live panel.
 - `Folders` and `Tree guides` show only for `Folder`; guides are also forced off in the other modes.
 - Board status (`todo`, `in-review`) is not used (see `host-data.md`, `Agent status`).
 

@@ -220,7 +220,7 @@ function render(scrollToSelected = false): void {
     renderMessage(treeEl, state.filter ? 'No matching projects' : 'No projects yet')
     return
   }
-  renderRows(treeEl, rows, { ...state, detailMode: state.display.detail, folderMark: state.display.folders, guides: state.display.group === 'folder' ? state.display.guides : 'none', titles })
+  renderRows(treeEl, rows, { ...state, detailMode: state.display.detail, folderMark: state.display.folders, guides: state.display.group === 'folder' ? state.display.guides : 'none', flat: state.display.group === 'none', titles })
   const selected = treeEl.querySelector('.row.selected')
   if (!selected) return
   treeEl.setAttribute('aria-activedescendant', selected.id)
