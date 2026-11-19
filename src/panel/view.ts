@@ -112,36 +112,46 @@ function renderRow(row: Row, index: number, state: ViewState): HTMLElement {
     el.appendChild(status)
   }
   // A folder drops the cells it does not show; a workspace never has an arrow cell, even with worktrees under it, and always keeps its icon.
-  el.append(...(isFolder && showArrow ? [twistie] : []), ...(showGlyph ? [glyph] : []), label)
-  // A project with worktrees says so right after its name: a chevron down when open, right when folded.
-  if (isProjectFolder(node)) {
-    const mark = document.createElement('span')
-    mark.className = 'worktrees-mark'
-    mark.appendChild(icon(row.expanded ? 'chevronDown' : 'chevron'))
-    el.appendChild(mark)
-  }
-
-  const detailText = detailFor(node, state.detailMode, state.titles)
-  if (detailText) {
-    const detail = document.createElement('span')
-    detail.className = 'detail'
-    detail.textContent = detailText
-    el.appendChild(detail)
+  el.append(...(isFolder && showArrow ? [twistie] : []), ...(showGlyph ? [glyph] : []))
+  if (isOpenable(node)) {
+    // Baseline-align name, detail and age together while the row itself stays vertically centred on its icon.
+    const text = document.createElement('span')
+    text.className = 'row-text'
+    text.appendChild(label)
+    const detailText = detailFor(node, state.detailMode, state.titles)
+    if (detailText) {
+      const detail = document.createElement('span')
+      detail.className = 'detail'
+      detail.textContent = detailText
+      text.appendChild(detail)
+    } else {
+      const spacer = document.createElement('span')
+      spacer.className = 'spacer'
+      text.appendChild(spacer)
+    }
+    if (state.showTime && node.activeAt) {
+      const age = document.createElement('span')
+      age.className = 'age'
+      age.dataset.at = String(node.activeAt)
+      age.textContent = shortAge(node.activeAt, Date.now())
+      text.appendChild(age)
+    }
+    el.appendChild(text)
   } else {
+    el.appendChild(label)
+    // A project with worktrees says so right after its name: a chevron down when open, right when folded.
+    if (isProjectFolder(node)) {
+      const mark = document.createElement('span')
+      mark.className = 'worktrees-mark'
+      mark.appendChild(icon(row.expanded ? 'chevronDown' : 'chevron'))
+      el.appendChild(mark)
+    }
     const spacer = document.createElement('span')
     spacer.className = 'spacer'
     el.appendChild(spacer)
   }
 
   if (node.kind !== 'workspace') return el
-  // Time since the workspace's last activity, as in Orca's own sidebar; a project that only folds has none.
-  if (state.showTime && isOpenable(node) && node.activeAt) {
-    const age = document.createElement('span')
-    age.className = 'age'
-    age.dataset.at = String(node.activeAt)
-    age.textContent = shortAge(node.activeAt, Date.now())
-    el.appendChild(age)
-  }
   const slot = document.createElement('span')
   slot.className = 'slot'
   const more = document.createElement('button')
