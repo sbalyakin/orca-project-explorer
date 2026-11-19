@@ -8,7 +8,7 @@ import { createLooksCache, type LooksCache } from './appearance'
 import { buildTree } from './tree'
 import { createCatalogs } from './catalog/catalogs'
 import { launchAgent } from './launch'
-import { fetchCliAgents, latestByPath, realPath, resolveAgentPaths, titleOf, type CliAgent } from './titles'
+import { agentKey, fetchCliAgents, latestByPath, resolveAgentPaths, titleOf, workspaceSuffix, type CliAgent } from './titles'
 import { openNewWorktreeDialog } from './newworktree'
 import { readFontFace } from './pluginfont'
 import type { AgentText, ProjectTree } from './types'
@@ -48,7 +48,7 @@ export async function loadTitles(orca: OrcaWorkerApi, fetchAgents: () => Promise
   const byPath = cli ? latestByPath(await resolveAgentPaths(cli)) : null
   const found = await Promise.all(
     workspaces.map(async ({ id, path }) => {
-      if (byPath) return [id, byPath.get(await realPath(path))] as const
+      if (byPath) return [id, byPath.get(await agentKey(path, workspaceSuffix(id)))] as const
       const { agents } = await orca.host.call('agents.list', { workspaceId: id }).catch(() => ({ agents: [] }))
       const title = titleOf(agents)
       return [id, title ? { title } : undefined] as const

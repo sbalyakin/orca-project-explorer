@@ -70,10 +70,32 @@ export function parseCliAgents(stdout: string): CliAgent[] {
   return agents
 }
 
-/** The agents with their folder paths resolved; each distinct path is resolved once. */
+const FOLDER_WORKSPACE_SUFFIX = /::workspace:[^:]+$/
+
+/**
+ * A folder workspace's key: its folder (symlinks resolved) plus the `::workspace:<uuid>` its ids carry. Several
+ * workspaces can sit on one folder, and only that suffix tells them apart; a plain worktree has none.
+ */
+export async function agentKey(path: string, suffix = ''): Promise<string> {
+  return `${await realPath(path)}${suffix}`
+}
+
+/** The suffix `::workspace:<uuid>` at the end of an Orca id or CLI path, or ''. */
+export function workspaceSuffix(id: string): string {
+  return FOLDER_WORKSPACE_SUFFIX.exec(id)?.[0] ?? ''
+}
+
+/** The agents with their keys resolved (see `agentKey`); each distinct path is resolved once. */
 export async function resolveAgentPaths(agents: readonly CliAgent[]): Promise<CliAgent[]> {
   const paths = [...new Set(agents.map((agent) => agent.path))]
-  const resolved = new Map(await Promise.all(paths.map(async (path) => [path, await realPath(path)] as const)))
+  const resolved = new Map(
+    await Promise.all(
+      paths.map(async (path) => {
+        const suffix = workspaceSuffix(path)
+        return [path, await agentKey(path.slice(0, path.length - suffix.length), suffix)] as const
+      })
+    )
+  )
   return agents.map((agent) => ({ ...agent, path: resolved.get(agent.path) ?? agent.path }))
 }
 

@@ -104,3 +104,24 @@ test('a workspace path through a symlink matches the real folder the CLI reports
     await rm(dir, { recursive: true, force: true })
   }
 })
+
+test('two folder workspaces on one folder keep their own agents, told apart by the ::workspace: suffix', async () => {
+  const api = {
+    host: {
+      call: async () => ({
+        workspaces: [
+          { id: 'r1::/Users/me/hacks', path: '/Users/me/hacks' },
+          { id: 'r1::/Users/me/hacks::workspace:abc', path: '/Users/me/hacks' }
+        ]
+      })
+    }
+  }
+  const agents = [
+    { path: '/Users/me/hacks::workspace:abc', title: 'MMM chat', message: 'Hi', updatedAt: 2 },
+    { path: '/Users/me/hacks', title: 'main chat', updatedAt: 1 }
+  ]
+  assert.deepEqual(await main.loadTitles(api as unknown as OrcaWorkerApi, async () => agents), {
+    'r1::/Users/me/hacks': { title: 'main chat' },
+    'r1::/Users/me/hacks::workspace:abc': { title: 'MMM chat', message: 'Hi' }
+  })
+})
