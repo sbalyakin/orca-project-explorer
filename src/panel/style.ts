@@ -43,7 +43,8 @@ body {
 .tool:hover { background: var(--panel-accent); color: var(--orca-accent-foreground); }
 .tool svg { width: 15px; height: 15px; }
 .header { display: flex; align-items: center; gap: 2px; padding: 2px 8px 2px 12px; min-height: 30px; }
-.header-title { color: var(--orca-muted-foreground); font-size: 13px; font-weight: 600; line-height: 16px; letter-spacing: -0.01em; }
+/* Matches Orca's SidebarHeader: text-xs font-semibold text-muted-foreground/80. */
+.header-title { color: color-mix(in oklab, var(--orca-muted-foreground) 80%, transparent); font-size: 12px; font-weight: 600; line-height: 16px; }
 .header-fold { margin-left: 4px; opacity: 0; transition: opacity .12s; }
 .header:hover .header-fold, .header-fold:focus-visible { opacity: 1; }
 .header-actions { display: flex; gap: 2px; margin-left: auto; }
