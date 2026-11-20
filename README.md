@@ -2,6 +2,8 @@
 
 An [Orca](https://orca.stably.ai) plugin that replaces flat workspace scrolling with a hierarchical project tree in the right sidebar. It groups your repositories and worktrees by folder or agent status, shows live activity at a glance, and lets you open terminals, workspaces, or configured agent sessions from any row.
 
+![Project Explorer icon and title beside light and dark sidebar panels](images/cover.png)
+
 ## Why use it
 
 Orca's built-in sidebar lists projects one by one. When you work across dozens of repositories and linked worktrees, finding a specific project or seeing which agent needs attention takes extra scrolling. Project Explorer puts your workspace hierarchy into a compact tree with filtering, sorting, and Orca's own launcher menu right on every row.
