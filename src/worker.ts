@@ -13,6 +13,7 @@ import { agentKey, fetchCliAgents, latestByPath, resolveAgentPaths, titleOf, wor
 import { openNewWorktreeDialog } from './newworktree'
 import { deleteWorkspace, setWorkspaceUnread } from './worktree'
 import { readFontFace } from './pluginfont'
+import { demoConfig, demoTexts, demoTree, isDemoMode } from './demo'
 import type { AgentText, ProjectTree } from './types'
 
 export async function loadTree(orca: OrcaWorkerApi, looks: LooksCache): Promise<ProjectTree> {
@@ -61,12 +62,15 @@ export async function loadTitles(orca: OrcaWorkerApi, fetchAgents: () => Promise
 
 export default function activate(orca: OrcaWorkerApi): void {
   const looks = createLooksCache(undefined, () => orca.panels.post('tree.changed', {}))
-  orca.panels.handle('tree.load', () => loadTree(orca, looks))
+  orca.panels.handle('tree.load', () => {
+    const cfg = demoConfig()
+    return cfg ? demoTree(Date.now(), cfg) : loadTree(orca, looks)
+  })
 
   orca.panels.handle('font.face', ({ alias, index }) =>
     readFontFace(requireId(alias, 'alias'), Number.isInteger(index) && index >= 0 ? index : 0)
   )
-  orca.panels.handle('agents.text', () => loadTitles(orca))
+  orca.panels.handle('agents.text', () => (isDemoMode() ? demoTexts() : loadTitles(orca)))
   orca.panels.handle('agents.installed', () => fetchInstalledAgents())
   orca.panels.handle('theme.get', () => readSidebarLooks())
 

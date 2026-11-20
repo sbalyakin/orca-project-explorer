@@ -4,6 +4,54 @@
   "name": "Project Explorer",
   "version": "0.1.0",
   "description": "Your projects and workspaces as a folder tree, with a right-click menu to open a terminal or launch an agent with a model, effort and prompt.",
+  "author": {
+    "name": "Sergey Balyakin",
+    "url": "https://github.com/sbalyakin"
+  },
+  "repository": "https://github.com/sbalyakin/orca-project-explorer",
+  "icon": "images/icon.png",
+  "cover": {
+    "path": "images/cover.png",
+    "alt": "Project Explorer icon and title beside light and dark sidebar panels"
+  },
+  "screenshots": [
+    {
+      "path": "images/screenshot-dark-2.png",
+      "alt": "Project Explorer folder tree in dark theme with Favorites, tree guides, and inline agent messages",
+      "caption": "Folder hierarchy, Favorites, and inline agent replies",
+      "theme": "dark"
+    },
+    {
+      "path": "images/screenshot-dark-1.png",
+      "alt": "Project Explorer flat list in dark theme showing git branches, agent status dots, and activity time",
+      "caption": "All workspaces at a glance with live status and git branches",
+      "theme": "dark"
+    },
+    {
+      "path": "images/screenshot-dark-3.png",
+      "alt": "Project Explorer minimal folder tree in dark theme with arrow markers and clean rows",
+      "caption": "Minimal folder view tailored in Display options",
+      "theme": "dark"
+    },
+    {
+      "path": "images/screenshot-light-2.png",
+      "alt": "Project Explorer folder tree in light theme with Favorites, tree guides, and inline agent messages",
+      "caption": "Folder hierarchy, Favorites, and inline agent replies",
+      "theme": "light"
+    },
+    {
+      "path": "images/screenshot-light-1.png",
+      "alt": "Project Explorer flat list in light theme showing git branches, agent status dots, and activity time",
+      "caption": "All workspaces at a glance with live status and git branches",
+      "theme": "light"
+    },
+    {
+      "path": "images/screenshot-light-3.png",
+      "alt": "Project Explorer minimal folder tree in light theme with arrow markers and clean rows",
+      "caption": "Minimal folder view tailored in Display options",
+      "theme": "light"
+    }
+  ],
   "engines": {
     "orca": ">=1.4.259"
   },

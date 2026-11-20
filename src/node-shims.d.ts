@@ -5,6 +5,7 @@ declare module 'node:os' {
 }
 declare module 'node:fs' {
   export function existsSync(path: string): boolean
+  export function readFileSync(path: string, encoding: 'utf8'): string
 }
 declare module 'node:fs/promises' {
   export function readFile(path: string, encoding: 'utf8'): Promise<string>
@@ -12,13 +13,18 @@ declare module 'node:fs/promises' {
   export function realpath(path: string): Promise<string>
   export function mkdir(path: string): Promise<void>
   export function mkdtemp(prefix: string): Promise<string>
+  export function writeFile(path: string, data: string): Promise<void>
   export function symlink(target: string, path: string): Promise<void>
   export function rm(path: string, options?: { recursive?: boolean; force?: boolean }): Promise<void>
 }
 declare module 'node:path' {
+  export function dirname(path: string): string
   export function join(...parts: string[]): string
   export function resolve(...parts: string[]): string
   export const sep: string
+}
+declare module 'node:url' {
+  export function fileURLToPath(url: string): string
 }
 declare module 'node:child_process' {
   type Stream = { setEncoding(encoding: 'utf8'): void; on(event: 'data', listener: (chunk: string) => void): void }

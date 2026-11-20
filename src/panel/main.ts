@@ -113,9 +113,14 @@ const foldButton = toolButton('collapseAll', 'Collapse all', () => {
 })
 
 /** The tree as drawn: the worker's folders, one list, or status sections, per the Group by and Sort by options. */
+function activeDisplay(): DisplayOptions {
+  return state.tree?.demoDisplay ? { ...state.display, ...state.tree.demoDisplay } : state.display
+}
+
 function shownNodes(): TreeNode[] {
-  const bucket = manualOrderBucket(state.display.group)
-  return groupTree(state.tree?.nodes ?? [], state.display.group, state.display.sort, state.display.sortDir, state.manualOrder[bucket])
+  const display = activeDisplay()
+  const bucket = manualOrderBucket(display.group)
+  return groupTree(state.tree?.nodes ?? [], display.group, display.sort, display.sortDir, state.manualOrder[bucket])
 }
 
 function syncFoldButton(): void {
@@ -249,8 +254,13 @@ async function run(action: () => Promise<unknown>, pending = ''): Promise<void> 
 
 function render(scrollToSelected = false): void {
   syncFoldButton()
-  treeEl.dataset.density = state.display.density
-  favListEl.dataset.density = state.display.density
+  const display = activeDisplay()
+  treeEl.dataset.density = display.density
+  favListEl.dataset.density = display.density
+  if (state.tree?.demoDisplay && search.value !== '') {
+    search.value = ''
+    clearButton.hidden = true
+  }
   treeEl.removeAttribute('aria-activedescendant')
   if (!state.tree) {
     favSectionEl.hidden = true
@@ -258,11 +268,12 @@ function render(scrollToSelected = false): void {
     return
   }
   const grouped = shownNodes()
-  const favoritesSet = new Set(state.favorites)
-  const needle = state.filter.trim().toLowerCase()
+  const activeFavorites = state.tree?.demoFavorites ?? state.favorites
+  const favoritesSet = new Set(activeFavorites)
+  const needle = state.tree?.demoDisplay ? '' : state.filter.trim().toLowerCase()
   const filtering = needle !== ''
-  const favoritesDraggable = !filtering
-  const favSection = buildFavoritesSection(grouped, state.favorites)
+  const favoritesDraggable = !filtering && !state.tree?.demoFavorites
+  const favSection = buildFavoritesSection(grouped, activeFavorites)
   const favNodes = favSection ? (filtering ? filterNodes(favSection.children, needle) : favSection.children) : []
   let favRows: Row[] = []
   if (favNodes.length > 0) {
@@ -278,11 +289,11 @@ function render(scrollToSelected = false): void {
         favRows,
         {
           ...state,
-          detailMode: state.display.detail,
-          folderMark: state.display.folders,
+          detailMode: display.detail,
+          folderMark: display.folders,
           guides: 'none',
           flat: true,
-          showTime: state.display.time === 'show',
+          showTime: display.time === 'show',
           draggable: false,
           favorites: favoritesSet,
           favoritesDraggable,
@@ -306,12 +317,12 @@ function render(scrollToSelected = false): void {
   } else {
     renderRows(treeEl, treeRows, {
       ...state,
-      detailMode: state.display.detail,
-      folderMark: state.display.folders,
-      guides: state.display.group === 'folder' ? state.display.guides : 'none',
-      flat: state.display.group === 'none',
-      showTime: state.display.time === 'show',
-      draggable: state.display.sort === 'manual' && state.filter.trim() === '',
+      detailMode: display.detail,
+      folderMark: display.folders,
+      guides: display.group === 'folder' ? display.guides : 'none',
+      flat: display.group === 'none',
+      showTime: display.time === 'show',
+      draggable: display.sort === 'manual' && needle === '',
       favorites: favoritesSet,
       favoritesDraggable,
       titles
@@ -351,7 +362,7 @@ function reveal(workspaceId: string | null): void {
   if (!state.tree || !workspaceId) return setState({ currentWorkspaceId: workspaceId })
   const isIt = (node: TreeNode): boolean => isOpenable(node) && node.workspaceId === workspaceId
   const grouped = shownNodes()
-  const favSection = buildFavoritesSection(grouped, state.favorites)
+  const favSection = buildFavoritesSection(grouped, state.tree?.demoFavorites ?? state.favorites)
   const favAbove = favSection ? pathTo([favSection], isIt) : null
   const above = favAbove ?? pathTo(grouped, isIt) ?? []
   const collapsed = new Set([...state.collapsed].filter((key) => !above.includes(key)))
@@ -430,10 +441,12 @@ async function reload(): Promise<void> {
     prunePanes(panes, knownWorkspaceIds, ids)
     knownWorkspaceIds = ids
     pruneTitles(titles, ids)
-    const prunedOrder = pruneManualOrder(state.manualOrder, new Set(projectsOf(loaded.nodes).map((project) => project.key)))
-    if (prunedOrder) setManualOrder(prunedOrder)
-    const prunedFavorites = pruneFavorites(state.favorites, loaded.nodes)
-    if (prunedFavorites) setFavorites(prunedFavorites)
+    if (!loaded.demoFavorites) {
+      const prunedOrder = pruneManualOrder(state.manualOrder, new Set(projectsOf(loaded.nodes).map((project) => project.key)))
+      if (prunedOrder) setManualOrder(prunedOrder)
+      const prunedFavorites = pruneFavorites(state.favorites, loaded.nodes)
+      if (prunedFavorites) setFavorites(prunedFavorites)
+    }
     loadTitles()
     const tree = { ...loaded, nodes: applyMonitoring(loaded.nodes, panes) }
     await shrinkImages(tree.nodes)
@@ -966,7 +979,7 @@ orca.on('workspace.removed', reloadSoon)
 orca.on('agent.status.changed', (event) => {
   recordPane(panes, event)
   recordTitle(titles, event)
-  if (needsAgentText(state.display.detail)) render()
+    if (needsAgentText(activeDisplay().detail)) render()
   reloadSoon()
 })
 orca.plugin.on('tree.changed', reloadSoon)

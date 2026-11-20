@@ -64,10 +64,23 @@ export function isOpenable(node: TreeNode): node is WorkspaceNode {
   return node.kind === 'workspace' && !isProjectFolder(node)
 }
 
+export type DemoDisplay = {
+  group?: 'none' | 'folder' | 'status'
+  detail?: 'none' | 'branch' | 'title' | 'message'
+  folders?: 'none' | 'arrows' | 'icons' | 'both'
+  guides?: 'none' | 'subtle' | 'visible'
+  density?: 'compact' | 'comfort' | 'spacious'
+  time?: 'show' | 'hide'
+}
+
 export type ProjectTree = {
   nodes: TreeNode[]
   /** The worker has not loaded project icons and colours yet; `tree.changed` follows when it has. */
   looksPending?: true
+  /** Favorites shown in demo mode without touching the user's saved favorites. */
+  demoFavorites?: string[]
+  /** Display overrides applied in demo mode without touching saved Display options. */
+  demoDisplay?: DemoDisplay
 }
 
 /** One model an agent offers, as its own CLI lists it. */
