@@ -67,3 +67,7 @@ scripts/check.sh              # type-check (tsc) + orca plugin test .
 orca plugin validate .        # validate manifest and images
 python3 build.py              # regenerate agent icons from an Orca checkout (ORCA_SRC)
 ```
+
+## License
+
+[MIT](LICENSE)
