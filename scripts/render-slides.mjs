@@ -212,6 +212,8 @@ const chromium = findChromium()
 const iconSrc = dataUri(join(OUT_DIR, 'icon.png'))
 const tmpHtml = join(RAW_DIR, '_slide.html')
 
+const tmpPng = join(RAW_DIR, '_slide.png')
+
 function renderHtml(html, outPath) {
   writeFileSync(tmpHtml, html)
   execFileSync(chromium, [
@@ -219,16 +221,18 @@ function renderHtml(html, outPath) {
     '--disable-gpu',
     '--hide-scrollbars',
     '--window-size=1600,1000',
-    `--screenshot=${outPath}`,
+    `--screenshot=${tmpPng}`,
     `file://${tmpHtml}`
   ], { stdio: 'ignore' })
+  execFileSync('sips', ['-s', 'format', 'jpeg', '-s', 'formatOptions', '85', tmpPng, '--out', outPath], { stdio: 'ignore' })
+  rmSync(tmpPng, { force: true })
   console.log(`Rendered ${outPath}`)
 }
 
 for (const theme of ['dark', 'light']) {
   for (const slide of SLIDES) {
     const raw = join(RAW_DIR, `panel-${theme}-${slide.num}.png`)
-    const out = join(OUT_DIR, `screenshot-${theme}-${slide.num}.png`)
+    const out = join(OUT_DIR, `screenshot-${theme}-${slide.num}.jpg`)
     renderHtml(slideHtml({ theme, title: slide.title, bullets: slide.bullets, iconSrc, panelSrc: dataUri(raw) }), out)
   }
 }
@@ -239,7 +243,7 @@ renderHtml(
     lightSrc: dataUri(join(RAW_DIR, 'panel-light-2.png')),
     darkSrc: dataUri(join(RAW_DIR, 'panel-dark-2.png'))
   }),
-  join(OUT_DIR, 'cover.png')
+  join(OUT_DIR, 'cover.jpg')
 )
 
 rmSync(tmpHtml, { force: true })
