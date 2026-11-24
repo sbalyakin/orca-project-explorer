@@ -34,10 +34,25 @@ export function toggleFavorite(favorites: readonly string[], key: string): strin
   return [...favorites, canonical]
 }
 
-/** Adds a key to the end of favorites if not already present. */
-export function addFavorite(favorites: readonly string[], key: string): string[] {
+/** Adds a key to favorites if not already present, at the end or before/after a target favorite. */
+export function addFavorite(
+  favorites: readonly string[],
+  key: string,
+  targetKey?: string,
+  position?: 'before' | 'after'
+): string[] {
   const canonical = canonicalKey(key)
   if (favorites.includes(canonical)) return [...favorites]
+  if (targetKey && position) {
+    const target = canonicalKey(targetKey)
+    const targetIndex = favorites.indexOf(target)
+    if (targetIndex !== -1) {
+      const next = [...favorites]
+      const insertAt = position === 'before' ? targetIndex : targetIndex + 1
+      next.splice(insertAt, 0, canonical)
+      return next
+    }
+  }
   return [...favorites, canonical]
 }
 

@@ -39,6 +39,15 @@ test('addFavorite and removeFavorite are idempotent and normalize fav: prefix', 
   assert.deepEqual(removeFavorite(['a', 'b'], 'c'), ['a', 'b'])
 })
 
+test('addFavorite inserts at start, middle, or end when given a target and position', () => {
+  assert.deepEqual(addFavorite(['a', 'b', 'c'], 'd', 'fav:a', 'before'), ['d', 'a', 'b', 'c'])
+  assert.deepEqual(addFavorite(['a', 'b', 'c'], 'd', 'fav:a', 'after'), ['a', 'd', 'b', 'c'])
+  assert.deepEqual(addFavorite(['a', 'b', 'c'], 'd', 'fav:b', 'before'), ['a', 'd', 'b', 'c'])
+  assert.deepEqual(addFavorite(['a', 'b', 'c'], 'd', 'fav:c', 'after'), ['a', 'b', 'c', 'd'])
+  assert.deepEqual(addFavorite(['a', 'b'], 'd', 'fav:missing', 'before'), ['a', 'b', 'd'])
+  assert.deepEqual(addFavorite(['a', 'b'], 'a', 'fav:b', 'after'), ['a', 'b'])
+})
+
 test('canonicalKey and isFavoriteCopy handle fav: prefix', () => {
   assert.equal(isFavoriteCopy('fav:ws:1'), true)
   assert.equal(isFavoriteCopy('ws:1'), false)

@@ -941,10 +941,15 @@ scrollEl.addEventListener('dragover', (event) => {
   }
   event.preventDefault()
   if (event.dataTransfer) event.dataTransfer.dropEffect = 'move'
-  if (action.kind === 'reorder-favorites' || action.kind === 'reorder-projects') {
+  if (
+    action.kind === 'reorder-favorites' ||
+    action.kind === 'reorder-projects' ||
+    (action.kind === 'add-favorite' && action.position)
+  ) {
     if (
       pendingDrop?.action.kind === action.kind &&
       pendingDrop.rowEl === rowEl &&
+      'position' in pendingDrop.action &&
       pendingDrop.action.position === action.position
     ) {
       return
@@ -955,7 +960,7 @@ scrollEl.addEventListener('dragover', (event) => {
     return
   }
   if (action.kind === 'add-favorite') {
-    if (pendingDrop?.action.kind === 'add-favorite') return
+    if (pendingDrop?.action.kind === 'add-favorite' && !pendingDrop.action.position) return
     clearDropIndicator()
     favSectionEl.classList.add('drop-target')
     pendingDrop = { action, rowEl: null }
@@ -981,7 +986,7 @@ scrollEl.addEventListener('drop', (event) => {
   clearDrag(!activeAction || activeAction.kind === 'none')
   if (!activeAction || activeAction.kind === 'none') return
   if (activeAction.kind === 'add-favorite') {
-    setFavorites(addFavorite(state.favorites, activeAction.key))
+    setFavorites(addFavorite(state.favorites, activeAction.key, activeAction.targetKey, activeAction.position))
     return
   }
   if (activeAction.kind === 'remove-favorite') {

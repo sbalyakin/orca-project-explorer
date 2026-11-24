@@ -96,7 +96,7 @@ test('classifyDraggable distinguishes project and linked worktree rows in Favori
   assert.equal(classifyDraggable(workspace({ key: 'fav:p1' }), 0, { manualReorder: false, favoritesEnabled: false }), null)
 })
 
-test('resolveDropAction adds a project dragged from Projects onto Favorites', () => {
+test('resolveDropAction adds a project dragged from Projects onto Favorites with optional position', () => {
   const source: DragSource = {
     key: 'p1',
     container: 'dir:a',
@@ -113,6 +113,20 @@ test('resolveDropAction adds a project dragged from Projects onto Favorites', ()
     resolveDropAction(source, {
       zone: 'favorites',
       row: { key: 'fav:p2', container: FAVORITES_SECTION_KEY, canReorder: true, position: 'before' }
+    }),
+    { kind: 'add-favorite', key: 'p1', targetKey: 'fav:p2', position: 'before' }
+  )
+  assert.deepEqual(
+    resolveDropAction(source, {
+      zone: 'favorites',
+      row: { key: 'fav:p2', container: FAVORITES_SECTION_KEY, canReorder: true, position: 'after' }
+    }),
+    { kind: 'add-favorite', key: 'p1', targetKey: 'fav:p2', position: 'after' }
+  )
+  assert.deepEqual(
+    resolveDropAction(source, {
+      zone: 'favorites',
+      row: { key: 'fav:w1', container: 'fav:p2', canReorder: false, position: 'before' }
     }),
     { kind: 'add-favorite', key: 'p1' }
   )

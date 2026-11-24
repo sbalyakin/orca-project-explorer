@@ -36,7 +36,7 @@ export type DropTargetInfo = {
 export type DropAction =
   | { kind: 'reorder-favorites'; draggedKey: string; targetKey: string; position: DropPosition }
   | { kind: 'reorder-projects'; draggedKey: string; targetKey: string; position: DropPosition }
-  | { kind: 'add-favorite'; key: string }
+  | { kind: 'add-favorite'; key: string; targetKey?: string; position?: DropPosition }
   | { kind: 'remove-favorite'; key: string }
   | { kind: 'none' }
 
@@ -74,7 +74,12 @@ export function resolveDropAction(source: DragSource, target: DropTargetInfo): D
   if (source.section === 'projects') {
     if (!source.isProject) return { kind: 'none' }
     if (target.zone === 'favorites') {
-      return source.canFavorite ? { kind: 'add-favorite', key: canonicalKey(source.key) } : { kind: 'none' }
+      if (!source.canFavorite) return { kind: 'none' }
+      const row = target.row
+      if (row && row.canReorder && row.container === FAVORITES_SECTION_KEY) {
+        return { kind: 'add-favorite', key: canonicalKey(source.key), targetKey: row.key, position: row.position }
+      }
+      return { kind: 'add-favorite', key: canonicalKey(source.key) }
     }
     const row = target.row
     if (source.canReorder && row && row.canReorder && row.container === source.container && row.key !== source.key) {
