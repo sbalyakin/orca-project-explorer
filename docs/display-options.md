@@ -36,7 +36,7 @@ The toolbar gear (to the right of the filter field, since options apply to both 
 - `Recent`: by `activeAt` (`lastActivityAt`; max across a project's worktrees); rows without `activeAt` always stay last by `Name`, even in `asc`.
 - `Status`: by strongest `Attention` (`permission` → `unread` → `working` → `monitoring` → `none`, reversed in `asc`), ties broken by `Recent` (`desc`), then `Name`.
 - `Manual` (2026-11-19, user request): drag-and-drop project rows within their current container (folders stay above projects alphabetically; worktrees stay alphabetical; drop on worktree rows is ignored; dragging is disabled while a filter is active). No direction arrow or toggle. Stored in `orca.storage` under `manualOrder:v1` as two buckets: `folder` for `Folder` grouping and `flat` shared by `None` and `Status`. Unseen projects fall to the end alphabetically; removed projects are pruned on `tree.load`. `Reset manual order` (with `ListX` icon) always appears under a separator in the `Sort by` menu, disabled when the current bucket has no saved order, and clears that bucket at once. Checked live by the user 2026-11-19 (the always-visible `Reset manual order` item not re-checked).
-- In `Folder` mode, folders stay above projects in alphabetical order; projects inside each folder and worktrees inside each project (including `primary`) are sorted by the active rule (except `Manual`, where worktrees stay alphabetical).
+- In `Folder` mode, folders stay above projects in alphabetical order; projects inside each folder and linked worktrees inside each project are sorted by the active rule (except `Manual`, where linked worktrees stay alphabetical), while `primary` always stays first (user request 2026-11-24).
 
 ### `Details`
 

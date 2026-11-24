@@ -67,17 +67,19 @@ function compareWorkspaces(a: WorkspaceNode, b: WorkspaceNode, sort: SortMode, d
   }
 }
 
-/** Sorts a project's worktrees (including `primary`) using the active sort mode and direction; in manual mode they stay alphabetical. */
+/** Sorts a project's worktrees using the active sort mode and direction, always keeping `primary` first; in manual mode others stay alphabetical. */
 function sortWorktrees(node: WorkspaceNode, sort: SortMode, dir: SortDirection, manualOrder: ReadonlyMap<string, number>): WorkspaceNode {
   if (node.children.length === 0) return node
   const children = [...node.children]
   const worktreeSort: SortMode = sort === 'manual' ? 'name' : sort
   const worktreeDir: SortDirection = sort === 'manual' ? 'asc' : dir
-  children.sort((a, b) =>
-    a.kind === 'workspace' && b.kind === 'workspace'
-      ? compareWorkspaces(a, b, worktreeSort, worktreeDir, manualOrder)
-      : collator.compare(a.label, b.label)
-  )
+  children.sort((a, b) => {
+    if (a.kind === 'workspace' && b.kind === 'workspace') {
+      if (Boolean(a.primary) !== Boolean(b.primary)) return a.primary ? -1 : 1
+      return compareWorkspaces(a, b, worktreeSort, worktreeDir, manualOrder)
+    }
+    return collator.compare(a.label, b.label)
+  })
   return { ...node, children }
 }
 

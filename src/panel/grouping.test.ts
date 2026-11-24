@@ -76,14 +76,14 @@ test('recent sort orders by latest activeAt across worktrees and puts missing ti
     folder('~/work', [
       ws('a', 'alpha', 'none', [], 100),
       ws('b', 'beta', 'none', []),
-      ws('c', 'charlie', 'none', [ws('c0', 'charlie', 'none', [], 50, true), ws('c1', 'feat', 'none', [], 300)]),
+      ws('c', 'charlie', 'none', [ws('c0', 'charlie', 'none', [], 50, true), ws('c1', 'feat', 'none', [], 300), ws('c2', 'bug', 'none', [], 150)]),
       ws('d', 'delta', 'none', [])
     ])
   ]
   const flat = groupTree(dated, 'none', 'recent')
   assert.deepEqual(flat.map((node) => node.label), ['charlie', 'alpha', 'beta', 'delta'])
-  // Worktrees inside a project are sorted by the same rule, including primary.
-  assert.deepEqual(flat[0].children.map((node) => node.label), ['feat', 'charlie'])
+  // Primary stays first; other worktrees follow the active sort rule.
+  assert.deepEqual(flat[0].children.map((node) => node.label), ['charlie', 'feat', 'bug'])
 
   const grouped = groupTree(dated, 'folder', 'recent')
   assert.deepEqual(grouped[0].children.map((node) => node.label), ['charlie', 'alpha', 'beta', 'delta'])
@@ -100,7 +100,7 @@ test('status sort orders by strongest attention, then recent, then name', () => 
   ]
   const flat = groupTree(active, 'none', 'status')
   assert.deepEqual(flat.map((node) => node.label), ['charlie', 'delta', 'beta', 'alpha'])
-  assert.deepEqual(flat[1].children.map((node) => node.label), ['fix', 'delta'])
+  assert.deepEqual(flat[1].children.map((node) => node.label), ['delta', 'fix'])
 
   const reversed = groupTree(active, 'none', 'status', 'asc')
   assert.deepEqual(reversed.map((node) => node.label), ['beta', 'alpha', 'delta', 'charlie'])
@@ -140,4 +140,23 @@ test('manual sort follows saved project keys, puts unseen projects last alphabet
 
   const grouped = groupTree(dated, 'folder', 'manual', 'asc', ['ws:c', 'ws:a'])
   assert.deepEqual(grouped[0].children.map((node) => node.label), ['charlie', 'alpha', 'beta', 'delta'])
+})
+
+test('primary worktree always stays first regardless of sort mode and direction', () => {
+  const projectTree: TreeNode[] = [
+    folder('~/work', [
+      ws('p', 'mid', 'none', [
+        ws('w1', 'alpha', 'permission', [], 300),
+        ws('p0', 'mid', 'none', [], 10, true),
+        ws('w2', 'zeta', 'working', [], 200)
+      ])
+    ])
+  ]
+  assert.deepEqual(groupTree(projectTree, 'none', 'name', 'asc')[0].children.map((n) => n.label), ['mid', 'alpha', 'zeta'])
+  assert.deepEqual(groupTree(projectTree, 'none', 'name', 'desc')[0].children.map((n) => n.label), ['mid', 'zeta', 'alpha'])
+  assert.deepEqual(groupTree(projectTree, 'none', 'recent', 'desc')[0].children.map((n) => n.label), ['mid', 'alpha', 'zeta'])
+  assert.deepEqual(groupTree(projectTree, 'none', 'recent', 'asc')[0].children.map((n) => n.label), ['mid', 'zeta', 'alpha'])
+  assert.deepEqual(groupTree(projectTree, 'none', 'status', 'desc')[0].children.map((n) => n.label), ['mid', 'alpha', 'zeta'])
+  assert.deepEqual(groupTree(projectTree, 'none', 'status', 'asc')[0].children.map((n) => n.label), ['mid', 'zeta', 'alpha'])
+  assert.deepEqual(groupTree(projectTree, 'none', 'manual', 'asc')[0].children.map((n) => n.label), ['mid', 'alpha', 'zeta'])
 })
