@@ -2,12 +2,14 @@ import { assert, test } from 'orca/testing'
 import type { GroupNode, WorkspaceNode } from '../types'
 import {
   FAVORITES_SECTION_KEY,
+  addFavorite,
   buildFavoritesSection,
   canonicalKey,
   excludeFavorites,
   isFavoriteCopy,
   parseFavorites,
   pruneFavorites,
+  removeFavorite,
   reorderFavorites,
   toggleFavorite
 } from './favorites'
@@ -28,6 +30,13 @@ test('parseFavorites filters invalid entries and deduplicates canonical keys', (
 test('toggleFavorite appends new keys to the end and removes existing ones', () => {
   assert.deepEqual(toggleFavorite(['a'], 'b'), ['a', 'b'])
   assert.deepEqual(toggleFavorite(['a', 'b'], 'fav:a'), ['b'])
+})
+
+test('addFavorite and removeFavorite are idempotent and normalize fav: prefix', () => {
+  assert.deepEqual(addFavorite(['a'], 'b'), ['a', 'b'])
+  assert.deepEqual(addFavorite(['a'], 'fav:a'), ['a'])
+  assert.deepEqual(removeFavorite(['a', 'b'], 'fav:a'), ['b'])
+  assert.deepEqual(removeFavorite(['a', 'b'], 'c'), ['a', 'b'])
 })
 
 test('canonicalKey and isFavoriteCopy handle fav: prefix', () => {

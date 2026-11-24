@@ -34,6 +34,20 @@ export function toggleFavorite(favorites: readonly string[], key: string): strin
   return [...favorites, canonical]
 }
 
+/** Adds a key to the end of favorites if not already present. */
+export function addFavorite(favorites: readonly string[], key: string): string[] {
+  const canonical = canonicalKey(key)
+  if (favorites.includes(canonical)) return [...favorites]
+  return [...favorites, canonical]
+}
+
+/** Removes a key from favorites if present. */
+export function removeFavorite(favorites: readonly string[], key: string): string[] {
+  const canonical = canonicalKey(key)
+  if (!favorites.includes(canonical)) return [...favorites]
+  return favorites.filter((item) => item !== canonical)
+}
+
 function collectWorkspaceKeys(nodes: readonly TreeNode[], out: Set<string>): void {
   for (const node of nodes) {
     if (node.kind === 'workspace') out.add(node.key)

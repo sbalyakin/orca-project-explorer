@@ -49,7 +49,16 @@ body {
 .header:hover .header-fold, .header-fold:focus-visible { opacity: 1; }
 .header-actions { display: flex; gap: 2px; margin-left: auto; }
 .scroll { flex: 1; overflow: auto; }
-.fav-section { padding-bottom: 6px; }
+.scroll.drop-remove {
+  background: color-mix(in srgb, var(--orca-destructive) 5%, transparent);
+  box-shadow: inset 0 0 0 1px color-mix(in srgb, var(--orca-destructive) 45%, transparent);
+}
+.fav-section { padding-bottom: 6px; border-radius: 8px; }
+.fav-section.drop-reveal { margin: 2px 4px 4px; border: 1px dashed color-mix(in srgb, var(--orca-border) 75%, transparent); }
+.fav-section.drop-target {
+  background: color-mix(in srgb, var(--orca-ring) 12%, transparent);
+  box-shadow: inset 0 0 0 1px color-mix(in srgb, var(--orca-ring) 55%, transparent);
+}
 .fav-header { gap: 5px; cursor: pointer; }
 .fav-header .section-count { font-size: 11px; }
 .fav-tree { padding: 2px 0 0; }

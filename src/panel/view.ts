@@ -2,6 +2,7 @@
 import { isOpenable, isProjectFolder, type AgentText } from '../types'
 import { longAge, shortAge } from './age'
 import { detailFor, type DetailMode, type FolderMark, type GuideMode } from './display'
+import { classifyDraggable } from './drag-drop'
 import { FAVORITES_SECTION_KEY, canonicalKey, isFavoriteCopy } from './favorites'
 import { icon, projectIcon } from './icons'
 import { rowLayout } from './layout'
@@ -130,14 +131,18 @@ function renderRow(row: Row, index: number, state: ViewState, idPrefix: string):
   el.className = `row ${node.kind}`
   el.id = `${idPrefix}-${index}`
   el.dataset.key = node.key
-  if (isFavoriteCopy(node.key) && row.depth === 0 && state.favoritesDraggable) {
+  const dragMeta = classifyDraggable(node, row.depth, {
+    manualReorder: state.draggable,
+    favoritesEnabled: state.favoritesDraggable
+  })
+  if (dragMeta) {
     el.draggable = true
     el.dataset.draggable = 'true'
-    el.dataset.container = FAVORITES_SECTION_KEY
-  } else if (state.draggable && node.kind === 'workspace' && !node.linked && !isFavoriteCopy(node.key)) {
-    el.draggable = true
-    el.dataset.draggable = 'true'
-    el.dataset.container = row.parentKey ?? ''
+    el.dataset.dragSection = dragMeta.section
+    el.dataset.dragProject = dragMeta.isProject ? 'true' : 'false'
+    el.dataset.canReorder = dragMeta.canReorder ? 'true' : 'false'
+    el.dataset.canFavorite = dragMeta.canFavorite ? 'true' : 'false'
+    el.dataset.container = dragMeta.section === 'favorites' ? FAVORITES_SECTION_KEY : (row.parentKey ?? '')
   }
   el.setAttribute('role', 'treeitem')
   el.setAttribute('aria-level', String(row.depth + 1))

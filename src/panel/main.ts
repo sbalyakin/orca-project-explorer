@@ -12,7 +12,8 @@ import { buildDeleteConfirm, buildEditForm, buildMainMenu, buildRowMenu, closePo
 import { buildOptionsMenu, buildSortMenu } from './options-menu'
 import { buildProjectPicker } from './project-picker'
 import { groupTree } from './grouping'
-import { FAVORITES_SECTION_KEY, buildFavoritesSection, canonicalKey, excludeFavorites, isFavoriteCopy, parseFavorites, pruneFavorites, reorderFavorites, toggleFavorite } from './favorites'
+import { resolveDropAction, type DragSection, type DragSource, type DropAction, type DropTargetInfo } from './drag-drop'
+import { FAVORITES_SECTION_KEY, addFavorite, buildFavoritesSection, canonicalKey, excludeFavorites, isFavoriteCopy, parseFavorites, pruneFavorites, removeFavorite, reorderFavorites, toggleFavorite } from './favorites'
 import { EMPTY_MANUAL_ORDER, manualOrderBucket, parseManualOrder, pruneManualOrder, reorderProjects, type ManualOrder } from './manual-order'
 import { allCollapsed, canRename, containerKeys, filterNodes, keepLooks, navigate, pathTo, projectOf, projectsOf, visibleRows, type NavKey, type Row } from './rows'
 import { applyMonitoring, prunePanes, recordPane, workspaceIds, type PaneStates } from './monitoring'
@@ -252,7 +253,21 @@ async function run(action: () => Promise<unknown>, pending = ''): Promise<void> 
   }
 }
 
+type DragState = DragSource & { sourceEl: HTMLElement; revealedFavorites: boolean }
+type PendingDrop = { action: DropAction; rowEl: HTMLElement | null }
+let dragState: DragState | null = null
+let pendingDrop: PendingDrop | null = null
+let renderDeferred = false
+let deferredScrollToSelected = false
+
 function render(scrollToSelected = false): void {
+  if (dragState !== null) {
+    renderDeferred = true
+    if (scrollToSelected) deferredScrollToSelected = true
+    return
+  }
+  renderDeferred = false
+  deferredScrollToSelected = false
   syncFoldButton()
   const display = activeDisplay()
   treeEl.dataset.density = display.density
@@ -836,36 +851,63 @@ scrollEl.addEventListener('contextmenu', (event) => {
   if (row) showMenu(row, event.clientX, event.clientY)
 })
 
-type DragState = { key: string; container: string; sourceEl: HTMLElement }
-type DropTarget = { key: string; el: HTMLElement; position: 'before' | 'after' }
-let dragState: DragState | null = null
-let dropTarget: DropTarget | null = null
-
 function clearDropIndicator(): void {
-  if (!dropTarget) return
-  dropTarget.el.classList.remove('drop-before', 'drop-after')
-  dropTarget = null
+  pendingDrop?.rowEl?.classList.remove('drop-before', 'drop-after')
+  favSectionEl.classList.remove('drop-target')
+  scrollEl.classList.remove('drop-remove')
+  pendingDrop = null
 }
 
-function clearDrag(): void {
+function clearDrag(flush = true): void {
   clearDropIndicator()
   dragState?.sourceEl.classList.remove('dragging')
+  if (dragState?.revealedFavorites) {
+    favSectionEl.classList.remove('drop-reveal')
+    favSectionEl.hidden = true
+  }
   dragState = null
+  if (flush && renderDeferred) {
+    const scroll = deferredScrollToSelected
+    renderDeferred = false
+    deferredScrollToSelected = false
+    render(scroll)
+  }
 }
 
 scrollEl.addEventListener('dragstart', (event) => {
   const rowEl = event.target instanceof Element ? event.target.closest<HTMLElement>('.row[data-draggable="true"]') : null
   const key = rowEl?.dataset.key
-  if (!rowEl || !key) {
+  const section = rowEl?.dataset.dragSection as DragSection | undefined
+  if (!rowEl || !key || (section !== 'favorites' && section !== 'projects')) {
     event.preventDefault()
     return
   }
-  dragState = { key, container: rowEl.dataset.container ?? '', sourceEl: rowEl }
+  const rect = rowEl.getBoundingClientRect()
+  const isProject = rowEl.dataset.dragProject === 'true'
+  const canFavorite = rowEl.dataset.canFavorite === 'true'
+  const revealedFavorites = section === 'projects' && isProject && canFavorite && Boolean(favSectionEl.hidden)
+  if (revealedFavorites) {
+    favSectionEl.hidden = false
+    favSectionEl.classList.add('drop-reveal')
+    favCount.textContent = '0'
+    favChevron.replaceChildren(icon('chevron'))
+    favListEl.hidden = true
+  }
+  dragState = {
+    key,
+    container: rowEl.dataset.container ?? '',
+    section,
+    isProject,
+    canReorder: rowEl.dataset.canReorder === 'true',
+    canFavorite,
+    sourceEl: rowEl,
+    revealedFavorites
+  }
+  rowEl.addEventListener('dragend', () => clearDrag(), { once: true })
   event.dataTransfer?.setData('text/plain', key)
   if (event.dataTransfer) {
     event.dataTransfer.effectAllowed = 'move'
     // Render the drag image on its own composited layer with no outer shadow, so the panel background does not bleed past rounded corners.
-    const rect = rowEl.getBoundingClientRect()
     const ghost = rowEl.cloneNode(true) as HTMLElement
     ghost.classList.add('drag-ghost')
     ghost.style.width = `${rect.width}px`
@@ -879,20 +921,50 @@ scrollEl.addEventListener('dragstart', (event) => {
 
 scrollEl.addEventListener('dragover', (event) => {
   if (!dragState) return
+  const zone = event.target instanceof Node && favSectionEl.contains(event.target) ? 'favorites' : 'outside-favorites'
   const rowEl = event.target instanceof Element ? event.target.closest<HTMLElement>('.row') : null
-  const key = rowEl?.dataset.key
-  if (!rowEl || !key || rowEl.dataset.draggable !== 'true' || (rowEl.dataset.container ?? '') !== dragState.container || key === dragState.key) {
+  const rowKey = rowEl?.dataset.key
+  let targetRow: DropTargetInfo['row']
+  if (rowEl && rowKey) {
+    const rect = rowEl.getBoundingClientRect()
+    targetRow = {
+      key: rowKey,
+      container: rowEl.dataset.container ?? '',
+      canReorder: rowEl.dataset.canReorder === 'true',
+      position: event.clientY < rect.top + rect.height / 2 ? 'before' : 'after'
+    }
+  }
+  const action = resolveDropAction(dragState, { zone, row: targetRow })
+  if (action.kind === 'none') {
     clearDropIndicator()
     return
   }
   event.preventDefault()
   if (event.dataTransfer) event.dataTransfer.dropEffect = 'move'
-  const rect = rowEl.getBoundingClientRect()
-  const position: 'before' | 'after' = event.clientY < rect.top + rect.height / 2 ? 'before' : 'after'
-  if (dropTarget?.el === rowEl && dropTarget.position === position) return
+  if (action.kind === 'reorder-favorites' || action.kind === 'reorder-projects') {
+    if (
+      pendingDrop?.action.kind === action.kind &&
+      pendingDrop.rowEl === rowEl &&
+      pendingDrop.action.position === action.position
+    ) {
+      return
+    }
+    clearDropIndicator()
+    rowEl?.classList.add(action.position === 'before' ? 'drop-before' : 'drop-after')
+    pendingDrop = { action, rowEl }
+    return
+  }
+  if (action.kind === 'add-favorite') {
+    if (pendingDrop?.action.kind === 'add-favorite') return
+    clearDropIndicator()
+    favSectionEl.classList.add('drop-target')
+    pendingDrop = { action, rowEl: null }
+    return
+  }
+  if (pendingDrop?.action.kind === 'remove-favorite') return
   clearDropIndicator()
-  rowEl.classList.add(position === 'before' ? 'drop-before' : 'drop-after')
-  dropTarget = { key, el: rowEl, position }
+  scrollEl.classList.add('drop-remove')
+  pendingDrop = { action, rowEl: null }
 })
 
 scrollEl.addEventListener('dragleave', (event) => {
@@ -905,18 +977,26 @@ scrollEl.addEventListener('drop', (event) => {
   if (!dragState) return
   event.preventDefault()
   const activeDrag = dragState
-  const activeDrop = dropTarget
-  clearDrag()
-  if (!activeDrop) return
-  if (activeDrag.container === FAVORITES_SECTION_KEY) {
-    setFavorites(reorderFavorites(state.favorites, activeDrag.key, activeDrop.key, activeDrop.position))
+  const activeAction = pendingDrop?.action ?? null
+  clearDrag(!activeAction || activeAction.kind === 'none')
+  if (!activeAction || activeAction.kind === 'none') return
+  if (activeAction.kind === 'add-favorite') {
+    setFavorites(addFavorite(state.favorites, activeAction.key))
+    return
+  }
+  if (activeAction.kind === 'remove-favorite') {
+    setFavorites(removeFavorite(state.favorites, activeAction.key))
+    return
+  }
+  if (activeAction.kind === 'reorder-favorites') {
+    setFavorites(reorderFavorites(state.favorites, activeAction.draggedKey, activeAction.targetKey, activeAction.position))
     return
   }
   const bucket = manualOrderBucket(state.display.group)
   const visibleContainerKeys = rows
     .filter((row) => row.node.kind === 'workspace' && !row.node.linked && !isFavoriteCopy(row.node.key) && (row.parentKey ?? '') === activeDrag.container)
     .map((row) => row.node.key)
-  const nextBucket = reorderProjects(state.manualOrder[bucket], visibleContainerKeys, activeDrag.key, activeDrop.key, activeDrop.position)
+  const nextBucket = reorderProjects(state.manualOrder[bucket], visibleContainerKeys, activeAction.draggedKey, activeAction.targetKey, activeAction.position)
   setManualOrder({ ...state.manualOrder, [bucket]: nextBucket })
 })
 
