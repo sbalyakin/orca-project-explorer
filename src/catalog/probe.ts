@@ -1,5 +1,5 @@
 // Asks each agent's own CLI for its models, the way Orca's own picker does.
-import { parseClaudeModels, parseCodexModels, parseCursorModels, parseGeminiModels, parseOpenCodeModels, parsePiModels, parsePiRpcModels } from './parse'
+import { parseAntigravityModels, parseClaudeModels, parseCodexModels, parseCursorModels, parseGeminiModels, parseOpenCodeModels, parsePiModels, parsePiRpcModels } from './parse'
 import { findCommand, runLines, runText, type LineIo } from './run'
 import type { AgentModel } from '../types'
 
@@ -104,7 +104,8 @@ const PROBES: Record<string, () => Promise<AgentModel[]>> = {
   opencode: async () => parseOpenCodeModels(await runText(requireCommand(['opencode-jb', 'opencode']), ['models'], { timeoutMs: PROBE_TIMEOUT_MS })),
   opencode2: async () => parseOpenCodeModels(await runText(requireCommand(['opencode-jb', 'opencode2', 'opencode']), ['models'], { timeoutMs: PROBE_TIMEOUT_MS })),
   cursor: async () => parseCursorModels(await runText(requireCommand(['cursor-agent', 'agent']), ['--list-models'], { timeoutMs: PROBE_TIMEOUT_MS })),
-  gemini: async () => parseGeminiModels(await runText(requireCommand(['gemini']), ['--list-models'], { timeoutMs: PROBE_TIMEOUT_MS }))
+  gemini: async () => parseGeminiModels(await runText(requireCommand(['gemini']), ['--list-models'], { timeoutMs: PROBE_TIMEOUT_MS })),
+  antigravity: async () => parseAntigravityModels(await runText(requireCommand(['agy', 'antigravity']), ['models'], { timeoutMs: PROBE_TIMEOUT_MS }))
 }
 
 export function canListModels(agent: string): boolean {

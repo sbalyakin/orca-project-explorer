@@ -136,3 +136,40 @@ export function parseGeminiModels(text: string): AgentModel[] {
   }
   return uniqueById(models)
 }
+
+const ANTIGRAVITY_EFFORT_ID = /^(.+)-(low|medium|high|xhigh|max)$/i
+const ANTIGRAVITY_EFFORT_LABEL = /\s*\((low|medium|high|xhigh|max)\)\s*$/i
+
+/**
+ * `agy models`: tab-separated `id\tLabel` (or 2+ spaces on a TTY) lines.
+ * Entries that end in `-(low|medium|high|xhigh|max)` are grouped into one model with `efforts`
+ * sorted in standard order; entries without an effort suffix stay as standalone models.
+ */
+export function parseAntigravityModels(text: string): AgentModel[] {
+  const byId = new Map<string, AgentModel>()
+  for (const line of text.split(/\r?\n/)) {
+    const match = /^([a-z0-9][a-z0-9._-]*)(?:\t+|\s{2,})(.+)$/i.exec(line.trim())
+    if (!match) continue
+    const rawId = match[1]
+    const rawLabel = match[2].trim()
+    const effortMatch = ANTIGRAVITY_EFFORT_ID.exec(rawId)
+    if (effortMatch) {
+      const baseId = effortMatch[1]
+      const effort = effortMatch[2].toLowerCase()
+      const baseLabel = rawLabel.replace(ANTIGRAVITY_EFFORT_LABEL, '').trim() || baseId
+      const existing = byId.get(baseId)
+      if (existing) {
+        if (!existing.efforts.includes(effort)) existing.efforts.push(effort)
+      } else {
+        byId.set(baseId, { id: baseId, label: baseLabel, efforts: [effort] })
+      }
+    } else if (!byId.has(rawId)) {
+      byId.set(rawId, { id: rawId, label: rawLabel, efforts: [] })
+    }
+  }
+  const models = [...byId.values()]
+  for (const model of models) {
+    model.efforts.sort((a, b) => STANDARD_EFFORTS.indexOf(a) - STANDARD_EFFORTS.indexOf(b))
+  }
+  return models
+}

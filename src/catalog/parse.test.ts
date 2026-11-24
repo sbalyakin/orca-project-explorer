@@ -1,5 +1,5 @@
 import { assert, test } from 'orca/testing'
-import { parseClaudeModels, parseCodexModels, parseCursorModels, parseGeminiModels, parseOpenCodeModels, parsePiModels, parsePiRpcModels } from './parse'
+import { parseAntigravityModels, parseClaudeModels, parseCodexModels, parseCursorModels, parseGeminiModels, parseOpenCodeModels, parsePiModels, parsePiRpcModels } from './parse'
 
 test('codex: visible models with their levels and defaults', () => {
   const rows = [
@@ -87,5 +87,25 @@ test('gemini: id (Label) lines under heading, indented metadata ignored', () => 
   assert.deepEqual(parseGeminiModels(text), [
     { id: 'auto', label: 'Auto', efforts: [] },
     { id: 'gemini-2.5-pro', label: 'gemini-2.5-pro', efforts: [] }
+  ])
+})
+
+test('antigravity: groups effort variants into one model, keeps non-effort models as-is', () => {
+  const text = [
+    '⠋ Fetching available models...',
+    'gemini-4-neon-high\tGemini 4 Neon (High)',
+    'gemini-4-neon-xhigh\tGemini 4 Neon (XHigh)',
+    'gemini-4-neon-low              Gemini 4 Neon (Low)',
+    'gemini-4-neon-medium\tGemini 4 Neon (Medium)',
+    'gemini-pro-orchestrator-neon\tOrchestrator (Neon)',
+    'claude-opus-5-5-high\tClaude Opus 5.5 (High)',
+    'claude-opus-5-5-low\tClaude Opus 5.5 (Low)',
+    'gemini-4-neon-high\tDuplicate',
+    ''
+  ].join('\n')
+  assert.deepEqual(parseAntigravityModels(text), [
+    { id: 'gemini-4-neon', label: 'Gemini 4 Neon', efforts: ['low', 'medium', 'high', 'xhigh'] },
+    { id: 'gemini-pro-orchestrator-neon', label: 'Orchestrator (Neon)', efforts: [] },
+    { id: 'claude-opus-5-5', label: 'Claude Opus 5.5', efforts: ['low', 'high'] }
   ])
 })

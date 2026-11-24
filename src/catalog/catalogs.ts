@@ -5,7 +5,7 @@ import type { AgentModel, ModelCatalog } from '../types'
 import { canListModels, probeModels } from './probe'
 
 const MAX_AGE_MS = 6 * 60 * 60 * 1000
-const storageKey = (agent: string): string => `models-v2:${agent}`
+const storageKey = (agent: string): string => `models-v3:${agent}`
 
 function errorText(error: unknown): string {
   return error instanceof Error ? error.message : String(error)

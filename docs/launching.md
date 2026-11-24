@@ -27,6 +27,7 @@ Each agent is asked through its own CLI, as Orca's picker does (`src/catalog/pro
 | OpenCode 2 | `opencode-jb models`; no `--verbose`, no reasoning levels |
 | Cursor | `cursor-agent --list-models` |
 | Gemini | `gemini --list-models` (checked 2026-11-19) |
+| Antigravity | `agy models` (`id\tLabel` when piped, 2+ spaces on a TTY; `-(low|medium|high|xhigh|max)` variants grouped into one model with `efforts`) (checked 2026-11-24) |
 
 - Pi levels: `off, minimal, low, medium, high`, plus `xhigh` and `max` only when the model maps them; a level mapped to `null` is dropped; a model without `reasoning` has none. Matches Orca's picker (2026-11-17).
 - The Codex and Claude protocols are undocumented. After an agent update, a failing probe is the first suspect.
@@ -34,5 +35,5 @@ Each agent is asked through its own CLI, as Orca's picker does (`src/catalog/pro
 
 ## Cache
 
-- Plugin storage, key `models-v2:<agent>`, 6 h, stale-while-revalidate with in-flight dedupe; a refresh is pushed to the panel as `models.updated`. Change the key when the stored shape changes (it was `models:<agent>` before Pi's RPC format).
+- Plugin storage, key `models-v3:<agent>`, 6 h, stale-while-revalidate with in-flight dedupe; a refresh is pushed to the panel as `models.updated`. Change the key when the stored shape changes (it was `models-v2:<agent>` before Antigravity effort grouping).
 - `last:<agent>` holds the last model and effort. A saved model missing from a fresh list is kept as the chosen one; the flyout still opens scrolled to it when it is listed.

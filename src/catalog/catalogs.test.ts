@@ -22,7 +22,7 @@ function fakeOrca(stored: Record<string, unknown> = {}) {
 const catalog = (fetchedAt: number): ModelCatalog => ({ agent: 'claude', models: [model('old')], fetchedAt, supported: true })
 
 test('a fresh cache answers without a probe', async () => {
-  const { orca } = fakeOrca({ 'models-v2:claude': catalog(1000) })
+  const { orca } = fakeOrca({ 'models-v3:claude': catalog(1000) })
   let probes = 0
   const catalogs = createCatalogs(orca, () => 1000 + HOUR, async () => (probes++, [model('new')]))
   assert.deepEqual(await catalogs.get('claude'), catalog(1000))
@@ -30,17 +30,17 @@ test('a fresh cache answers without a probe', async () => {
 })
 
 test('a stale cache answers at once and refreshes in the background', async () => {
-  const { orca, posted, stored } = fakeOrca({ 'models-v2:claude': catalog(1000) })
+  const { orca, posted, stored } = fakeOrca({ 'models-v3:claude': catalog(1000) })
   const catalogs = createCatalogs(orca, () => 1000 + 7 * HOUR, async () => [model('new')])
   assert.deepEqual((await catalogs.get('claude')).models, [model('old')])
   await new Promise((resolve) => setTimeout(resolve, 0))
   assert.equal(posted.length, 1)
   assert.deepEqual((posted[0] as ModelCatalog).models, [model('new')])
-  assert.deepEqual((stored['models-v2:claude'] as ModelCatalog).models, [model('new')])
+  assert.deepEqual((stored['models-v3:claude'] as ModelCatalog).models, [model('new')])
 })
 
 test('a failed probe keeps the earlier models and reports why', async () => {
-  const { orca } = fakeOrca({ 'models-v2:claude': catalog(1000) })
+  const { orca } = fakeOrca({ 'models-v3:claude': catalog(1000) })
   const catalogs = createCatalogs(orca, () => 5000, async () => {
     throw new Error('boom')
   })

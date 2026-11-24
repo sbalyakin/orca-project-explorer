@@ -183,12 +183,11 @@ export function buildLauncher(options: LauncherOptions): { element: HTMLElement;
     note.hidden = note.textContent === ''
   }
 
-  /** The model the flyout starts on: the last one used, else the agent's default. */
+  /** The model the flyout starts on: the last one used, else the agent's default, else the first listed. */
   function pickInitial(models: readonly AgentModel[]): AgentModel | null {
     const saved = options.initial.model
-    const wanted = (saved ? models.find((m) => m.id === saved) : undefined) ?? models.find((m) => m.isDefault)
-    if (wanted) return wanted
-    return saved ? { id: saved, label: saved, efforts: [] } : null
+    if (saved) return models.find((m) => m.id === saved) ?? { id: saved, label: saved, efforts: [] }
+    return models.find((m) => m.isDefault) ?? models[0] ?? null
   }
 
   function accept(next: ModelCatalog): void {
