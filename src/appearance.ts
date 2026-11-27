@@ -18,6 +18,7 @@ function iconOf(value: unknown): ProjectIcon | undefined {
   if (icon.type === 'lucide' && typeof icon.name === 'string') return { type: 'lucide', name: icon.name }
   if (icon.type === 'emoji' && typeof icon.emoji === 'string') return { type: 'emoji', emoji: icon.emoji }
   if (icon.type === 'image' && typeof icon.src === 'string') return { type: 'image', src: icon.src }
+  if (icon.type === 'letters' && typeof icon.text === 'string') return { type: 'letters', text: icon.text }
   return undefined
 }
 

@@ -103,6 +103,7 @@ export function agentIcon(agent: string, label: string): Element {
 
 /** Orca shows a plain folder for a project without an icon; here it looks too much like a group folder, so a box stands in. */
 const DEFAULT_PROJECT_ICON = 'Box'
+const DEFAULT_BADGE_COLOR = '#737373'
 
 function lucideIcon(name: string, color: string | undefined): SVGSVGElement {
   // Orca falls back to its Folder for a name it does not know.
@@ -112,25 +113,52 @@ function lucideIcon(name: string, color: string | undefined): SVGSVGElement {
   return svg
 }
 
+/** Tinted 16x16 rounded-square badge matching Orca 1.4.279's RepoBadgeLabel (16% bg / 8% default, 25% 0.5px inset ring). */
+function tintedBadge(color: string | undefined, child: Element): HTMLSpanElement {
+  const badge = document.createElement('span')
+  badge.className = 'project-badge'
+  const isDefault = !color || color.toLowerCase() === DEFAULT_BADGE_COLOR
+  const tint = isDefault ? 'var(--orca-foreground)' : color
+  badge.style.backgroundColor = `color-mix(in srgb, ${tint} ${isDefault ? 8 : 16}%, transparent)`
+  badge.style.boxShadow = `inset 0 0 0 0.5px color-mix(in srgb, ${tint} 25%, transparent)`
+  badge.appendChild(child)
+  return badge
+}
+
 /**
- * A project's icon as Orca draws it: its own picture, emoji or Lucide shape, else the default box in
- * the badge colour. A picture that cannot be loaded falls back to that box.
+ * A project's icon as Orca draws it: its own picture, monogram, emoji or Lucide shape, else the
+ * default box in the badge colour. Lucide, emoji and default icons sit inside Orca's tinted 16px
+ * rounded-square badge; a picture that cannot be loaded falls back to the default badge.
  */
 export function projectIcon(chosen: ProjectIcon | undefined, color: string | undefined): Element {
   if (chosen?.type === 'emoji') {
     const emoji = document.createElement('span')
     emoji.className = 'project-emoji'
     emoji.textContent = chosen.emoji
-    return emoji
+    return tintedBadge(color, emoji)
+  }
+  if (chosen?.type === 'letters') {
+    const badge = document.createElement('span')
+    badge.className = 'project-badge project-letters'
+    const isDefault = !color || color.toLowerCase() === DEFAULT_BADGE_COLOR
+    badge.style.backgroundColor = isDefault ? 'color-mix(in srgb, var(--orca-foreground) 14%, transparent)' : color
+    if (!isDefault) badge.style.color = '#fff'
+    const text = chosen.text.slice(0, 2)
+    badge.style.fontSize = Array.from(text).length > 1 ? '9px' : '11px'
+    badge.textContent = text
+    return badge
   }
   if (chosen?.type === 'image') {
+    const badge = document.createElement('span')
+    badge.className = 'project-badge'
     const image = document.createElement('img')
     image.className = 'project-image'
     image.alt = ''
     image.draggable = false
-    image.addEventListener('error', () => image.replaceWith(lucideIcon(DEFAULT_PROJECT_ICON, color)), { once: true })
+    image.addEventListener('error', () => badge.replaceWith(tintedBadge(color, lucideIcon(DEFAULT_PROJECT_ICON, color))), { once: true })
     image.src = chosen.src
-    return image
+    badge.appendChild(image)
+    return badge
   }
-  return lucideIcon(chosen?.type === 'lucide' ? chosen.name : DEFAULT_PROJECT_ICON, color)
+  return tintedBadge(color, lucideIcon(chosen?.type === 'lucide' ? chosen.name : DEFAULT_PROJECT_ICON, color))
 }

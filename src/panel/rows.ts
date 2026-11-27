@@ -58,6 +58,18 @@ export function allCollapsed(nodes: readonly TreeNode[], collapsed: ReadonlySet<
   return keys.length > 0 && keys.every((key) => collapsed.has(key))
 }
 
+/** Expands or collapses only `nodes`, keeping collapsed keys from other sections (such as Favorites) intact. */
+export function toggleAllCollapsed(nodes: readonly TreeNode[], collapsed: ReadonlySet<string>): Set<string> {
+  const keys = containerKeys(nodes)
+  const next = new Set(collapsed)
+  if (allCollapsed(nodes, collapsed)) {
+    for (const key of keys) next.delete(key)
+  } else {
+    for (const key of keys) next.add(key)
+  }
+  return next
+}
+
 /** While a filter is set every folder opens, so no match hides behind a collapsed one. */
 export function visibleRows(nodes: readonly TreeNode[], collapsed: ReadonlySet<string>, filter: string): Row[] {
   const needle = filter.trim().toLowerCase()

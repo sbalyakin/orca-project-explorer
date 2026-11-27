@@ -14,11 +14,12 @@ export type GroupNode = {
   section?: true
 }
 
-/** A project's own icon, as Orca shows it; an absent icon means Orca's default folder. */
+/** A project's own icon, as Orca shows it; an absent icon falls back to the default box. */
 export type ProjectIcon =
   | { type: 'lucide'; name: string }
   | { type: 'emoji'; emoji: string }
   | { type: 'image'; src: string }
+  | { type: 'letters'; text: string }
 
 /** A workspace Orca can open: a project's main checkout, or a linked worktree under it. */
 export type WorkspaceNode = {

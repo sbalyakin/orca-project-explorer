@@ -15,7 +15,7 @@ import { groupTree } from './grouping'
 import { resolveDropAction, type DragSection, type DragSource, type DropAction, type DropTargetInfo } from './drag-drop'
 import { FAVORITES_SECTION_KEY, addFavorite, buildFavoritesSection, canonicalKey, excludeFavorites, isFavoriteCopy, parseFavorites, pruneFavorites, removeFavorite, reorderFavorites, toggleFavorite } from './favorites'
 import { EMPTY_MANUAL_ORDER, manualOrderBucket, parseManualOrder, pruneManualOrder, reorderProjects, type ManualOrder } from './manual-order'
-import { allCollapsed, canRename, containerKeys, filterNodes, keepLooks, navigate, pathTo, projectOf, projectsOf, visibleRows, type NavKey, type Row } from './rows'
+import { allCollapsed, canRename, filterNodes, keepLooks, navigate, pathTo, projectOf, projectsOf, toggleAllCollapsed, visibleRows, type NavKey, type Row } from './rows'
 import { applyMonitoring, prunePanes, recordPane, workspaceIds, type PaneStates } from './monitoring'
 import { lookFor, parseLooks } from './sidebar'
 import { CSS } from './style'
@@ -109,8 +109,7 @@ function toolButton(name: IconName, label: string, onPress: () => void): HTMLBut
 
 /** One button for both directions; its label and icon name what a press will do (see `syncFoldButton`). */
 const foldButton = toolButton('collapseAll', 'Collapse all', () => {
-  const nodes = shownNodes()
-  setCollapsed(allCollapsed(nodes, state.collapsed) ? new Set() : new Set(containerKeys(nodes)))
+  setCollapsed(toggleAllCollapsed(projectsNodes(), state.collapsed))
 })
 
 /** The tree as drawn: the worker's folders, one list, or status sections, per the Group by and Sort by options. */
@@ -124,8 +123,14 @@ function shownNodes(): TreeNode[] {
   return groupTree(state.tree?.nodes ?? [], display.group, display.sort, display.sortDir, state.manualOrder[bucket])
 }
 
-function syncFoldButton(): void {
-  const expand = allCollapsed(shownNodes(), state.collapsed)
+function projectsNodes(): TreeNode[] {
+  const grouped = shownNodes()
+  const activeFavorites = state.tree?.demoFavorites ?? state.favorites
+  return activeFavorites.length > 0 ? excludeFavorites(grouped, new Set(activeFavorites)) : grouped
+}
+
+function syncFoldButton(nodes: readonly TreeNode[]): void {
+  const expand = allCollapsed(nodes, state.collapsed)
   const label = expand ? 'Expand all' : 'Collapse all'
   setTip(foldButton, label)
   foldButton.setAttribute('aria-label', label)
@@ -268,7 +273,6 @@ function render(scrollToSelected = false): void {
   }
   renderDeferred = false
   deferredScrollToSelected = false
-  syncFoldButton()
   const display = activeDisplay()
   treeEl.dataset.density = display.density
   favListEl.dataset.density = display.density
@@ -278,6 +282,7 @@ function render(scrollToSelected = false): void {
   }
   treeEl.removeAttribute('aria-activedescendant')
   if (!state.tree) {
+    syncFoldButton([])
     favSectionEl.hidden = true
     renderMessage(treeEl, state.error ? `Could not load projects: ${state.error}` : 'Loading…', state.error !== null)
     return
@@ -325,6 +330,7 @@ function render(scrollToSelected = false): void {
   }
 
   const mainNodes = favSection ? excludeFavorites(grouped, favoritesSet) : grouped
+  syncFoldButton(mainNodes)
   const treeRows = visibleRows(mainNodes, state.collapsed, state.filter)
   rows = [...favRows, ...treeRows]
   if (treeRows.length === 0) {

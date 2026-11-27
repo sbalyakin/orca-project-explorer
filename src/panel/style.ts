@@ -112,8 +112,11 @@ html.dark .row.current {
 .glyph { color: var(--orca-muted-foreground); }
 .glyph svg { width: 15px; height: 15px; }
 .row.group .glyph { color: #737373; } /* Orca's default project badge colour (DEFAULT_REPO_BADGE_COLOR) */
-.glyph .project-image { width: 15px; height: 15px; border-radius: 4px; object-fit: contain; }
-.glyph .project-emoji { font-size: 13px; line-height: 1; }
+.project-badge { display: inline-flex; align-items: center; justify-content: center; flex: none; width: 16px; height: 16px; border-radius: 4px; overflow: hidden; }
+.project-badge .project-icon { width: 14px; height: 14px; }
+.project-badge .project-image { width: 100%; height: 100%; object-fit: contain; }
+.project-badge .project-emoji { font-size: 11px; line-height: 1; }
+.project-badge.project-letters { font-weight: 600; line-height: 1; color: var(--orca-foreground); }
 .row-text { display: flex; align-items: baseline; gap: 4px; flex: 1; min-width: 0; }
 .label { overflow: hidden; text-overflow: ellipsis; flex: 0 1 auto; min-width: 0; }
 .detail { overflow: hidden; text-overflow: ellipsis; flex: 1 1 0; min-width: 0; font-size: 10px; line-height: 14px; color: color-mix(in srgb, var(--orca-muted-foreground) 65%, transparent); }

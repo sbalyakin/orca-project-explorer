@@ -1,6 +1,6 @@
 import { assert, test } from 'orca/testing'
 import type { Attention, TreeNode, WorkspaceNode } from '../types'
-import { allCollapsed, canRename, containerKeys, keepLooks, navigate, pathTo, projectOf, projectsOf, rowDescription, visibleRows } from './rows'
+import { allCollapsed, canRename, containerKeys, keepLooks, navigate, pathTo, projectOf, projectsOf, rowDescription, toggleAllCollapsed, visibleRows } from './rows'
 
 function ws(id: string, label: string, attention: Attention = 'none', children: TreeNode[] = []): TreeNode {
   return { kind: 'workspace', key: `ws:${id}`, workspaceId: id, label, linked: false, attention, children }
@@ -50,6 +50,14 @@ test('all collapsed only when every folder is folded', () => {
   assert.equal(allCollapsed(tree, new Set(['g1'])), false)
   assert.equal(allCollapsed(tree, new Set(['g1', 'g2'])), true)
   assert.equal(allCollapsed([ws('a', 'A')], new Set()), false)
+})
+
+test('toggleAllCollapsed only changes keys in the given tree and preserves outside keys', () => {
+  const initial = new Set(['section:favorites', 'fav:ws:p'])
+  const collapsed = toggleAllCollapsed(tree, initial)
+  assert.deepEqual([...collapsed].sort(), ['fav:ws:p', 'g1', 'g2', 'section:favorites'])
+  const expanded = toggleAllCollapsed(tree, collapsed)
+  assert.deepEqual([...expanded].sort(), ['fav:ws:p', 'section:favorites'])
 })
 
 test('a tree without looks takes them from the earlier tree by row key', () => {
