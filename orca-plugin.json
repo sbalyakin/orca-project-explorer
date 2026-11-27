@@ -2,7 +2,7 @@
   "manifestVersion": 2,
   "id": "project-explorer",
   "name": "Project Explorer",
-  "version": "0.1.1",
+  "version": "0.1.2",
   "description": "Your projects and workspaces as a folder tree, with a right-click menu to open a terminal or launch an agent with a model, effort and prompt.",
   "author": {
     "name": "Sergey Balyakin",
